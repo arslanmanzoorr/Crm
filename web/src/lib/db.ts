@@ -137,3 +137,25 @@ export async function getThreads(): Promise<Thread[]> {
   );
   return threads.sort((a, b) => b.messages.at(-1)!.at.localeCompare(a.messages.at(-1)!.at));
 }
+
+const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT ?? 200);
+
+/**
+ * Per-org AI spend cap. Returns an error message when the org hit its 24h limit, else logs the call.
+ * ponytail: count-then-insert can overshoot by a few under concurrency; fine for a soft cap, move to a DB function if it becomes billing.
+ */
+export async function meterAi(task: string): Promise<string | null> {
+  if (!dbEnabled) return null;
+  const db = await supabase();
+  const since = new Date(Date.now() - 864e5).toISOString();
+  const { count, error } = await db.from("ai_usage").select("id", { count: "exact", head: true }).gte("ts", since);
+  if (error) return "Sign in again.";
+  if ((count ?? 0) >= AI_DAILY_LIMIT) return `Daily AI limit reached (${AI_DAILY_LIMIT}). It resets over the next 24 hours.`;
+  const { data } = await db.auth.getUser();
+  await db.from("ai_usage").insert({ task, user_id: data.user?.id });
+  return null;
+}
+
+/** Fail closed: a production deploy without Supabase must not serve the demo as if it were the product. */
+if (process.env.NODE_ENV === "production" && process.env.VERCEL && !dbEnabled)
+  throw new Error("NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set in production.");

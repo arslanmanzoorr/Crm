@@ -1,4 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { meterAi } from "@/lib/db";
+
+const MAX_BODY = 64_000; // chars; a long thread is ~20k
 
 const SYSTEM = `You are the AI assistant inside EstateOS, a real estate CRM. Write for a busy agent: short, concrete, no preamble.
 Fair Housing rules (never break): never use, infer or mention race, color, religion, sex, disability, familial status, national origin or other protected classes; never steer anyone toward or away from areas based on who lives there. Describe homes and areas only by property facts, amenities, commute and price.
@@ -14,8 +17,20 @@ const tasks = {
 } as const;
 
 export async function POST(req: Request) {
-  const { task, data } = (await req.json()) as { task: keyof typeof tasks; data: unknown };
-  if (!(task in tasks)) return Response.json({ error: "Unknown task" }, { status: 400 });
+  const raw = await req.text();
+  if (raw.length > MAX_BODY) return Response.json({ error: "Too much text for one AI request." }, { status: 413 });
+  let body: { task?: string; data?: unknown };
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    return Response.json({ error: "Bad request" }, { status: 400 });
+  }
+  const task = body.task as keyof typeof tasks;
+  if (typeof task !== "string" || !Object.hasOwn(tasks, task)) return Response.json({ error: "Unknown task" }, { status: 400 });
+  if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: "Set ANTHROPIC_API_KEY in web/.env.local to enable AI." }, { status: 503 });
+  const limited = await meterAi(task);
+  if (limited) return Response.json({ error: limited }, { status: 429 });
+  const data = body.data;
 
   try {
     const msg = await new Anthropic().beta.messages.create({
