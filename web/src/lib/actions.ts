@@ -117,7 +117,11 @@ export async function saveProperty(_: FormState, f: FormData): Promise<FormState
 
 export async function deleteProperty(id: string) {
   if (!dbEnabled) return;
-  const { error } = await (await authed()).from("properties").delete().eq("id", id);
+  const db = await authed();
+  // Remove the photo files too; the media rows cascade with the listing.
+  const { data: media } = await db.from("property_media").select("path").eq("property_id", id);
+  if (media?.length) await db.storage.from("listing-photos").remove(media.flatMap((m) => [m.path, m.path.replace(/\.webp$/, ".thumb.webp")]));
+  const { error } = await db.from("properties").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
   redirect("/properties");
@@ -303,4 +307,77 @@ export async function bulkDelete(ids: string[]): Promise<{ deleted: number }> {
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
   return { deleted: data.length };
+}
+
+const BUCKET = "listing-photos";
+const thumbPath = (path: string) => path.replace(/\.webp$/, ".thumb.webp");
+const MAX_PHOTOS = 40;
+
+/** Org that owns a property the caller can see (RLS), or null. */
+async function propertyOrg(db: Awaited<ReturnType<typeof authed>>, propertyId: string) {
+  if (!UUID.test(propertyId)) return null;
+  const { data } = await db.from("properties").select("org_id").eq("id", propertyId).maybeSingle();
+  return data?.org_id as string | null;
+}
+
+/**
+ * Step 1 of an upload: one-time signed URLs so the browser sends photo bytes straight to Storage.
+ * Paths are generated here (never by the client) inside the caller's org folder.
+ */
+export async function photoUploadUrls(propertyId: string, count: number) {
+  if (!dbEnabled) throw new Error(NO_DB.error);
+  const db = await authed();
+  const org = await propertyOrg(db, propertyId);
+  if (!org) throw new Error("Listing not found.");
+  const { count: existing } = await db.from("property_media").select("id", { count: "exact", head: true }).eq("property_id", propertyId);
+  const n = Math.min(Math.max(0, Math.floor(count)), MAX_PHOTOS - (existing ?? 0));
+  if (n <= 0) throw new Error(`A listing can hold up to ${MAX_PHOTOS} photos.`);
+  // Each photo gets two slots: the full image and an 800px thumbnail for cards.
+  const sign = async (path: string) => {
+    const { data, error } = await db.storage.from(BUCKET).createSignedUploadUrl(path);
+    if (error) throw new Error(error.message);
+    return data.token;
+  };
+  return Promise.all(Array.from({ length: n }, async () => {
+    const path = `${org}/${propertyId}/${crypto.randomUUID()}.webp`;
+    const [token, thumbToken] = await Promise.all([sign(path), sign(thumbPath(path))]);
+    return { path, token, thumbPath: thumbPath(path), thumbToken };
+  }));
+}
+
+/** Step 2: record the photos that finished uploading, appended after the existing ones. */
+export async function confirmPhotos(propertyId: string, paths: string[]) {
+  if (!dbEnabled) return;
+  const db = await authed();
+  const org = await propertyOrg(db, propertyId);
+  if (!org) throw new Error("Listing not found.");
+  const prefix = `${org}/${propertyId}/`;
+  const clean = [...new Set(paths)].filter((p) => typeof p === "string" && p.startsWith(prefix) && /^[0-9a-f-]{36}\.webp$/.test(p.slice(prefix.length)));
+  if (!clean.length) return;
+  const { data: last } = await db.from("property_media").select("position").eq("property_id", propertyId).order("position", { ascending: false }).limit(1).maybeSingle();
+  const start = (last?.position ?? -1) + 1;
+  const { error } = await db.from("property_media").insert(clean.map((path, i) => ({ property_id: propertyId, path, position: start + i })));
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+export async function deletePhoto(mediaId: string) {
+  if (!dbEnabled || !UUID.test(mediaId)) return;
+  const db = await authed();
+  const { data } = await db.from("property_media").select("path").eq("id", mediaId).maybeSingle();
+  if (!data) return;
+  await db.storage.from(BUCKET).remove([data.path, thumbPath(data.path)]);
+  await db.from("property_media").delete().eq("id", mediaId);
+  revalidatePath("/", "layout");
+}
+
+/** Cover = lowest position. */
+export async function setCoverPhoto(mediaId: string) {
+  if (!dbEnabled || !UUID.test(mediaId)) return;
+  const db = await authed();
+  const { data } = await db.from("property_media").select("property_id").eq("id", mediaId).maybeSingle();
+  if (!data) return;
+  const { data: first } = await db.from("property_media").select("position").eq("property_id", data.property_id).order("position").limit(1).single();
+  await db.from("property_media").update({ position: (first?.position ?? 0) - 1 }).eq("id", mediaId);
+  revalidatePath("/", "layout");
 }

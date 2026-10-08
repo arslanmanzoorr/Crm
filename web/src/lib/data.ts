@@ -38,7 +38,9 @@ export type Property = {
   status: "Active" | "Coming soon" | "Under contract" | "Sold";
   features: string[];
   description: string;
-  tone: string; // placeholder cover gradient until real photos are uploaded
+  tone: string; // placeholder cover gradient when a listing has no photos
+  cover?: string; // signed URL of the first photo
+  photos?: { id: string; url: string }[]; // full gallery (listing page only)
 };
 
 export type Task = {

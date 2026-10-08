@@ -60,8 +60,10 @@ export function toLead(r: ContactRow): Lead {
 }
 
 const TONES = mock.properties.map((p) => p.tone);
-const toProperty = (r: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string }, i: number): Property =>
-  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: TONES[i % TONES.length] });
+// Placeholder gradient keyed to the listing id, so it's the same on every page.
+const toneFor = (id: string) => TONES[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length];
+const toProperty = (r: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string }): Property =>
+  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id) });
 
 const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,consent_sms,consent_call,consent_email,dnc,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
 const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description";
@@ -136,14 +138,41 @@ export async function getLead(id: string): Promise<Lead | undefined> {
   return data ? toLead(data as ContactRow) : undefined;
 }
 
-export async function getProperties(): Promise<Property[]> {
-  if (!dbEnabled) return mock.properties;
-  const rows = must(await (await supabase()).from("properties").select(PROPERTY_COLS).order("created_at"));
-  return (rows as Parameters<typeof toProperty>[0][]).map(toProperty);
+type PropertyRow = Parameters<typeof toProperty>[0] & { property_media: { id: string; path: string }[] };
+const PHOTO_TTL = 60 * 60; // signed photo URLs last an hour; pages re-sign on every render
+
+/** Signs many storage paths in one request; returns path -> URL. */
+async function signPhotos(db: Awaited<ReturnType<typeof supabase>>, paths: string[]) {
+  if (!paths.length) return new Map<string, string>();
+  const { data } = await db.storage.from("listing-photos").createSignedUrls(paths, PHOTO_TTL);
+  return new Map((data ?? []).flatMap((d) => (d.path && d.signedUrl ? [[d.path, d.signedUrl] as const] : [])));
 }
 
+/** All listings with their cover photo. ponytail: first 200 by age; add paging like leads past that. */
+export async function getProperties(): Promise<Property[]> {
+  if (!dbEnabled) return mock.properties;
+  const db = await supabase();
+  const rows = must(await db.from("properties").select(`${PROPERTY_COLS},property_media(id,path)`)
+    .order("position", { referencedTable: "property_media" }).limit(1, { referencedTable: "property_media" })
+    .order("created_at").limit(200)) as PropertyRow[];
+  // Cards use the 800px thumbnail written next to each photo at upload.
+  const thumb = (path: string) => path.replace(/\.webp$/, ".thumb.webp");
+  const urls = await signPhotos(db, rows.flatMap((r) => r.property_media.map((m) => thumb(m.path))));
+  return rows.map(({ property_media, ...r }) => ({ ...toProperty(r), cover: property_media[0] && urls.get(thumb(property_media[0].path)) }));
+}
+
+/** One listing with its full ordered gallery. */
 export async function getProperty(id: string): Promise<Property | undefined> {
-  return (await getProperties()).find((p) => p.id === id);
+  if (!dbEnabled) return mock.propertyById(id);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return undefined;
+  const db = await supabase();
+  const { data } = await db.from("properties").select(`${PROPERTY_COLS},property_media(id,path)`)
+    .order("position", { referencedTable: "property_media" }).eq("id", id).maybeSingle();
+  if (!data) return undefined;
+  const { property_media, ...r } = data as PropertyRow;
+  const urls = await signPhotos(db, property_media.map((m) => m.path));
+  const photos = property_media.flatMap((m) => (urls.get(m.path) ? [{ id: m.id, url: urls.get(m.path)! }] : []));
+  return { ...toProperty(r), cover: photos[0]?.url, photos };
 }
 
 /** Display name for the signed-in agent (email prefix until profiles exist). */

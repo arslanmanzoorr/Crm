@@ -1,18 +1,20 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
+// Listing photos upload straight to Supabase Storage (signed URLs) and display from signed URLs.
+const storage = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin : "";
 
-// No third-party scripts, frames or form targets. The browser never talks to Supabase or Anthropic directly
-// (all calls are server-side), so connect-src stays 'self'.
+// No third-party scripts, frames or form targets. The browser only talks to our origin, plus Supabase Storage
+// for photo bytes; all data and AI calls are server-side.
 // ponytail: 'unsafe-inline' scripts because Next streams inline RSC payloads; move to nonces if a strict CSP audit requires it.
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data:",
+  `img-src 'self' blob: data: ${storage}`.trim(),
   "media-src 'self' blob:",
   "font-src 'self'",
-  "connect-src 'self'",
+  `connect-src 'self' ${storage}`.trim(),
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
