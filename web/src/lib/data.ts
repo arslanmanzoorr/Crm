@@ -15,8 +15,15 @@ export type Lead = {
   budget: string;
   areas: string[];
   preferences: string[];
-  activity: { when: string; channel: Channel; text: string }[];
+  activity: { when: string; channel: Channel; text: string; inbound?: boolean }[]; // when: ISO timestamp, or a label in mock data
+  type?: string;
+  stage?: Stage;
+  nextAction?: string;
+  consent?: { sms: boolean; call: boolean; email: boolean; dnc: boolean };
 };
+
+export const STAGES = ["New", "Contacted", "Qualified", "Showing", "Offer", "Under Contract", "Closed", "Lost"] as const;
+export type Stage = (typeof STAGES)[number];
 
 export type Channel = "Call" | "SMS" | "WhatsApp" | "Email" | "Instagram" | "Note";
 
@@ -44,25 +51,18 @@ export type Task = {
   dueToday: boolean;
   priority: boolean; // AI's top recommended action
   note: string;
+  dueAt?: string; // ISO; real tasks only
+  contactId?: string;
+  phone?: string;
+  email?: string;
+  done?: boolean;
 };
 
 export type ScheduleItem = { id: string; time: string; label: string; people: string[]; minutes: number };
 
 export const agent = { name: "Arslan Manzoor", initials: "AM" };
 
-export const kpis = [
-  { label: "Active deals", value: 34 },
-  { label: "Showings this week", value: 20 },
-  { label: "Hot leads", value: 9 },
-  { label: "Lost", value: 3 },
-];
 
-export const schedule: ScheduleItem[] = [
-  { id: "s1", time: "10:00", label: "Showing · 14 Oak Ave", people: ["Jane Doe"], minutes: 45 },
-  { id: "s2", time: "12:30", label: "Call · Pre-approval", people: ["Wade Warren", "Lena Ortiz"], minutes: 20 },
-  { id: "s3", time: "14:15", label: "Video call · Offer review", people: ["Robert Fox"], minutes: 36 },
-  { id: "s4", time: "17:00", label: "Open house · Westside", people: ["Jonah Jude", "Mia Chen"], minutes: 120 },
-];
 
 export const leads: Lead[] = [
   {
@@ -189,18 +189,6 @@ export const tasks: Task[] = [
   },
 ];
 
-export const callSummary = {
-  contact: "Robert Fox",
-  duration: "36 min",
-  goal: "Close on 22 Pine St under $600k with a 21-day escrow before his lease ends on Nov 30.",
-  keyPoints: [
-    "Pre-approved up to $640k (doc on file)",
-    "Wants inspection contingency kept",
-    "Flexible on closing-cost credit",
-  ],
-  documents: ["Pre-approval", "Offer v2"],
-  nextSteps: ["Send counter at $598k", "Book inspector for Mon"],
-};
 
 export const properties: Property[] = [
   { id: "p1", address: "14 Oak Ave", area: "Westside", price: 635000, beds: 3, baths: 2, sqft: 1840, status: "Active", features: ["Backyard", "Renovated kitchen", "2-car garage"], description: "Bright 3-bed on a quiet tree-lined street with a deep backyard and a fully renovated kitchen.", tone: "from-[#c5f36a] to-[#3a5a1a]" },
@@ -211,9 +199,9 @@ export const properties: Property[] = [
 ];
 
 export type Message = { from: "lead" | "agent"; text: string; at: string };
-export type Thread = { leadId: string; channel: Channel; messages: Message[] };
+export type Thread = { leadId: string; name: string; phone: string; email: string; channel: Channel; messages: Message[]; lead?: Pick<Lead, "intent" | "budget" | "preferences"> };
 
-export const threads: Thread[] = [
+const threadsSeed: Omit<Thread, "name" | "phone" | "email">[] = [
   { leadId: "l1", channel: "SMS", messages: [
     { from: "agent", text: "Hi Jane, 14 Oak Ave just had a price adjustment to $635k.", at: "Yesterday 10:02" },
     { from: "lead", text: "Can we see Oak Ave this weekend? Saturday morning works best.", at: "Yesterday 18:40" },
@@ -230,6 +218,11 @@ export const threads: Thread[] = [
     { from: "lead", text: "Any duplexes over 6% cap in Riverside?", at: "Mon 21:14" },
   ] },
 ];
+
+export const mockThreads: Thread[] = threadsSeed.map((t) => {
+  const l = leads.find((x) => x.id === t.leadId)!;
+  return { ...t, name: l.name, phone: l.phone, email: l.email, lead: l };
+});
 
 export const leadById = (id: string) => leads.find((l) => l.id === id);
 export const propertyById = (id: string) => properties.find((p) => p.id === id);

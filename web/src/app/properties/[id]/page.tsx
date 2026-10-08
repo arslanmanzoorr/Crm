@@ -1,7 +1,8 @@
-import { Clapperboard, Send } from "lucide-react";
+import { Clapperboard, Pencil, Send } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { DeleteButton } from "@/components/lead-controls";
 import { Chip } from "@/components/ui";
 import { money } from "@/lib/data";
 import { getProperty } from "@/lib/db";
@@ -43,6 +44,10 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         <Link href={`/publish?property=${p.id}`} className="flex items-center gap-2 rounded-full bg-surface-light px-5 py-2.5 font-medium text-on-light hover:bg-white">
           <Send className="size-4" /> Post to socials
         </Link>
+        <Link href={`/properties/${p.id}/edit`} className="flex items-center gap-2 rounded-full bg-surface-2 px-5 py-2.5 hover:bg-surface-3">
+          <Pencil className="size-4" /> Edit
+        </Link>
+        <DeleteButton id={p.id} what="listing" />
       </div>
     </div>
   );

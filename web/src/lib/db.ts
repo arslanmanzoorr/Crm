@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import * as mock from "./data";
-import type { Channel, Lead, Property } from "./data";
+import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -26,14 +26,13 @@ export async function supabase() {
   });
 }
 
-type ActivityRow = { channel: Channel; content: string; ts: string };
+type ActivityRow = { channel: Channel; content: string; ts: string; direction: "in" | "out" };
 type ContactRow = {
-  id: string; type: string; name: string; email: string | null; phone: string | null; sources: string[];
-  score: number; intent: string; budget: string; areas: string[]; preferences: string[]; activities: ActivityRow[];
+  id: string; type: string; stage: Stage; next_action: string; name: string; email: string | null; phone: string | null; sources: string[];
+  score: number; consent_sms: boolean; consent_call: boolean; consent_email: boolean; dnc: boolean; intent: string; budget: string; areas: string[]; preferences: string[]; activities: ActivityRow[];
 };
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
-const when = (ts: string) => new Date(ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 export function toLead(r: ContactRow): Lead {
   const activity = [...r.activities].sort((a, b) => b.ts.localeCompare(a.ts));
@@ -50,7 +49,11 @@ export function toLead(r: ContactRow): Lead {
     budget: r.budget,
     areas: r.areas,
     preferences: r.preferences,
-    activity: activity.map((a) => ({ when: when(a.ts), channel: a.channel, text: a.content })),
+    activity: activity.map((a) => ({ when: a.ts, channel: a.channel, text: a.content, inbound: a.direction === "in" })),
+    type: r.type,
+    stage: r.stage,
+    nextAction: r.next_action,
+    consent: { sms: r.consent_sms, call: r.consent_call, email: r.consent_email, dnc: r.dnc },
   };
 }
 
@@ -58,7 +61,7 @@ const TONES = mock.properties.map((p) => p.tone);
 const toProperty = (r: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string }, i: number): Property =>
   ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: TONES[i % TONES.length] });
 
-const CONTACT_COLS = "id,type,name,email,phone,sources,score,intent,budget,areas,preferences,activities(channel,content,ts)";
+const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,consent_sms,consent_call,consent_email,dnc,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
 const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description";
 
 function must<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
@@ -86,4 +89,51 @@ export async function getProperties(): Promise<Property[]> {
 
 export async function getProperty(id: string): Promise<Property | undefined> {
   return (await getProperties()).find((p) => p.id === id);
+}
+
+/** Display name for the signed-in agent (email prefix until profiles exist). */
+export async function getMe(): Promise<{ name: string }> {
+  if (!dbEnabled) return mock.agent;
+  const { data } = await (await supabase()).auth.getUser();
+  const handle = data.user?.email?.split("@")[0] ?? "there";
+  return { name: handle.split(/[._-]/).map(cap).join(" ") };
+}
+
+type TaskRow = {
+  id: string; kind: Task["kind"]; title: string; note: string; due_at: string; done: boolean; created_by: string;
+  contacts: { id: string; name: string; type: string; phone: string | null; email: string | null } | null;
+};
+
+/** Open tasks plus anything finished today, soonest first. */
+export async function getTasks(): Promise<Task[]> {
+  if (!dbEnabled) return mock.tasks;
+  const db = await supabase(); // first: marks the request dynamic before Date.now()
+  const since = new Date(Date.now() - 36 * 3600_000).toISOString();
+  const rows = must(await db.from("tasks")
+    .select("id,kind,title,note,due_at,done,created_by,contacts(id,name,type,phone,email)")
+    .or(`done.eq.false,due_at.gte.${since}`).order("due_at").limit(100));
+  return (rows as unknown as TaskRow[]).map((t) => ({
+    id: t.id, kind: t.kind, title: t.title, note: t.note, dueAt: t.due_at, done: t.done,
+    contact: t.contacts?.name ?? "", contactRole: t.contacts ? cap(t.contacts.type) : "",
+    contactId: t.contacts?.id, phone: t.contacts?.phone ?? "", email: t.contacts?.email ?? "",
+    when: "", dueToday: false, priority: t.created_by === "ai",
+  }));
+}
+
+const MSG_CHANNELS: Channel[] = ["SMS", "WhatsApp", "Email", "Instagram"];
+
+/** One thread per lead + channel, built from logged messages; most recent first. */
+export async function getThreads(): Promise<Thread[]> {
+  if (!dbEnabled) return mock.mockThreads;
+  const leads = await getLeads();
+  const threads = leads.flatMap((l) =>
+    MSG_CHANNELS.map((channel) => {
+      const msgs = l.activity.filter((a) => a.channel === channel).reverse();
+      return {
+        leadId: l.id, name: l.name, phone: l.phone, email: l.email, channel, lead: l,
+        messages: msgs.map((a) => ({ from: a.inbound ? ("lead" as const) : ("agent" as const), text: a.text, at: a.when })),
+      };
+    }).filter((t) => t.messages.length),
+  );
+  return threads.sort((a, b) => b.messages.at(-1)!.at.localeCompare(a.messages.at(-1)!.at));
 }

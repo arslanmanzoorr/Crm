@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Workspace } from "@/components/workspace";
-import { getLeads } from "@/lib/db";
+import { getLeads, getMe, getTasks } from "@/lib/db";
 
 export default function Home() {
   return (
@@ -11,5 +11,6 @@ export default function Home() {
 }
 
 async function Home_() {
-  return <Workspace leads={await getLeads()} />;
+  const [me, leads, tasks] = await Promise.all([getMe(), getLeads(), getTasks()]);
+  return <Workspace name={me.name} leads={leads} tasks={tasks} />;
 }
