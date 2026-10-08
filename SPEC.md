@@ -175,6 +175,9 @@ Grouped by how soon they could realistically ship.
 
 ## 4. Suggested Tech Stack
 
+> UI / visual design: see [DESIGN.md](DESIGN.md) (dark workspace + lime accent).
+
+
 | Layer | Choice | Why |
 |---|---|---|
 | Frontend | **Next.js (App Router) + TypeScript + Tailwind + shadcn/ui** | Fast, SEO for public listing pages |
