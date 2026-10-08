@@ -45,7 +45,14 @@ const nextConfig: NextConfig = {
     },
   },
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    // Public lead forms (/f/<id>) may be embedded in an agent's own website; everything else may not be framed.
+    const embeddable = securityHeaders
+      .filter((h) => h.key !== "X-Frame-Options")
+      .map((h) => (h.key === "Content-Security-Policy" ? { ...h, value: h.value.replace("frame-ancestors 'none'", "frame-ancestors *") } : h));
+    return [
+      { source: "/((?!f/).*)", headers: securityHeaders },
+      { source: "/f/:path*", headers: embeddable },
+    ];
   },
 };
 

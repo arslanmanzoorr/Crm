@@ -381,3 +381,54 @@ export async function setCoverPhoto(mediaId: string) {
   await db.from("property_media").update({ position: (first?.position ?? 0) - 1 }).eq("id", mediaId);
   revalidatePath("/", "layout");
 }
+
+const FORM_MIN_MS = 2500; // humans don't finish a form this fast
+
+/** Public lead form submit. Anonymous: the database function does all writing and validation. */
+export async function submitLeadForm(formId: string, _: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(formId)) return { error: "This form is no longer available." };
+  // Bots: a filled honeypot or an instant submit gets a quiet fake success.
+  const started = Number(str(f, "t"));
+  if (str(f, "website") || !started || Date.now() - started < FORM_MIN_MS) return { ok: "Thanks! We'll be in touch shortly." };
+
+  const salt = process.env.FORM_IP_SALT;
+  if (!salt) return { error: "This form isn't configured yet." };
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "unknown").trim();
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}:${ip}`));
+  const ipHash = Buffer.from(digest).toString("hex").slice(0, 32);
+
+  const { data, error } = await (await supabase()).rpc("submit_lead", {
+    p_form: formId,
+    p_ip_hash: ipHash,
+    p_name: str(f, "name"),
+    p_email: str(f, "email"),
+    p_phone: str(f, "phone"),
+    p_message: str(f, "message"),
+    p_consent_call_sms: f.get("consent_call_sms") === "on",
+    p_consent_email: f.get("consent_email") === "on",
+    p_source: str(f, "source"),
+  });
+  if (error) return { error: "Something went wrong on our side. Please try again in a minute." };
+  const results: Record<string, FormState> = {
+    ok: { ok: "Thanks! We'll be in touch shortly." },
+    invalid: { error: "Please add your name and a valid email or phone number." },
+    closed: { error: "This form is no longer accepting submissions." },
+    limited: { error: "Too many submissions from this connection. Please try again later." },
+  };
+  return results[data as string] ?? { error: "Something went wrong. Please try again." };
+}
+
+/** Agent settings for their lead form. */
+export async function saveLeadForm(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const id = str(f, "id");
+  if (!UUID.test(id)) return { error: "Form not found." };
+  const { error } = await (await authed()).from("lead_forms")
+    .update({ public_name: str(f, "public_name").slice(0, 80) || null, enabled: f.get("enabled") === "on" })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/account");
+  return { ok: "Saved" };
+}

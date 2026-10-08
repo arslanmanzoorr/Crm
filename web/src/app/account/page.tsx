@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Avatar, Reveal } from "@/components/ui";
 import { signOut } from "@/lib/actions";
-import { dbEnabled, getMe } from "@/lib/db";
+import { LeadFormSettings } from "@/components/lead-form-settings";
+import { dbEnabled, getLeadForm, getMe } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Account" };
 
@@ -17,6 +18,15 @@ export default function AccountPage() {
       <Suspense fallback={<div className="h-24 rounded-card bg-surface-2" />}>
         <Me />
       </Suspense>
+
+      {dbEnabled && (
+        <section aria-labelledby="capture" className="flex flex-col gap-2">
+          <h2 id="capture" className="text-sm text-muted">Lead capture form</h2>
+          <Suspense fallback={<div className="h-64 rounded-card bg-surface-2" />}>
+            <Capture />
+          </Suspense>
+        </section>
+      )}
 
       <section aria-labelledby="tools" className="flex flex-col gap-2">
         <h2 id="tools" className="text-sm text-muted">Marketing tools</h2>
@@ -35,6 +45,13 @@ export default function AccountPage() {
       )}
     </div>
   );
+}
+
+async function Capture() {
+  const form = await getLeadForm();
+  if (!form) return null;
+  const base = process.env.SITE_URL ?? "";
+  return <LeadFormSettings form={form} url={`${base}/f/${form.id}`} />;
 }
 
 async function Me() {

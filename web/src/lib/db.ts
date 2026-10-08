@@ -271,3 +271,10 @@ export async function getPipeline(): Promise<BoardColumn[]> {
     };
   }));
 }
+
+/** The org's public lead form (one per org for now). */
+export async function getLeadForm(): Promise<{ id: string; public_name: string | null; enabled: boolean } | null> {
+  if (!dbEnabled) return null;
+  const { data } = await (await supabase()).from("lead_forms").select("id,public_name,enabled").order("created_at").limit(1).maybeSingle();
+  return data;
+}
