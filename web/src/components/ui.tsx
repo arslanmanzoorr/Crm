@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { ViewTransition, type ReactNode } from "react";
 
 const avatarTones = ["#c5f36a", "#f5d35d", "#9fd3f5", "#f5a25d", "#d4b5f5", "#7be07b"];
 
@@ -36,11 +36,28 @@ export function AvatarStack({ names, size = 28 }: { names: string[]; size?: numb
   );
 }
 
+/** One banding used by labels, dots and filters alike. */
 export function scoreLabel(score: number) {
   if (score >= 80) return "Hot";
-  if (score >= 60) return "Warm";
-  if (score >= 40) return "Medium";
+  if (score >= 50) return "Warm";
   return "Cold";
+}
+
+/**
+ * Route content entrance. Plain CSS on purpose: a React <ViewTransition> around a Suspense reveal
+ * blocks hydration when the browser aborts the transition (hidden tab), leaving a dead page.
+ */
+export function Reveal({ children }: { children: ReactNode }) {
+  return <div className="animate-rise">{children}</div>;
+}
+
+/** Lead avatar that morphs between the lead card and the profile header. */
+export function LeadAvatar({ id, name, size }: { id: string; name: string; size: number }) {
+  return (
+    <ViewTransition name={`lead-${id}`} share="morph" default="none">
+      <span className="inline-grid shrink-0"><Avatar name={name} size={size} /></span>
+    </ViewTransition>
+  );
 }
 
 /** 5-dot AI lead-score meter. Color is never the only signal: aria-label carries the value. */
@@ -108,7 +125,7 @@ export function NotchCard({
   children,
   tone = "dark",
   label,
-  href = "#",
+  href,
   className = "",
 }: {
   children: ReactNode;
@@ -123,8 +140,9 @@ export function NotchCard({
     light: "bg-surface-light text-on-light",
   }[tone];
   return (
-    <article className={`group relative rounded-card p-5 transition duration-200 hover:-translate-y-0.5 ${surface} ${className}`}>
-      {/* notch: a page-colored bite with two inverted corners for a smooth curve */}
+    <article className={`group relative rounded-card p-5 transition duration-200 ease-out hover:-translate-y-0.5 has-[a:focus-visible]:-translate-y-0.5 ${surface} ${className}`}>
+      {/* notch: a page-colored bite with two inverted corners for a smooth curve; only when there's an arrow to hold */}
+      {href && <>
       <span aria-hidden className="absolute -top-px -right-px size-16 rounded-bl-[22px] bg-bg" />
       <span
         aria-hidden
@@ -136,13 +154,16 @@ export function NotchCard({
         className="absolute top-[63px] -right-px size-5"
         style={{ background: "radial-gradient(circle at 0 100%, transparent 19.5px, var(--color-bg) 20px)" }}
       />
-      <Link
+      </>}
+      {/* Whole card is clickable; the arrow is the keyboard/screen-reader target. Controls inside the card need `relative z-10`. */}
+      {href && <Link href={href} aria-hidden tabIndex={-1} className="absolute inset-0 rounded-card" />}
+      {href && <Link
         href={href}
         aria-label={label}
-        className="absolute top-1.5 right-1.5 grid size-12 place-items-center rounded-full bg-surface-2 text-ink ring-1 ring-white/5 transition duration-150 group-hover:bg-accent group-hover:text-on-light"
+        className="absolute top-1.5 right-1.5 z-10 grid size-12 place-items-center rounded-full bg-surface-2 text-ink ring-1 ring-white/5 transition duration-150 group-hover:bg-accent group-hover:text-on-light"
       >
         <ArrowUpRight className="size-5" />
-      </Link>
+      </Link>}
       {children}
     </article>
   );

@@ -6,6 +6,7 @@ import { askAi } from "@/lib/ai";
 import type { Property } from "@/lib/data";
 
 const PLATFORMS = ["Instagram", "TikTok", "YouTube Shorts", "Facebook", "LinkedIn", "Google Business"];
+const plural = (n: number) => `${n} platform${n === 1 ? "" : "s"}`;
 const field = "rounded-full bg-surface-2 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent";
 
 export function Publisher({ properties, initialPropertyId }: { properties: Property[]; initialPropertyId: string }) {
@@ -15,37 +16,47 @@ export function Publisher({ properties, initialPropertyId }: { properties: Prope
   const [captions, setCaptions] = useState<Record<string, string>>({});
   const [when, setWhen] = useState("");
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<{ error: boolean; text: string } | null>(null);
 
   const property = propertyById(propertyId);
-  if (!property) return <p className="text-muted">Add a listing under Properties first, then come back to post it.</p>;
+  if (!property) return <p className="text-muted">Add a listing first (Listings → Add listing), then come back to post it.</p>;
   const toggle = (p: string) => setSelected(selected.includes(p) ? selected.filter((x) => x !== p) : [...selected, p]);
 
   async function generate() {
     setBusy(true);
-    setStatus("");
+    setStatus(null);
     try {
       const out = await Promise.all(selected.map((platform) => askAi("caption", { platform, property })));
       setCaptions(Object.fromEntries(selected.map((p, i) => [p, out[i]])));
     } catch (e) {
-      setStatus((e as Error).message);
+      setStatus({ error: true, text: (e as Error).message });
     } finally {
       setBusy(false);
     }
   }
 
   async function publish() {
+    const missing = selected.filter((p) => !captions[p]?.trim());
+    if (missing.length) return setStatus({ error: true, text: `Add a caption for ${missing.join(", ")} first.` });
     setBusy(true);
-    const posts = selected.map((platform) => ({ platform, caption: captions[platform] ?? "" }));
-    const res = await fetch("/api/publish", { method: "POST", body: JSON.stringify({ property, posts, scheduledAt: when || null }) });
-    const json = await res.json();
-    setStatus(res.ok ? (when ? "Scheduled ✓" : "Sent to n8n for publishing ✓") : json.error);
-    setBusy(false);
+    setStatus(null);
+    const posts = selected.map((platform) => ({ platform, caption: captions[platform].trim() }));
+    try {
+      const res = await fetch("/api/publish", { method: "POST", body: JSON.stringify({ property, posts, scheduledAt: when ? new Date(when).toISOString() : null }) });
+      const json = await res.json().catch(() => ({ error: `Publishing failed (${res.status}).` }));
+      setStatus(res.ok
+        ? { error: false, text: when ? `Scheduled for ${new Date(when).toLocaleString()}.` : `Sent to ${plural(selected.length)} for publishing.` }
+        : { error: true, text: json.error });
+    } catch {
+      setStatus({ error: true, text: "Couldn't reach the server. Check your connection and try again." });
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl">Publish</h1>
+      <h1 className="text-4xl font-light">Publish</h1>
 
       <div className="flex flex-wrap items-center gap-3">
         <select value={propertyId} onChange={(e) => { setPropertyId(e.target.value); setCaptions({}); }} aria-label="Property" className={field}>
@@ -88,9 +99,9 @@ export function Publisher({ properties, initialPropertyId }: { properties: Prope
       <div className="flex flex-wrap items-center gap-3">
         <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} aria-label="Schedule for (leave empty to post now)" className={field} />
         <button type="button" onClick={publish} disabled={busy || !selected.length} className="flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 font-medium text-on-light hover:bg-accent-strong disabled:opacity-50">
-          <Send className="size-4" /> {when ? "Schedule" : "Publish now"} to {selected.length} platforms
+          <Send aria-hidden className="size-4" /> {when ? "Schedule" : "Publish now"} to {plural(selected.length)}
         </button>
-        {status && <p role="status" className="text-sm text-muted">{status}</p>}
+        <p role="status" className={`text-sm ${status?.error ? "text-score-1" : "text-accent"}`}>{status?.text}</p>
       </div>
     </div>
   );

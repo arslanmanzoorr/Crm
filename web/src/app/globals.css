@@ -7,7 +7,7 @@
   --color-surface-3: #333333;
   --color-surface-light: #ededed;
   --color-ink: #f5f5f5;
-  --color-muted: #9a9a9a;
+  --color-muted: #a3a3a3; /* ≥5:1 on every dark surface */
   --color-on-light: #111111;
   --color-accent: #c5f36a;
   --color-accent-strong: #a9e33f;
@@ -18,16 +18,51 @@
   --color-score-5: #7be07b;
   --radius-card: 24px;
   --font-sans: var(--font-urbanist), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-rise: rise 320ms var(--ease-out-expo) both;
+  --animate-pop: pop 260ms var(--ease-out-expo) both;
+}
+
+:root {
+  color-scheme: dark;
+  --duration-move: 380ms;
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  caret-color: var(--color-accent);
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* Browser surfaces carry the palette too */
 ::selection {
   background: var(--color-accent);
   color: var(--color-on-light);
+}
+* {
+  scrollbar-color: var(--color-surface-3) transparent;
+  scrollbar-width: thin;
+}
+a {
+  text-underline-offset: 3px;
+}
+
+/* One visible focus style for every control; inputs keep their ring */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -35,4 +70,52 @@ body {
 }
 .no-scrollbar {
   scrollbar-width: none;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(2px);
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+}
+
+/* A lead's avatar travels from its card into the profile header */
+::view-transition-group(.morph) {
+  animation-duration: var(--duration-move);
+  animation-timing-function: var(--ease-out-expo);
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+/* Reduced motion: no travel, keep the state change visible through opacity and color */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    scroll-behavior: auto !important;
+    transition-property: color, background-color, border-color, opacity, outline-color !important;
+  }
+  .animate-rise,
+  .animate-pop {
+    animation: fade-in 150ms ease-out both !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 120ms !important;
+    animation-delay: 0ms !important;
+  }
 }

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -5,12 +6,14 @@ import { EmptyDemo } from "@/components/empty-demo";
 import { PropertyCard } from "@/components/property-card";
 import { getProperties } from "@/lib/db";
 
+export const metadata: Metadata = { title: "Listings" };
+
 export default function PropertiesPage() {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl">Properties</h1>
-        <Link href="/properties/new" className="flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-on-light hover:bg-accent-strong">
+        <h1 className="text-4xl font-light">Listings</h1>
+        <Link href="/properties/new" className="flex min-h-11 items-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-on-light hover:bg-accent-strong">
           <Plus className="size-4" /> Add listing
         </Link>
       </div>

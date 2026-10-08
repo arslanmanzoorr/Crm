@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Publisher } from "@/components/publisher";
 import { getProperties } from "@/lib/db";
+
+export const metadata: Metadata = { title: "Publish" };
 
 export default function PublishPage({ searchParams }: PageProps<"/publish">) {
   return (

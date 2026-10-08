@@ -1,13 +1,12 @@
 "use client";
 
 import { Clapperboard, Download, ImagePlus, X } from "lucide-react";
-import { useRef, useState } from "react";
-import { agent } from "@/lib/data";
+import { useEffect, useRef, useState } from "react";
 import { ASPECTS, END_CARD_SECONDS, SLIDE_SECONDS, coverRect, slideAt, type Aspect } from "@/lib/video";
 
 type Photo = { url: string; img: HTMLImageElement };
 
-const field = "w-full rounded-full bg-surface-2 px-4 py-2.5 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-accent";
+const field = "min-h-11 w-full rounded-full bg-surface-2 px-4 py-2.5 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-accent";
 
 function loadImage(file: File): Promise<Photo> {
   const url = URL.createObjectURL(file);
@@ -16,14 +15,15 @@ function loadImage(file: File): Promise<Photo> {
   return img.decode().then(() => ({ url, img }));
 }
 
-export function Studio({ defaults }: { defaults: { title: string; subtitle: string } }) {
+export function Studio({ defaults }: { defaults: { title: string; subtitle: string; agentName: string } }) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [aspect, setAspect] = useState<Aspect>("9:16");
   const [title, setTitle] = useState(defaults.title);
   const [subtitle, setSubtitle] = useState(defaults.subtitle);
-  const [cta, setCta] = useState(`DM ${agent.name.split(" ")[0]} to book a showing`);
+  const [cta, setCta] = useState(`DM ${defaults.agentName.split(" ")[0]} to book a showing`);
   const [rendering, setRendering] = useState(false);
   const [video, setVideo] = useState<{ url: string; ext: string } | null>(null);
+  const [progress, setProgress] = useState(0);
   const canvas = useRef<HTMLCanvasElement>(null);
 
   async function addFiles(files: FileList | null) {
@@ -34,6 +34,7 @@ export function Studio({ defaults }: { defaults: { title: string; subtitle: stri
 
   function draw(ctx: CanvasRenderingContext2D, t: number) {
     const [w, h] = ASPECTS[aspect];
+
     const s = slideAt(t, photos.length);
     ctx.fillStyle = "#0e0e0e";
     ctx.fillRect(0, 0, w, h);
@@ -61,9 +62,9 @@ export function Studio({ defaults }: { defaults: { title: string; subtitle: stri
       ctx.fillStyle = "#c5f36a";
       ctx.font = `600 ${unit * 1.6}px Urbanist, sans-serif`;
       ctx.fillText(cta, w / 2, h / 2, w - unit * 2);
-      ctx.fillStyle = "#9a9a9a";
+      ctx.fillStyle = "#a3a3a3";
       ctx.font = `400 ${unit}px Urbanist, sans-serif`;
-      ctx.fillText(agent.name, w / 2, h / 2 + unit * 2);
+      ctx.fillText(defaults.agentName, w / 2, h / 2 + unit * 2);
       ctx.textAlign = "start";
     }
   }
@@ -89,6 +90,7 @@ export function Studio({ defaults }: { defaults: { title: string; subtitle: stri
     const tick = () => {
       const t = (performance.now() - start) / 1000;
       draw(ctx, Math.min(t, total));
+      setProgress(Math.min(100, Math.round((t / total) * 100)));
       if (t < total) requestAnimationFrame(tick);
       else rec.stop();
     };
@@ -97,14 +99,32 @@ export function Studio({ defaults }: { defaults: { title: string; subtitle: stri
 
   const [w, h] = ASPECTS[aspect];
 
+  // Live preview: show the first frame whenever photos, format or text change (not while recording).
+  useEffect(() => {
+    if (rendering || !canvas.current) return;
+    const ctx = canvas.current.getContext("2d")!;
+    if (photos.length) draw(ctx, SLIDE_SECONDS * 0.4);
+    else ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- draw reads exactly these values
+  }, [photos, aspect, title, subtitle, cta, rendering]);
+
+  // Live preview: show the first frame whenever photos, format or text change (not while recording).
+  useEffect(() => {
+    if (rendering || !canvas.current) return;
+    const ctx = canvas.current.getContext("2d")!;
+    if (photos.length) draw(ctx, SLIDE_SECONDS * 0.4);
+    else ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- draw reads exactly these values
+  }, [photos, aspect, title, subtitle, cta, rendering]);
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl">Video Studio</h1>
+      <h1 className="text-4xl font-light">Video Studio</h1>
       <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
         <div className="flex flex-col gap-4">
-          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-card border-2 border-dashed border-white/10 p-8 text-muted hover:border-accent hover:text-accent">
-            <ImagePlus className="size-8" />
-            <span className="text-sm">Add listing photos (they play in this order)</span>
+          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-card border-2 border-dashed border-white/10 p-8 text-muted transition hover:border-accent hover:text-accent has-[:focus-visible]:border-accent has-[:focus-visible]:text-accent">
+            <ImagePlus aria-hidden className="size-8" />
+            <span className="text-sm">Add listing photos · they play in the order you add them</span>
             <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => addFiles(e.target.files)} />
           </label>
 
@@ -135,15 +155,21 @@ export function Studio({ defaults }: { defaults: { title: string; subtitle: stri
                 role="radio"
                 aria-checked={aspect === a}
                 onClick={() => setAspect(a)}
-                className={`rounded-full px-4 py-2 text-sm ${aspect === a ? "bg-surface-light text-on-light" : "bg-surface-2 hover:text-accent"}`}
+                className={`min-h-11 rounded-full px-4 text-sm ${aspect === a ? "bg-surface-light text-on-light" : "bg-surface-2 hover:text-accent"}`}
               >
                 {a}
               </button>
             ))}
           </div>
-          <input className={field} value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Title" placeholder="Title" />
-          <input className={field} value={subtitle} onChange={(e) => setSubtitle(e.target.value)} aria-label="Subtitle" placeholder="Price · beds · baths" />
-          <input className={field} value={cta} onChange={(e) => setCta(e.target.value)} aria-label="Call to action" placeholder="Call to action" />
+          <label className="flex flex-col gap-1.5 text-sm"><span className="text-muted">Headline</span>
+            <input className={field} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Just Listed · 14 Oak Ave" maxLength={60} />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm"><span className="text-muted">Details line</span>
+            <input className={field} value={subtitle} onChange={(e) => setSubtitle(e.target.value)} placeholder="$635,000 · 3 bd · 2 ba · Westside" maxLength={80} />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm"><span className="text-muted">End card</span>
+            <input className={field} value={cta} onChange={(e) => setCta(e.target.value)} placeholder="DM me to book a showing" maxLength={60} />
+          </label>
 
           <button
             type="button"
@@ -152,11 +178,17 @@ export function Studio({ defaults }: { defaults: { title: string; subtitle: stri
             className="flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2.5 font-medium text-on-light hover:bg-accent-strong disabled:opacity-50"
           >
             <Clapperboard className="size-4" />
-            {rendering ? "Rendering…" : `Render video (${photos.length * SLIDE_SECONDS + END_CARD_SECONDS}s)`}
+            {rendering ? `Recording… ${progress}%` : photos.length ? `Render ${photos.length * SLIDE_SECONDS + END_CARD_SECONDS}s video` : "Add photos to render"}
           </button>
         </div>
 
-        <div className="flex flex-col items-center gap-3">
+        <div className="relative flex flex-col items-center gap-3">
+          {rendering && (
+            <div role="progressbar" aria-label="Rendering video" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} className="h-1 w-full overflow-hidden rounded-full bg-surface-2">
+              <div className="h-full rounded-full bg-accent transition-[width] duration-200 ease-linear" style={{ width: `${progress}%` }} />
+            </div>
+          )}
+          {!photos.length && !video && <p className="absolute inset-x-0 top-1/2 z-10 -translate-y-1/2 px-6 text-center text-sm text-muted">Preview appears here once you add photos</p>}
           <canvas ref={canvas} width={w} height={h} hidden={!!video} className="max-h-[70vh] w-full rounded-card bg-surface-1 object-contain" style={{ aspectRatio: `${w}/${h}` }} />
           {video && (
             <>

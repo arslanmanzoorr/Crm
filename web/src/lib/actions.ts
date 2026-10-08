@@ -144,6 +144,7 @@ export async function loadDemo(): Promise<void> {
     mock.leads.map((l) => ({
       name: l.name, email: l.email, phone: l.phone, sources: l.sources, score: l.score, intent: l.intent,
       budget: l.budget, areas: l.areas, preferences: l.preferences,
+      consent_call: true, consent_sms: true, consent_email: true, // demo leads opted in on the form they came from
       type: l.headline.split(" ")[0].toLowerCase().replace(/[^a-z]/g, "") || "buyer",
     })),
   ).select("id,name");

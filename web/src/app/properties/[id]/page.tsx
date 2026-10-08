@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Clapperboard, Pencil, Send } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,6 +7,8 @@ import { DeleteButton } from "@/components/lead-controls";
 import { Chip } from "@/components/ui";
 import { money } from "@/lib/data";
 import { getProperty } from "@/lib/db";
+
+export const metadata: Metadata = { title: "Listing" };
 
 export default function PropertyPage({ params }: PageProps<"/properties/[id]">) {
   return (
@@ -21,7 +24,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/properties" className="text-sm text-muted hover:text-accent">← All properties</Link>
+      <Link href="/properties" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← All listings</Link>
       <div className={`aspect-[21/9] rounded-card bg-gradient-to-br ${p.tone}`} />
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>

@@ -92,16 +92,16 @@ export async function getProperty(id: string): Promise<Property | undefined> {
 }
 
 /** Display name for the signed-in agent (email prefix until profiles exist). */
-export async function getMe(): Promise<{ name: string }> {
+export async function getMe(): Promise<{ name: string; email?: string }> {
   if (!dbEnabled) return mock.agent;
   const { data } = await (await supabase()).auth.getUser();
   const handle = data.user?.email?.split("@")[0] ?? "there";
-  return { name: handle.split(/[._-]/).map(cap).join(" ") };
+  return { name: handle.split(/[._-]/).map(cap).join(" "), email: data.user?.email };
 }
 
 type TaskRow = {
   id: string; kind: Task["kind"]; title: string; note: string; due_at: string; done: boolean; created_by: string;
-  contacts: { id: string; name: string; type: string; phone: string | null; email: string | null } | null;
+  contacts: { id: string; name: string; type: string; phone: string | null; email: string | null; consent_call: boolean; consent_email: boolean; dnc: boolean } | null;
 };
 
 /** Open tasks plus anything finished today, soonest first. */
@@ -110,12 +110,15 @@ export async function getTasks(): Promise<Task[]> {
   const db = await supabase(); // first: marks the request dynamic before Date.now()
   const since = new Date(Date.now() - 36 * 3600_000).toISOString();
   const rows = must(await db.from("tasks")
-    .select("id,kind,title,note,due_at,done,created_by,contacts(id,name,type,phone,email)")
+    .select("id,kind,title,note,due_at,done,created_by,contacts(id,name,type,phone,email,consent_call,consent_email,dnc)")
     .or(`done.eq.false,due_at.gte.${since}`).order("due_at").limit(100));
   return (rows as unknown as TaskRow[]).map((t) => ({
     id: t.id, kind: t.kind, title: t.title, note: t.note, dueAt: t.due_at, done: t.done,
     contact: t.contacts?.name ?? "", contactRole: t.contacts ? cap(t.contacts.type) : "",
-    contactId: t.contacts?.id, phone: t.contacts?.phone ?? "", email: t.contacts?.email ?? "",
+    contactId: t.contacts?.id,
+    // Only expose contact details the lead consented to; the UI then can't offer a non-compliant Start.
+    phone: t.contacts && t.contacts.consent_call && !t.contacts.dnc ? t.contacts.phone ?? "" : "",
+    email: t.contacts && t.contacts.consent_email && !t.contacts.dnc ? t.contacts.email ?? "" : "",
     when: "", dueToday: false, priority: t.created_by === "ai",
   }));
 }
