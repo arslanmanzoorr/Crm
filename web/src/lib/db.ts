@@ -69,15 +69,70 @@ function must<T>({ data, error }: { data: T | null; error: { message: string } |
   return data as T;
 }
 
-export async function getLeads(): Promise<Lead[]> {
-  if (!dbEnabled) return mock.leads;
-  const rows = must(await (await supabase()).from("contacts").select(CONTACT_COLS).order("score", { ascending: false }));
-  return (rows as ContactRow[]).map(toLead);
+export type Temp = "Hot" | "Warm" | "Cold";
+export const PAGE = 30;
+const TEMP_RANGE: Record<Temp, [number, number]> = { Hot: [80, 100], Warm: [50, 79], Cold: [0, 49] };
+
+/** Strip characters PostgREST/LIKE treat as syntax, so a search is always a plain substring match. */
+const likeSafe = (q: string) => q.toLowerCase().replace(/[%_*\,()]/g, " ").trim().slice(0, 80);
+
+/**
+ * One page of leads with only their latest activity. Search and filters run in Postgres
+ * (trigram index on contacts.search), so this stays fast at any list size.
+ */
+export async function listLeads({ q = "", temp, limit = PAGE }: { q?: string; temp?: Temp; limit?: number }) {
+  if (!dbEnabled) {
+    const all = mock.leads.filter((l) => `${l.name} ${l.headline}`.toLowerCase().includes(q.toLowerCase()));
+    return { leads: all, total: all.length, counts: { All: all.length, Hot: 0, Warm: 0, Cold: 0 } };
+  }
+  const db = await supabase();
+  const term = likeSafe(q);
+  const base = () => {
+    let b = db.from("contacts").select("id", { count: "exact", head: true });
+    if (term) b = b.ilike("search", `%${term}%`);
+    return b;
+  };
+  let query = db.from("contacts").select(CONTACT_COLS, { count: "exact" })
+    .order("ts", { referencedTable: "activities", ascending: false }).limit(1, { referencedTable: "activities" });
+  if (term) query = query.ilike("search", `%${term}%`);
+  if (temp) query = query.gte("score", TEMP_RANGE[temp][0]).lte("score", TEMP_RANGE[temp][1]);
+  const [res, all, ...temps] = await Promise.all([
+    query.order("score", { ascending: false }).order("id").range(0, Math.min(limit, 500) - 1),
+    base(),
+    ...(["Hot", "Warm", "Cold"] as Temp[]).map((t) => base().gte("score", TEMP_RANGE[t][0]).lte("score", TEMP_RANGE[t][1])),
+  ]);
+  const rows = must(res) as ContactRow[];
+  return {
+    leads: rows.map(toLead),
+    total: res.count ?? rows.length,
+    counts: { All: all.count ?? 0, Hot: temps[0].count ?? 0, Warm: temps[1].count ?? 0, Cold: temps[2].count ?? 0 },
+  };
+}
+
+/** Workspace: hottest open leads (latest activity only) plus the org's lead total. */
+export async function getTopLeads(n = 12): Promise<{ leads: Lead[]; total: number }> {
+  if (!dbEnabled) return { leads: mock.leads, total: mock.leads.length };
+  const res = await (await supabase()).from("contacts").select(CONTACT_COLS, { count: "exact" })
+    .not("stage", "in", "(Closed,Lost)")
+    .order("ts", { referencedTable: "activities", ascending: false }).limit(1, { referencedTable: "activities" })
+    .order("score", { ascending: false }).order("id").limit(n);
+  return { leads: (must(res) as ContactRow[]).map(toLead), total: res.count ?? 0 };
+}
+
+/** Names for pickers (task form): most recently active first. */
+export async function getLeadOptions(): Promise<{ id: string; name: string }[]> {
+  if (!dbEnabled) return mock.leads.map(({ id, name }) => ({ id, name }));
+  // ponytail: top 200 by recency; switch the picker to a server-search combobox past that.
+  return must(await (await supabase()).from("contacts").select("id,name")
+    .order("last_activity_at", { ascending: false, nullsFirst: false }).limit(200));
 }
 
 export async function getLead(id: string): Promise<Lead | undefined> {
   if (!dbEnabled) return mock.leadById(id);
-  const { data } = await (await supabase()).from("contacts").select(CONTACT_COLS).eq("id", id).maybeSingle();
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return undefined;
+  const { data } = await (await supabase()).from("contacts").select(CONTACT_COLS)
+    .order("ts", { referencedTable: "activities", ascending: false }).limit(200, { referencedTable: "activities" })
+    .eq("id", id).maybeSingle();
   return data ? toLead(data as ContactRow) : undefined;
 }
 
@@ -125,20 +180,22 @@ export async function getTasks(): Promise<Task[]> {
 
 const MSG_CHANNELS: Channel[] = ["SMS", "WhatsApp", "Email", "Instagram"];
 
-/** One thread per lead + channel, built from logged messages; most recent first. */
+/** One thread per lead + channel, from the latest 500 messages across the org; most recent first. */
 export async function getThreads(): Promise<Thread[]> {
   if (!dbEnabled) return mock.mockThreads;
-  const leads = await getLeads();
-  const threads = leads.flatMap((l) =>
-    MSG_CHANNELS.map((channel) => {
-      const msgs = l.activity.filter((a) => a.channel === channel).reverse();
-      return {
-        leadId: l.id, name: l.name, phone: l.phone, email: l.email, channel, lead: l,
-        messages: msgs.map((a) => ({ from: a.inbound ? ("lead" as const) : ("agent" as const), text: a.text, at: a.when })),
-      };
-    }).filter((t) => t.messages.length),
-  );
-  return threads.sort((a, b) => b.messages.at(-1)!.at.localeCompare(a.messages.at(-1)!.at));
+  type Row = ActivityRow & { contacts: { id: string; name: string; phone: string | null; email: string | null; intent: string; budget: string; preferences: string[] } };
+  const rows = must(await (await supabase()).from("activities")
+    .select("channel,content,ts,direction,contacts(id,name,phone,email,intent,budget,preferences)")
+    .in("channel", MSG_CHANNELS).order("ts", { ascending: false }).limit(500)) as unknown as Row[];
+  const byKey = new Map<string, Thread>();
+  for (const r of rows.reverse()) {
+    const c = r.contacts;
+    const key = c.id + r.channel;
+    if (!byKey.has(key))
+      byKey.set(key, { leadId: c.id, name: c.name, phone: c.phone ?? "", email: c.email ?? "", channel: r.channel, lead: c, messages: [] });
+    byKey.get(key)!.messages.push({ from: r.direction === "in" ? "lead" : "agent", text: r.content, at: r.ts });
+  }
+  return [...byKey.values()].sort((a, b) => b.messages.at(-1)!.at.localeCompare(a.messages.at(-1)!.at));
 }
 
 const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT ?? 200);

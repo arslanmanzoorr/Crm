@@ -2,12 +2,14 @@
 
 import { Flame } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import type { Lead } from "@/lib/data";
 import { Chip, LeadAvatar, NotchCard, ScoreDots, scoreLabel } from "./ui";
 
 const filters = ["All", "Hot", "Warm", "Cold"] as const;
-type Filter = (typeof filters)[number];
+export type Filter = (typeof filters)[number];
+const PAGE = 30; // keep in sync with db.ts PAGE
 
 export const pill = (on: boolean) =>
   `flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm transition duration-150 ${on ? "bg-surface-light text-on-light" : "bg-surface-2 text-ink/80 hover:text-accent"}`;
@@ -45,13 +47,13 @@ export function LeadCard({ lead }: { lead: Lead }) {
 }
 
 /** Workspace: the three leads most worth a call, by score. */
-export function TopLeads({ leads }: { leads: Lead[] }) {
+export function TopLeads({ leads, total }: { leads: Lead[]; total: number }) {
   const top = [...leads].sort((a, b) => b.score - a.score).slice(0, 3);
   return (
     <section aria-labelledby="top-leads" className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="top-leads" className="text-xl">Hottest leads</h2>
-        <Link href="/leads" className="text-sm text-muted hover:text-accent">All {leads.length} leads →</Link>
+        <Link href="/leads" className="text-sm text-muted hover:text-accent">All {total} leads →</Link>
       </div>
       {top.length ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{top.map((l) => <LeadCard key={l.id} lead={l} />)}</div>
@@ -62,44 +64,78 @@ export function TopLeads({ leads }: { leads: Lead[] }) {
   );
 }
 
-/** Leads page: search + temperature filter over every lead. */
-export function LeadList({ leads }: { leads: Lead[] }) {
-  const [filter, setFilter] = useState<Filter>("All");
-  const [q, setQ] = useState("");
-  const needle = q.trim().toLowerCase();
-  const shown = leads
-    .filter((l) => (filter === "All" || scoreLabel(l.score) === filter) && `${l.name} ${l.headline} ${l.email} ${l.phone}`.toLowerCase().includes(needle))
-    .sort((a, b) => b.score - a.score);
-  const count = (f: Filter) => (f === "All" ? leads.length : leads.filter((l) => scoreLabel(l.score) === f).length);
+type Counts = Record<Filter, number>;
+
+/** Leads page. Search, filter and paging live in the URL and run in Postgres; this only drives the URL. */
+export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead[]; total: number; counts: Counts; q: string; temp: Filter; limit: number }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [text, setText] = useState(q);
+  const [sent, setSent] = useState(q); // last q this component pushed to the URL
+  const [seenQ, setSeenQ] = useState(q);
+  if (q !== seenQ) {
+    // URL changed (e.g. Back button): mirror it in the box unless it's our own debounced search landing.
+    setSeenQ(q);
+    if (q !== sent) setText(q);
+  }
+
+  const go = useCallback((next: { q?: string; temp?: Filter; limit?: number }) => {
+    const p = new URLSearchParams();
+    const nq = next.q ?? q;
+    setSent(nq);
+    const nt = next.temp ?? temp;
+    const nl = next.limit ?? PAGE;
+    if (nq) p.set("q", nq);
+    if (nt !== "All") p.set("temp", nt);
+    if (nl > PAGE) p.set("show", String(nl));
+    start(() => router.replace(`/leads${p.size ? `?${p}` : ""}`, { scroll: false }));
+  }, [q, temp, router]);
+
+  // Debounced server search as you type.
+  useEffect(() => {
+    if (text.trim() === q) return;
+    const t = setTimeout(() => go({ q: text.trim() }), 250);
+    return () => clearTimeout(t);
+  }, [text, q, go]);
 
   return (
-    <section aria-label="Lead list" className="flex flex-col gap-4">
+    <section aria-label="Lead list" aria-busy={pending} className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <input
           type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search name, area, phone…"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Search name, email, phone, area…"
           aria-label="Search leads"
-          className="min-h-11 w-full rounded-full bg-surface-2 px-4 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-accent sm:w-72"
+          maxLength={80}
+          className="min-h-11 w-full rounded-full bg-surface-2 px-4 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-accent sm:w-80"
         />
         <div role="group" aria-label="Filter by temperature" className="flex flex-wrap gap-2">
           {filters.map((f) => (
-            <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)} className={pill(filter === f)}>
+            <button key={f} type="button" aria-pressed={temp === f} onClick={() => go({ temp: f })} className={pill(temp === f)}>
               {f === "Hot" && <Flame aria-hidden className="size-3.5 text-score-2" />}
-              {f} <span className="text-xs opacity-70">{count(f)}</span>
+              {f} <span className="text-xs opacity-70">{counts[f]}</span>
             </button>
           ))}
         </div>
       </div>
 
-      <p className="sr-only" aria-live="polite">{shown.length} leads shown</p>
-      {shown.length ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{shown.map((l) => <LeadCard key={l.id} lead={l} />)}</div>
+      <p className="sr-only" aria-live="polite">{pending ? "Searching" : `${total} leads found`}</p>
+      {leads.length ? (
+        <>
+          <div className={`grid gap-4 transition-opacity duration-150 sm:grid-cols-2 xl:grid-cols-3 ${pending ? "opacity-60" : ""}`}>
+            {leads.map((l) => <LeadCard key={l.id} lead={l} />)}
+          </div>
+          {leads.length < total && (
+            <button type="button" onClick={() => go({ limit: limit + PAGE })} disabled={pending} className={`${pill(false)} self-center`}>
+              {pending ? "Loading…" : `Show more · ${total - leads.length} left`}
+            </button>
+          )}
+        </>
       ) : (
         <div className="flex flex-col items-start gap-3 rounded-card bg-surface-2 p-6 text-sm">
-          <p>No leads match{needle && <> “{q.trim()}”</>}{filter !== "All" && <> in {filter}</>}.</p>
-          <button type="button" onClick={() => { setQ(""); setFilter("All"); }} className={pill(false)}>Clear search and filter</button>
+          <p>No leads match{q && <> “{q}”</>}{temp !== "All" && <> in {temp}</>}.</p>
+          <button type="button" onClick={() => { setText(""); go({ q: "", temp: "All" }); }} className={pill(false)}>Clear search and filter</button>
         </div>
       )}
     </section>

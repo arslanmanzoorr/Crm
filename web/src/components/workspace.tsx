@@ -6,13 +6,13 @@ import { TopLeads } from "./leads";
 import { DayTasks } from "./tasks";
 import { Today } from "./today";
 
-export function Workspace({ name, leads, tasks }: { name: string; leads: Lead[]; tasks: Task[] }) {
+export function Workspace({ name, leads, total, tasks, options }: { name: string; leads: Lead[]; total: number; tasks: Task[]; options: { id: string; name: string }[] }) {
   return (
     <div className="flex flex-col gap-10">
       <Header name={name} tasks={tasks} />
       <Today leads={leads} tasks={tasks} />
-      <TopLeads leads={leads} />
-      <DayTasks tasks={tasks} leads={leads} />
+      <TopLeads leads={leads} total={total} />
+      <DayTasks tasks={tasks} leads={options} />
     </div>
   );
 }

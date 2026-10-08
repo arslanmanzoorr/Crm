@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Reveal } from "@/components/ui";
 import { Workspace } from "@/components/workspace";
-import { getLeads, getMe, getTasks } from "@/lib/db";
+import { getLeadOptions, getMe, getTasks, getTopLeads } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Workspace" };
 
@@ -15,10 +15,10 @@ export default function Home() {
 }
 
 async function Home_() {
-  const [me, leads, tasks] = await Promise.all([getMe(), getLeads(), getTasks()]);
+  const [me, top, tasks, options] = await Promise.all([getMe(), getTopLeads(), getTasks(), getLeadOptions()]);
   return (
     <Reveal>
-      <Workspace name={me.name} leads={leads} tasks={tasks} />
+      <Workspace name={me.name} leads={top.leads} total={top.total} tasks={tasks} options={options} />
     </Reveal>
   );
 }

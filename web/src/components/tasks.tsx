@@ -3,7 +3,7 @@
 import { Building2, Check, FileBarChart, Mail, Phone, Video } from "lucide-react";
 import { useState, useTransition } from "react";
 import { setTaskDone } from "@/lib/actions";
-import type { Lead, Task } from "@/lib/data";
+import type { Task } from "@/lib/data";
 import { pill } from "./leads";
 import { LocalTime } from "./local-time";
 import { TaskForm } from "./task-form";
@@ -110,7 +110,7 @@ export function TaskList({ tasks }: { tasks: Task[] }) {
   );
 }
 
-export function DayTasks({ tasks, leads }: { tasks: Task[]; leads: Lead[] }) {
+export function DayTasks({ tasks, leads }: { tasks: Task[]; leads: { id: string; name: string }[] }) {
   const [view, setView] = useState<"open" | "today" | "done">("open");
   const shown = tasks.filter((t) => (view === "done" ? t.done : !t.done && (view === "open" || isToday(t.dueAt) || overdue(t))));
   return (
@@ -125,7 +125,7 @@ export function DayTasks({ tasks, leads }: { tasks: Task[]; leads: Lead[] }) {
           ))}
         </div>
       </div>
-      <TaskForm leads={leads.map(({ id, name }) => ({ id, name }))} />
+      <TaskForm leads={leads} />
       {shown.length ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{shown.map((t) => <TaskCard key={t.id} task={t} />)}</div>
       ) : (
