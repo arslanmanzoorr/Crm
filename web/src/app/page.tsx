@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Reveal } from "@/components/ui";
+import { Reveal, Skeleton, LoadingCards } from "@/components/ui";
 import { Workspace } from "@/components/workspace";
 import { getLeadOptions, getMe, getTasks, getTopLeads } from "@/lib/db";
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Workspace" };
 
 export default function Home() {
   return (
-    <Suspense fallback={<p className="text-sm text-muted">Loading your day…</p>}>
+    <Suspense fallback={<div role="status" aria-label="Loading your day" className="flex flex-col gap-10"><Skeleton className="h-14 rounded-full" /><Skeleton className="h-40" /><LoadingCards label="Loading leads" /></div>}>
       <Home_ />
     </Suspense>
   );

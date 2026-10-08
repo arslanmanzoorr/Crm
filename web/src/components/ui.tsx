@@ -168,3 +168,17 @@ export function NotchCard({
     </article>
   );
 }
+
+/** Loading placeholder shaped like the content it stands in for. Static under reduced motion. */
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <div aria-hidden className={`animate-pulse rounded-card bg-surface-2 motion-reduce:animate-none ${className}`} />;
+}
+
+/** Common page-level loading states. */
+export function LoadingCards({ label, count = 3 }: { label: string; count?: number }) {
+  return (
+    <div role="status" aria-label={label} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: count }, (_, i) => <Skeleton key={i} className="h-56" />)}
+    </div>
+  );
+}

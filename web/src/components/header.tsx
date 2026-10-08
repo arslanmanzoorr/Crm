@@ -1,8 +1,10 @@
 "use client";
 
+import { Search } from "lucide-react";
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import type { Task } from "@/lib/data";
+import { openPalette } from "./command-palette";
 import { Avatar, AvatarStack } from "./ui";
 
 const DAY_START = 8 * 60; // 8:00
@@ -68,6 +70,9 @@ export function Header({ name, tasks }: { name: string; tasks: Task[] }) {
     <header className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <ScheduleTimeline tasks={tasks} />
+        <button type="button" onClick={openPalette} aria-label="Search (⌘K)" className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-2 hover:text-accent md:hidden">
+          <Search aria-hidden className="size-5" />
+        </button>
         <Link href="/account" aria-label="Account" className="shrink-0 rounded-full">
           <Avatar name={name} size={44} />
         </Link>

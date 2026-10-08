@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DeleteButton } from "@/components/lead-controls";
-import { Chip } from "@/components/ui";
+import { Chip, Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { getProperty } from "@/lib/db";
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Listing" };
 
 export default function PropertyPage({ params }: PageProps<"/properties/[id]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-muted">Loading listing…</p>}>
+    <Suspense fallback={<div role="status" aria-label="Loading listing" className="flex flex-col gap-6"><Skeleton className="aspect-[21/9]" /><Skeleton className="h-16 max-w-lg" /></div>}>
       <Listing params={params} />
     </Suspense>
   );

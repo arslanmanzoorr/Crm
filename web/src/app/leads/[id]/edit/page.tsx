@@ -4,13 +4,14 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LeadForm } from "@/components/lead-form";
 import { getLead } from "@/lib/db";
+import { Skeleton } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Edit lead" };
 
 export default function EditLeadPage({ params }: PageProps<"/leads/[id]/edit">) {
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
+      <Suspense fallback={<Skeleton className="h-96" />}>
         <Edit params={params} />
       </Suspense>
     </div>

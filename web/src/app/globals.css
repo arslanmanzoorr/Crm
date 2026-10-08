@@ -88,6 +88,22 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   }
 }
 
+/* Command palette: drops in from just above, backdrop dims */
+dialog.palette[open] {
+  animation: palette-in 200ms var(--ease-out-expo) both;
+}
+dialog.palette::backdrop {
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(2px);
+  animation: fade-in 160ms ease-out both;
+}
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
 /* A lead's avatar travels from its card into the profile header */
 ::view-transition-group(.morph) {
   animation-duration: var(--duration-move);
@@ -109,7 +125,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     transition-property: color, background-color, border-color, opacity, outline-color !important;
   }
   .animate-rise,
-  .animate-pop {
+  .animate-pop,
+  dialog.palette[open] {
     animation: fade-in 150ms ease-out both !important;
   }
   ::view-transition-group(*),

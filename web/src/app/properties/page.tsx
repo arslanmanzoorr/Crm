@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { EmptyDemo } from "@/components/empty-demo";
 import { PropertyCard } from "@/components/property-card";
 import { getProperties } from "@/lib/db";
+import { LoadingCards } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Listings" };
 
@@ -17,7 +18,7 @@ export default function PropertiesPage() {
           <Plus className="size-4" /> Add listing
         </Link>
       </div>
-      <Suspense fallback={<p className="text-sm text-muted">Loading listings…</p>}>
+      <Suspense fallback={<LoadingCards label="Loading listings" />}>
         <Listings />
       </Suspense>
     </section>

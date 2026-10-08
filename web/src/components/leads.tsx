@@ -1,10 +1,11 @@
 "use client";
 
-import { Flame } from "lucide-react";
+import { Check, Flame, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
-import type { Lead } from "@/lib/data";
+import { bulkDelete, bulkSetStage } from "@/lib/actions";
+import { STAGES, type Lead, type Stage } from "@/lib/data";
 import { Chip, LeadAvatar, NotchCard, ScoreDots, scoreLabel } from "./ui";
 
 const filters = ["All", "Hot", "Warm", "Cold"] as const;
@@ -14,9 +15,23 @@ const PAGE = 30; // keep in sync with db.ts PAGE
 export const pill = (on: boolean) =>
   `flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm transition duration-150 ${on ? "bg-surface-light text-on-light" : "bg-surface-2 text-ink/80 hover:text-accent"}`;
 
-export function LeadCard({ lead }: { lead: Lead }) {
+export function LeadCard({ lead, selected, onToggle }: { lead: Lead; selected?: boolean; onToggle?: () => void }) {
   return (
-    <NotchCard label={`Open ${lead.name}`} href={`/leads/${lead.id}`}>
+    <NotchCard label={`Open ${lead.name}`} href={`/leads/${lead.id}`} className={selected ? "ring-2 ring-accent" : ""}>
+      {onToggle && (
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={!!selected}
+          aria-label={`Select ${lead.name}`}
+          onClick={onToggle}
+          className="absolute inset-0 z-20 rounded-card"
+        >
+          <span className={`absolute top-[54px] left-[54px] grid size-7 place-items-center rounded-full border-[3px] border-surface-2 transition duration-150 ${selected ? "bg-accent text-on-light" : "bg-surface-3 text-transparent"}`}>
+            {selected && <Check aria-hidden className="size-4 animate-pop" />}
+          </span>
+        </button>
+      )}
       <LeadAvatar id={lead.id} name={lead.name} size={52} />
       <h3 className="mt-4 truncate pr-2 text-xl font-medium">{lead.name}</h3>
       <p className="line-clamp-2 text-sm text-muted">{lead.headline}</p>
@@ -71,6 +86,34 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
   const router = useRouter();
   const [pending, start] = useTransition();
   const [text, setText] = useState(q);
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [bulkMsg, setBulkMsg] = useState<{ error?: boolean; text: string } | null>(null);
+  const [armed, setArmed] = useState(false);
+  const toggle = (id: string) => {
+    setArmed(false); // a changed selection must be re-confirmed before deleting
+    setPicked((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  };
+  const stopSelecting = () => { setSelecting(false); setPicked(new Set()); setArmed(false); };
+
+  useEffect(() => {
+    if (!selecting) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setSelecting(false); setPicked(new Set()); setArmed(false); } };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selecting]);
+
+  function runBulk(fn: () => Promise<string>) {
+    setBulkMsg(null);
+    start(async () => {
+      try {
+        setBulkMsg({ text: await fn() });
+        stopSelecting();
+      } catch (e) {
+        setBulkMsg({ error: true, text: (e as Error).message || "That didn't work. Try again." });
+      }
+    });
+  }
   const [sent, setSent] = useState(q); // last q this component pushed to the URL
   const [seenQ, setSeenQ] = useState(q);
   if (q !== seenQ) {
@@ -99,7 +142,7 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
   }, [text, q, go]);
 
   return (
-    <section aria-label="Lead list" aria-busy={pending} className="flex flex-col gap-4">
+    <section aria-label="Lead list" aria-busy={pending} className={`flex flex-col gap-4 ${selecting ? "pb-28" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
         <input
           type="search"
@@ -110,6 +153,9 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
           maxLength={80}
           className="min-h-11 w-full rounded-full bg-surface-2 px-4 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-accent sm:w-80"
         />
+        <button type="button" onClick={() => (selecting ? stopSelecting() : setSelecting(true))} aria-pressed={selecting} className={`${pill(selecting)} ml-auto sm:order-last`}>
+          {selecting ? "Done" : "Select"}
+        </button>
         <div role="group" aria-label="Filter by temperature" className="flex flex-wrap gap-2">
           {filters.map((f) => (
             <button key={f} type="button" aria-pressed={temp === f} onClick={() => go({ temp: f })} className={pill(temp === f)}>
@@ -120,11 +166,42 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
         </div>
       </div>
 
-      <p className="sr-only" aria-live="polite">{pending ? "Searching" : `${total} leads found`}</p>
+      <p className="sr-only" aria-live="polite">{pending ? "Working" : `${total} leads found`}</p>
+      {bulkMsg && <p role="status" className={`flex animate-rise items-center gap-1.5 text-sm ${bulkMsg.error ? "text-score-1" : "text-accent"}`}>{!bulkMsg.error && <Check aria-hidden className="size-4" />}{bulkMsg.text}</p>}
+
+      {selecting && (
+        <div role="toolbar" aria-label="Bulk actions" className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-30 mx-auto flex max-w-2xl animate-rise flex-wrap items-center gap-2 rounded-card bg-surface-light p-2 pl-4 text-on-light shadow-[0_16px_48px_-12px_rgba(0,0,0,0.6)] md:bottom-6">
+          <span className="mr-auto text-sm font-medium">{picked.size ? `${picked.size} selected` : "Tap leads to select"}</span>
+          <button type="button" onClick={() => { setArmed(false); setPicked(new Set(leads.map((l) => l.id))); }} className="min-h-11 rounded-full px-3 text-sm hover:bg-black/5">All {leads.length}</button>
+          <label className="relative">
+            <span className="sr-only">Move selected leads to stage</span>
+            <select
+              value=""
+              disabled={!picked.size || pending}
+              onChange={(e) => { const st = e.target.value as Stage; runBulk(async () => { const { moved } = await bulkSetStage([...picked], st); return `Moved ${moved} lead${moved === 1 ? "" : "s"} to ${st}.`; }); }}
+              className="min-h-11 rounded-full bg-on-light px-4 text-sm text-ink outline-none disabled:opacity-40"
+            >
+              <option value="" disabled>Move to…</option>
+              {STAGES.map((st) => <option key={st} value={st}>{st}</option>)}
+            </select>
+          </label>
+          <button
+            type="button"
+            disabled={!picked.size || pending}
+            onClick={() => armed
+              ? runBulk(async () => { const { deleted } = await bulkDelete([...picked]); return `Deleted ${deleted} lead${deleted === 1 ? "" : "s"}.`; })
+              : setArmed(true)}
+            className={`flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm transition disabled:opacity-40 ${armed ? "bg-[#b42318] font-medium text-white" : "text-[#b42318] hover:bg-black/5"}`}
+          >
+            <Trash2 aria-hidden className="size-4" /> {armed ? `Delete ${picked.size}?` : "Delete"}
+          </button>
+          <button type="button" onClick={stopSelecting} aria-label="Cancel selection" className="grid size-11 place-items-center rounded-full hover:bg-black/5"><X aria-hidden className="size-4" /></button>
+        </div>
+      )}
       {leads.length ? (
         <>
           <div className={`grid gap-4 transition-opacity duration-150 sm:grid-cols-2 xl:grid-cols-3 ${pending ? "opacity-60" : ""}`}>
-            {leads.map((l) => <LeadCard key={l.id} lead={l} />)}
+            {leads.map((l) => <LeadCard key={l.id} lead={l} selected={picked.has(l.id)} onToggle={selecting ? () => toggle(l.id) : undefined} />)}
           </div>
           {leads.length < total && (
             <button type="button" onClick={() => go({ limit: limit + PAGE })} disabled={pending} className={`${pill(false)} self-center`}>

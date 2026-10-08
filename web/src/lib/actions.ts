@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Anthropic from "@anthropic-ai/sdk";
 import * as mock from "./data";
-import { dbEnabled, meterAi, supabase } from "./db";
+import { dbEnabled, likeSafe, meterAi, supabase } from "./db";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -253,4 +253,54 @@ export async function logMessage(contactId: string, channel: mock.Channel, text:
   const { error } = await (await authed()).from("activities").insert({ contact_id: contactId, channel, content: text.trim(), direction });
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
+}
+
+export type SearchHit = { kind: "lead" | "listing"; id: string; title: string; sub: string; href: string };
+
+/** Command palette search: leads (trigram index) and listings, scoped to the caller's org by RLS. */
+export async function searchEverything(q: string): Promise<SearchHit[]> {
+  const term = likeSafe(String(q ?? ""));
+  if (!term) return [];
+  if (!dbEnabled) {
+    return mock.leads.filter((l) => l.name.toLowerCase().includes(term))
+      .map((l) => ({ kind: "lead", id: l.id, title: l.name, sub: l.headline, href: `/leads/${l.id}` }));
+  }
+  const db = await authed();
+  const [leads, listings] = await Promise.all([
+    db.from("contacts").select("id,name,type,stage").ilike("search", `%${term}%`).order("score", { ascending: false }).limit(6),
+    db.from("properties").select("id,address,area,status").or(`address.ilike.%${term}%,area.ilike.%${term}%`).limit(4),
+  ]);
+  return [
+    ...(leads.data ?? []).map((c) => ({ kind: "lead" as const, id: c.id, title: c.name, sub: `${c.type[0].toUpperCase()}${c.type.slice(1)} · ${c.stage}`, href: `/leads/${c.id}` })),
+    ...(listings.data ?? []).map((p) => ({ kind: "listing" as const, id: p.id, title: p.address, sub: `${p.area} · ${p.status}`, href: `/properties/${p.id}` })),
+  ];
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Bulk inputs come from the browser: accept only a bounded list of well-formed ids. */
+function idList(ids: unknown): string[] {
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 200 || !ids.every((x) => typeof x === "string" && UUID.test(x)))
+    throw new Error("Select between 1 and 200 leads.");
+  return [...new Set(ids as string[])];
+}
+
+export async function bulkSetStage(ids: string[], stage: mock.Stage): Promise<{ moved: number }> {
+  if (!dbEnabled) return { moved: 0 };
+  if (!mock.STAGES.includes(stage)) throw new Error("Unknown stage.");
+  const list = idList(ids);
+  const db = await authed();
+  const { data, error } = await db.from("contacts").update({ stage }).in("id", list).neq("stage", stage).select("id");
+  if (error) throw new Error(error.message);
+  if (data.length) await db.from("activities").insert(data.map((c) => ({ contact_id: c.id, channel: "Note", content: `Stage → ${stage}` })));
+  revalidatePath("/", "layout");
+  return { moved: data.length };
+}
+
+export async function bulkDelete(ids: string[]): Promise<{ deleted: number }> {
+  if (!dbEnabled) return { deleted: 0 };
+  const list = idList(ids);
+  const { data, error } = await (await authed()).from("contacts").delete().in("id", list).select("id");
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+  return { deleted: data.length };
 }

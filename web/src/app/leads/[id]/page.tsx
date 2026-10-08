@@ -9,7 +9,7 @@ import { LocalTime } from "@/components/local-time";
 import { PropertyCard } from "@/components/property-card";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
-import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel } from "@/components/ui";
+import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
 import { getLead, getProperties, getTasks } from "@/lib/db";
 
@@ -20,7 +20,7 @@ const blockedBtn = "flex min-h-11 cursor-not-allowed items-center gap-2 rounded-
 
 export default function LeadPage({ params }: PageProps<"/leads/[id]">) {
   return (
-    <Suspense fallback={<p className="text-sm text-muted">Loading lead…</p>}>
+    <Suspense fallback={<div role="status" aria-label="Loading lead" className="flex flex-col gap-8"><Skeleton className="h-24 max-w-md" /><div className="grid gap-6 lg:grid-cols-[1fr_380px]"><Skeleton className="h-80" /><Skeleton className="h-64" /></div></div>}>
       <LeadView params={params} />
     </Suspense>
   );

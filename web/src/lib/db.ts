@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import * as mock from "./data";
+import { likeSafe } from "./search";
+export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -73,8 +75,6 @@ export type Temp = "Hot" | "Warm" | "Cold";
 export const PAGE = 30;
 const TEMP_RANGE: Record<Temp, [number, number]> = { Hot: [80, 100], Warm: [50, 79], Cold: [0, 49] };
 
-/** Strip characters PostgREST/LIKE treat as syntax, so a search is always a plain substring match. */
-const likeSafe = (q: string) => q.toLowerCase().replace(/[%_*\,()]/g, " ").trim().slice(0, 80);
 
 /**
  * One page of leads with only their latest activity. Search and filters run in Postgres
@@ -219,3 +219,26 @@ export async function meterAi(task: string): Promise<string | null> {
 /** Fail closed: a production deploy without Supabase must not serve the demo as if it were the product. */
 if (process.env.NODE_ENV === "production" && process.env.VERCEL && !dbEnabled)
   throw new Error("NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set in production.");
+
+export type BoardCard = { id: string; name: string; type: string; budget: string; score: number; stage: Stage; lastActivityAt: string | null };
+export type BoardColumn = { stage: Stage; count: number; cards: BoardCard[] };
+
+/** Pipeline: up to 50 leads per stage (highest score first) plus each stage's true count. */
+export async function getPipeline(): Promise<BoardColumn[]> {
+  if (!dbEnabled)
+    return mock.STAGES.map((stage) => {
+      const cards = stage === "New" ? mock.leads.map((l) => ({ id: l.id, name: l.name, type: l.type ?? "buyer", budget: l.budget, score: l.score, stage, lastActivityAt: null })) : [];
+      return { stage, count: cards.length, cards };
+    });
+  const db = await supabase();
+  return Promise.all(mock.STAGES.map(async (stage) => {
+    const res = await db.from("contacts").select("id,name,type,budget,score,stage,last_activity_at", { count: "exact" })
+      .eq("stage", stage).order("score", { ascending: false }).order("id").limit(50);
+    const rows = must(res) as { id: string; name: string; type: string; budget: string; score: number; stage: Stage; last_activity_at: string | null }[];
+    return {
+      stage,
+      count: res.count ?? rows.length,
+      cards: rows.map((r) => ({ id: r.id, name: r.name, type: r.type, budget: r.budget, score: r.score, stage: r.stage, lastActivityAt: r.last_activity_at })),
+    };
+  }));
+}

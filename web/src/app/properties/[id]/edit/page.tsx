@@ -4,13 +4,14 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PropertyForm } from "@/components/property-form";
 import { getProperty } from "@/lib/db";
+import { Skeleton } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Edit listing" };
 
 export default function EditPropertyPage({ params }: PageProps<"/properties/[id]/edit">) {
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
+      <Suspense fallback={<Skeleton className="h-96" />}>
         <Edit params={params} />
       </Suspense>
     </div>
