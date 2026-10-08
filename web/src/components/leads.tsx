@@ -1,9 +1,9 @@
 "use client";
 
-import { Flame, Plus, SlidersHorizontal } from "lucide-react";
+import { Flame } from "lucide-react";
 import { useState } from "react";
 import { leads, type Lead } from "@/lib/data";
-import { Avatar, Chip, IconButton, NotchCard, ScoreDots, scoreLabel } from "./ui";
+import { Avatar, Chip, NotchCard, ScoreDots, scoreLabel } from "./ui";
 
 const filters = ["All", "Hot", "Warm", "Cold"] as const;
 type Filter = (typeof filters)[number];
@@ -11,9 +11,9 @@ type Filter = (typeof filters)[number];
 const matches = (l: Lead, f: Filter) =>
   f === "All" || (f === "Hot" ? l.score >= 80 : f === "Warm" ? l.score >= 50 && l.score < 80 : l.score < 50);
 
-export function LeadCard({ lead }: { lead: Lead }) {
+export function LeadCard({ lead, wrap = false }: { lead: Lead; wrap?: boolean }) {
   return (
-    <NotchCard label={`Open ${lead.name}`} className="w-72 shrink-0 snap-start">
+    <NotchCard label={`Open ${lead.name}`} href={`/leads/${lead.id}`} className={wrap ? "" : "w-72 shrink-0 snap-start"}>
       <Avatar name={lead.name} size={52} />
       <h3 className="mt-4 text-xl font-medium">{lead.name}</h3>
       <p className="text-sm text-muted">{lead.headline}</p>
@@ -45,16 +45,28 @@ export function LeadCard({ lead }: { lead: Lead }) {
   );
 }
 
-export function NewLeads() {
+export function NewLeads({ wrap = false }: { wrap?: boolean }) {
   const [filter, setFilter] = useState<Filter>("All");
-  const shown = leads.filter((l) => matches(l, filter)).sort((a, b) => b.score - a.score);
+  const [q, setQ] = useState("");
+  const shown = leads
+    .filter((l) => matches(l, filter) && `${l.name} ${l.headline}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => b.score - a.score);
 
   return (
     <section aria-labelledby="new-leads" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <h2 id="new-leads" className="text-xl">
-          New Leads <sup className="text-xs text-muted">{leads.length}</sup>
+          {wrap ? "All Leads" : "New Leads"} <sup className="text-xs text-muted">{leads.length}</sup>
         </h2>
+        {wrap && (
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search leads"
+            aria-label="Search leads"
+            className="rounded-full bg-surface-2 px-4 py-2 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-accent"
+          />
+        )}
         <div role="tablist" aria-label="Filter leads" className="flex flex-wrap gap-2">
           {filters.map((f) => (
             <button
@@ -72,25 +84,11 @@ export function NewLeads() {
             </button>
           ))}
         </div>
-        <div className="ml-auto flex gap-2">
-          <IconButton label="Sort and filter">
-            <SlidersHorizontal className="size-5" />
-          </IconButton>
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-full bg-surface-light py-1.5 pr-5 pl-1.5 text-sm font-medium text-on-light hover:bg-white"
-          >
-            <span className="grid size-8 place-items-center rounded-full bg-on-light text-ink">
-              <Plus className="size-4" />
-            </span>
-            Add lead
-          </button>
-        </div>
       </div>
 
-      <div className="no-scrollbar -mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-2">
+      <div className={wrap ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3" : "no-scrollbar -mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-2"}>
         {shown.map((l) => (
-          <LeadCard key={l.id} lead={l} />
+          <LeadCard key={l.id} lead={l} wrap={wrap} />
         ))}
         {shown.length === 0 && <p className="py-10 text-sm text-muted">No {filter.toLowerCase()} leads right now.</p>}
       </div>

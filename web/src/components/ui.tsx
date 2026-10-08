@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 const avatarTones = ["#c5f36a", "#f5d35d", "#9fd3f5", "#f5a25d", "#d4b5f5", "#7be07b"];
@@ -107,11 +108,13 @@ export function NotchCard({
   children,
   tone = "dark",
   label,
+  href = "#",
   className = "",
 }: {
   children: ReactNode;
   tone?: "dark" | "accent" | "light";
   label: string;
+  href?: string;
   className?: string;
 }) {
   const surface = {
@@ -133,13 +136,13 @@ export function NotchCard({
         className="absolute top-[63px] -right-px size-5"
         style={{ background: "radial-gradient(circle at 0 100%, transparent 19.5px, var(--color-bg) 20px)" }}
       />
-      <button
-        type="button"
+      <Link
+        href={href}
         aria-label={label}
         className="absolute top-1.5 right-1.5 grid size-12 place-items-center rounded-full bg-surface-2 text-ink ring-1 ring-white/5 transition duration-150 group-hover:bg-accent group-hover:text-on-light"
       >
         <ArrowUpRight className="size-5" />
-      </button>
+      </Link>
       {children}
     </article>
   );
