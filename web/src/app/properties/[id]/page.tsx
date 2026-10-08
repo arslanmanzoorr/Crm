@@ -1,13 +1,21 @@
 import { Clapperboard, Send } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { Chip } from "@/components/ui";
-import { properties, money, propertyById } from "@/lib/data";
+import { money } from "@/lib/data";
+import { getProperty } from "@/lib/db";
 
-export const generateStaticParams = () => properties.map(({ id }) => ({ id }));
+export default function PropertyPage({ params }: PageProps<"/properties/[id]">) {
+  return (
+    <Suspense fallback={<p className="text-sm text-muted">Loading listing…</p>}>
+      <Listing params={params} />
+    </Suspense>
+  );
+}
 
-export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
-  const p = propertyById((await params).id);
+async function Listing({ params }: { params: PageProps<"/properties/[id]">["params"] }) {
+  const p = await getProperty((await params).id);
   if (!p) notFound();
 
   return (

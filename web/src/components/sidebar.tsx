@@ -1,8 +1,9 @@
 "use client";
 
-import { Clapperboard, Home, Inbox, LayoutGrid, Send, Users } from "lucide-react";
+import { Clapperboard, Home, Inbox, LayoutGrid, LogOut, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "@/lib/actions";
 
 const nav = [
   { label: "Workspace", href: "/", icon: LayoutGrid },
@@ -21,6 +22,7 @@ const itemClass = (active: boolean) =>
 export function Sidebar() {
   const path = usePathname();
   const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  if (path === "/login") return null;
   return (
     <nav
       aria-label="Main"
@@ -34,6 +36,11 @@ export function Sidebar() {
           <Icon className="size-5" />
         </Link>
       ))}
+      {process.env.NEXT_PUBLIC_SUPABASE_URL && (
+        <form action={signOut} className="md:mt-auto">
+          <button aria-label="Sign out" title="Sign out" className={itemClass(false)}><LogOut className="size-5" /></button>
+        </form>
+      )}
     </nav>
   );
 }

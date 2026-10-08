@@ -1,16 +1,24 @@
 import { Mail, MessageSquare, Phone } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { ActivityForm } from "@/components/activity-form";
 import { AiPanel } from "@/components/ai-panel";
 import { Avatar, Chip, ScoreDots, scoreLabel } from "@/components/ui";
-import { leads, leadById } from "@/lib/data";
+import { getLead } from "@/lib/db";
 
 const contactBtn = "flex items-center gap-2 rounded-full bg-surface-light px-4 py-2 text-sm font-medium text-on-light hover:bg-white";
 
-export const generateStaticParams = () => leads.map(({ id }) => ({ id }));
+export default function LeadPage({ params }: PageProps<"/leads/[id]">) {
+  return (
+    <Suspense fallback={<p className="text-sm text-muted">Loading lead…</p>}>
+      <Lead params={params} />
+    </Suspense>
+  );
+}
 
-export default async function LeadPage({ params }: { params: Promise<{ id: string }> }) {
-  const lead = leadById((await params).id);
+async function Lead({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
+  const lead = await getLead((await params).id);
   if (!lead) notFound();
 
   return (
@@ -36,6 +44,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <section aria-labelledby="timeline" className="rounded-card bg-surface-2 p-6">
           <h2 id="timeline" className="mb-4 text-xl">Timeline</h2>
+          <ActivityForm contactId={lead.id} />
           <ol className="flex flex-col gap-4">
             {lead.activity.map((a) => (
               <li key={a.when + a.text} className="flex gap-4">
@@ -46,6 +55,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
                 </span>
               </li>
             ))}
+            {lead.activity.length === 0 && <li className="text-sm text-muted">Nothing logged yet.</li>}
           </ol>
         </section>
 

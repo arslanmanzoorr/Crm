@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Studio } from "@/components/studio";
-import { money, propertyById } from "@/lib/data";
+import { money } from "@/lib/data";
+import { getProperty } from "@/lib/db";
 
 export default function StudioPage({ searchParams }: PageProps<"/studio">) {
   return (
@@ -12,7 +13,7 @@ export default function StudioPage({ searchParams }: PageProps<"/studio">) {
 
 async function StudioFor({ searchParams }: { searchParams: PageProps<"/studio">["searchParams"] }) {
   const id = (await searchParams).property;
-  const p = typeof id === "string" ? propertyById(id) : undefined;
+  const p = typeof id === "string" ? await getProperty(id) : undefined;
   return (
     <Studio
       defaults={{

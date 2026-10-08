@@ -3,20 +3,22 @@
 import { Send, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { askAi } from "@/lib/ai";
-import { properties, propertyById } from "@/lib/data";
+import type { Property } from "@/lib/data";
 
 const PLATFORMS = ["Instagram", "TikTok", "YouTube Shorts", "Facebook", "LinkedIn", "Google Business"];
 const field = "rounded-full bg-surface-2 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent";
 
-export function Publisher({ initialPropertyId }: { initialPropertyId: string }) {
-  const [propertyId, setPropertyId] = useState(propertyById(initialPropertyId) ? initialPropertyId : properties[0].id);
+export function Publisher({ properties, initialPropertyId }: { properties: Property[]; initialPropertyId: string }) {
+  const propertyById = (id: string) => properties.find((p) => p.id === id);
+  const [propertyId, setPropertyId] = useState(propertyById(initialPropertyId) ? initialPropertyId : properties[0]?.id);
   const [selected, setSelected] = useState<string[]>(["Instagram", "TikTok", "Facebook"]);
   const [captions, setCaptions] = useState<Record<string, string>>({});
   const [when, setWhen] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
 
-  const property = propertyById(propertyId)!;
+  const property = propertyById(propertyId);
+  if (!property) return <p className="text-muted">Add a listing under Properties first, then come back to post it.</p>;
   const toggle = (p: string) => setSelected(selected.includes(p) ? selected.filter((x) => x !== p) : [...selected, p]);
 
   async function generate() {

@@ -2,7 +2,7 @@
 
 import { Flame } from "lucide-react";
 import { useState } from "react";
-import { leads, type Lead } from "@/lib/data";
+import type { Lead } from "@/lib/data";
 import { Avatar, Chip, NotchCard, ScoreDots, scoreLabel } from "./ui";
 
 const filters = ["All", "Hot", "Warm", "Cold"] as const;
@@ -45,7 +45,7 @@ export function LeadCard({ lead, wrap = false }: { lead: Lead; wrap?: boolean })
   );
 }
 
-export function NewLeads({ wrap = false }: { wrap?: boolean }) {
+export function NewLeads({ leads, wrap = false }: { leads: Lead[]; wrap?: boolean }) {
   const [filter, setFilter] = useState<Filter>("All");
   const [q, setQ] = useState("");
   const shown = leads

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Publisher } from "@/components/publisher";
+import { getProperties } from "@/lib/db";
 
 export default function PublishPage({ searchParams }: PageProps<"/publish">) {
   return (
@@ -11,5 +12,5 @@ export default function PublishPage({ searchParams }: PageProps<"/publish">) {
 
 async function PublisherFor({ searchParams }: { searchParams: PageProps<"/publish">["searchParams"] }) {
   const id = (await searchParams).property;
-  return <Publisher initialPropertyId={typeof id === "string" ? id : ""} />;
+  return <Publisher properties={await getProperties()} initialPropertyId={typeof id === "string" ? id : ""} />;
 }
