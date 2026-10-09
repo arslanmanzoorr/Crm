@@ -66,7 +66,7 @@ export function FinancingForm({ contactId, f, lenders }: { contactId: string; f:
                 <select name="stage" defaultValue={f?.stage ?? "not_started"} className={input}>{Object.entries(LOAN_STAGES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
               </label>
               <label className="flex flex-col gap-1.5 text-sm"><span className="text-muted">Preapproved up to</span>
-                <input name="preapproval_amount" type="number" inputMode="numeric" min={1} step={1000} defaultValue={f?.preapprovalAmount ?? ""} className={input} />
+                <input name="preapproval_amount" type="number" inputMode="numeric" min={1} step="any" defaultValue={f?.preapprovalAmount ?? ""} className={input} />
               </label>
               <label className="flex flex-col gap-1.5 text-sm"><span className="text-muted">Preapproval expires</span>
                 <input name="preapproval_expires" type="date" defaultValue={f?.preapprovalExpires ?? ""} className={input} />

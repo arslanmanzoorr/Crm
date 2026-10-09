@@ -48,6 +48,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0019_retention.sql` | Referrals (`referred_by`), review requests per deal, testimonials with publish consent, team review link |
 | `0020_showings.sql` | Showings (booking, status, buyer feedback) and listing showing instructions |
 | `0021_analytics_showings.sql` | Listing funnel counts showings |
+| `0022_financing_partners.sql` | Partner directory and per-buyer financing (lender, loan stage, preapproval, documents) |
 
 After `0010`, store the hash of your form key (per environment):
 
