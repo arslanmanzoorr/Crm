@@ -56,6 +56,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0027_buying_signals.sql` | `buying_signals()`: re-engaged, portal saves, liked at showings, open-house touring, newly preapproved |
 | `0028_cmas.sql` | Saved CMAs: subject, agent-entered comps, adjustment rates, net sheet inputs |
 | `0029_relationships.sql` | Contact relationships (household, family, friend, colleague), one row per pair |
+| `0030_finance.sql` | Expenses (per deal / lead source), commission payout approval (guarded), per-agent default split (`set_default_split`) |
 
 After `0010`, store the hash of your form key (per environment):
 
