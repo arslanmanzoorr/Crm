@@ -97,8 +97,10 @@ export async function setStage(id: string, stage: mock.Stage) {
 }
 
 export async function deleteLead(id: string) {
-  if (!dbEnabled) return;
-  const { error } = await (await authed()).from("contacts").delete().eq("id", id);
+  if (!dbEnabled || !UUID.test(id)) return;
+  const db = await authed();
+  await removeLeadFiles(db, [id]);
+  const { error } = await db.from("contacts").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
   redirect("/leads");
@@ -169,6 +171,8 @@ export async function deleteProperty(id: string) {
   // Remove the photo files too; the media rows cascade with the listing.
   const { data: media } = await db.from("property_media").select("path").eq("property_id", id);
   if (media?.length) await db.storage.from("listing-photos").remove(media.flatMap((m) => [m.path, m.path.replace(/\.webp$/, ".thumb.webp")]));
+  const { data: docs } = await db.from("documents").select("path").eq("property_id", id);
+  if (docs?.length) await db.storage.from("documents").remove(docs.map((d) => d.path));
   const { error } = await db.from("properties").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
@@ -351,7 +355,9 @@ export async function bulkSetStage(ids: string[], stage: mock.Stage): Promise<{ 
 export async function bulkDelete(ids: string[]): Promise<{ deleted: number }> {
   if (!dbEnabled) return { deleted: 0 };
   const list = idList(ids);
-  const { data, error } = await (await authed()).from("contacts").delete().in("id", list).select("id");
+  const db = await authed();
+  await removeLeadFiles(db, list);
+  const { data, error } = await db.from("contacts").delete().in("id", list).select("id");
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
   return { deleted: data.length };
@@ -1324,4 +1330,17 @@ export async function deleteDocument(id: string) {
   const { error } = await db.from("documents").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
+}
+
+/**
+ * Erasing a lead must erase their files too: documents on the lead and on their deals. The rows cascade with
+ * the contact; the stored files don't, so remove them first.
+ */
+async function removeLeadFiles(db: Db, contactIds: string[]) {
+  if (!contactIds.length) return;
+  const { data: deals } = await db.from("deals").select("id").in("contact_id", contactIds);
+  const dealIds = (deals ?? []).map((d) => d.id);
+  const filter = dealIds.length ? `contact_id.in.(${contactIds.join(",")}),deal_id.in.(${dealIds.join(",")})` : `contact_id.in.(${contactIds.join(",")})`;
+  const { data: docs } = await db.from("documents").select("path").or(filter);
+  if (docs?.length) await db.storage.from("documents").remove(docs.map((d) => d.path));
 }
