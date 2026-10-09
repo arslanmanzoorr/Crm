@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { CsvDownload } from "@/components/csv-download";
 import { DeleteExpense, ExpenseForm } from "@/components/money-controls";
@@ -24,6 +25,7 @@ export default function ExpensesPage() {
 const date = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
 async function Ledger() {
+  await connection(); // per-request: reads the clock below
   const year = new Date().getFullYear();
   const [items, deals] = await Promise.all([getExpenses({ since: `${year}-01-01` }), listDeals()]);
   const total = items.reduce((n, e) => n + e.amount, 0);

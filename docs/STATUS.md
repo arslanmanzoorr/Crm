@@ -9,7 +9,7 @@ Last updated: 2026-10-09.
 | # | Module | Done | Partial | Needs account | Not started |
 |---|---|---|---|---|---|
 | 1 | AI Command Center | | 2, 5, 8, 10 | 9 (speech) | 1, 3, 4, 6, 7, 11, 12 |
-| 2 | Lead Generation | 17, 24, 30 | 18, 19, 21 | 13, 14, 15, 16, 22, 23, 27, 29 | 20, 25, 26, 28 |
+| 2 | Lead Generation | 17, 24, 25, 30 | 18, 19, 21 | 13, 14, 15, 16, 22, 23, 27, 29 | 20, 26, 28 |
 | 3 | Lead Management | 31, 32, 35, 37, 39, 40, 41, 42, 43, 45, 46, 48 | 33, 34, 36, 38, 44 (territory then round-robin; performance-based not yet), 47 | | |
 | 4 | Communication Hub | 67 | 59, 63 | 49, 50, 51, 53, 54, 55, 56, 57, 58, 60, 61, 64, 66 | 52, 62, 65 |
 | 5 | Listings | 69, 70, 72 | | 68, 71 | 73–83 |
@@ -22,10 +22,10 @@ Last updated: 2026-10-09.
 | 12 | Client Portal | 163, 164, 166, 167, 168, 170, 171, 172, 173, 174, 176 | 175 (agent sees portal activity; no client notifications yet) | 175 (email/SMS) | 165, 169 |
 | 13 | Referral & Retention | 177, 178, 179, 180, 181, 182, 183, 185, 186 | | | 184 |
 | 14 | Brokerage & Team Ops | 188 | 187, 194 | | 189–193, 195, 196 |
-| 15 | Commissions & Finance | 198, 199, 206 | 197 (per deal; no plan templates yet), 200 (pending and 30-day view) | 205 | 201–204 |
+| 15 | Commissions & Finance | 198, 199, 201, 202, 203, 204, 206 | 197 (default split per agent; no caps or tiers), 200 (pending and 30-day view) | 205 | |
 | 16 | Investor Toolkit | 208, 209, 210, 211, 214 | | 212 (rent comps) | 207, 213, 215, 216 |
 | 17 | Automation & Workflows | 218, 219, 220, 222, 225, 226 | 217 (structured builder, not a canvas), 223, 224 | | 221 (needs AI key) |
-| 18 | Analytics | 227, 228, 229, 230, 231, 232, 235 | 236 (CSV per table) | | 233, 234 |
+| 18 | Analytics | 227, 228, 229, 230, 231, 232, 233, 235 | 236 (CSV per table) | | 234 |
 | 19 | Security & Compliance | 237, 239, 240, 241, 244 | 242, 243 (export + erase on delete; no self-serve request form), 245, 248 | 238 (SSO) | 246, 247 |
 | 20 | Platform & Mobile | 260 (import) | 250 (responsive web) | 249, 251, 254, 255 | 252, 253, 256–259 |
 

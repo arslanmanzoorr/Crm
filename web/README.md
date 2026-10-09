@@ -57,6 +57,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0028_cmas.sql` | Saved CMAs: subject, agent-entered comps, adjustment rates, net sheet inputs |
 | `0029_relationships.sql` | Contact relationships (household, family, friend, colleague), one row per pair |
 | `0030_finance.sql` | Expenses (per deal / lead source), commission payout approval (guarded), per-agent default split (`set_default_split`) |
+| `0031_analytics_spend.sql` | Lead sources include marketing spend for cost per lead / per closing |
 
 After `0010`, store the hash of your form key (per environment):
 
