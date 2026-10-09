@@ -62,6 +62,8 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0033_documents.sql` | Documents bucket (private, 25 MB, allowlisted types, team-folder policies) and documents table |
 | `0034_suppressions.sql` | Team do-not-contact list; matching leads (existing and future) are marked DNC by triggers |
 | `0035_privacy_requests.sql` | Consumer privacy requests (access/delete/correct/opt out) with 45-day deadline, keyed public RPC |
+| `0036_listing_media_approval.sql` | Virtual tour / floor plan links (https only); agents' listings need owner/admin approval (trigger-enforced) |
+| `0037_portal_tours.sql` | Client portal homes include the tour link |
 
 After `0010`, store the hash of your form key (per environment):
 

@@ -12,7 +12,7 @@ Last updated: 2026-10-09.
 | 2 | Lead Generation | 17, 24, 25, 30 | 18, 19, 21 | 13, 14, 15, 16, 22, 23, 27, 29 | 20, 26, 28 |
 | 3 | Lead Management | 31, 32, 35, 37, 39, 40, 41, 42, 43, 45, 46, 48 | 33, 34, 36, 38, 44 (territory then round-robin; performance-based not yet), 47 | | |
 | 4 | Communication Hub | 67 | 59, 63 | 49, 50, 51, 53, 54, 55, 56, 57, 58, 60, 61, 64, 66 | 52, 62, 65 |
-| 5 | Listings | 69, 70, 72, 74, 75, 76, 77, 78, 79, 81, 82, 83 | | 68, 71 | 73, 80 |
+| 5 | Listings | 69, 70, 72, 73 (links), 74, 75, 76, 77, 78, 79, 80, 81, 82, 83 | | 68, 71 | |
 | 6 | Matchmaking | 84, 85, 86, 91 (as tasks) | 90 (lead criteria act as the saved search) | 88 (maps) | 87, 89, 92–94 |
 | 7 | Marketing Studio | 96 | 95, 97, 98, 103, 104 | 100, 101, 102 | 99, 105–110 |
 | 8 | Showings & Open Houses | 111, 115, 116, 117, 118, 120, 121, 122 | 112 (.ics files, no two-way sync), 119 (follow-up task, not a draft yet) | 112 (two-way sync) | 113, 114 |
