@@ -114,6 +114,20 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
         )}
       </Section>
 
+      <Section id="cohorts" title="Lead cohorts" note="Leads by the month they arrived, and how far they've come since. Last 12 months.">
+        {a.cohorts.length === 0 ? <Empty>No leads in the last 12 months.</Empty> : (
+          <Table head={["Month", "Leads", "Contacted", "Qualified", "Contract", "Closed"]}>
+            {a.cohorts.map((k) => (
+              <tr key={k.month}>
+                <th scope="row" className="py-2.5 pr-4 text-left font-normal">{monthName(k.month)}</th>
+                <Td>{k.leads}</Td><Td>{k.reached} <Dim>{pct(k.reached, k.leads)}</Dim></Td><Td>{k.qualified} <Dim>{pct(k.qualified, k.leads)}</Dim></Td>
+                <Td>{k.contracted} <Dim>{pct(k.contracted, k.leads)}</Dim></Td><Td><span className={k.closed ? "text-accent" : ""}>{k.closed} <Dim>{pct(k.closed, k.leads)}</Dim></span></Td>
+              </tr>
+            ))}
+          </Table>
+        )}
+      </Section>
+
       <Section id="cycle" title="Sales cycle" note="Median days, for deals opened in the period.">
         <dl className="grid grid-cols-2 gap-3 sm:max-w-lg">
           <Stat label="First contact to contract" value={a.cycle.lead_to_contract_days === null ? "–" : `${a.cycle.lead_to_contract_days} days`} />

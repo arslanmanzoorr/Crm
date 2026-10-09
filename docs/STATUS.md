@@ -25,7 +25,7 @@ Last updated: 2026-10-09.
 | 15 | Commissions & Finance | 198, 199, 201, 202, 203, 204, 206 | 197 (default split per agent; no caps or tiers), 200 (pending and 30-day view) | 205 | |
 | 16 | Investor Toolkit | 207, 208, 209, 210, 211, 214, 216 | 213 (portal hearts) | 212 (rent comps) | 215 |
 | 17 | Automation & Workflows | 218, 219, 220, 222, 225, 226 | 217 (structured builder, not a canvas), 223, 224 | | 221 (needs AI key) |
-| 18 | Analytics | 227, 228, 229, 230, 231, 232, 233, 235 | 236 (CSV per table) | | 234 |
+| 18 | Analytics | 227, 228, 229, 230, 231, 232, 233, 234, 235 | 236 (CSV per table) | | |
 | 19 | Security & Compliance | 237, 239, 240, 241, 242, 243, 244, 248 | 245 | 238 (SSO) | 246, 247 |
 | 20 | Platform & Mobile | 260 (import) | 250 (responsive web) | 249, 251, 254, 255 | 252, 253, 256–259 |
 

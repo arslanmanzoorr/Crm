@@ -66,6 +66,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0037_portal_tours.sql` | Client portal homes include the tour link |
 | `0038_est_rent.sql` | Estimated monthly rent on listings (investor matching, rental numbers); in the portal too |
 | `0039_valuation_leads.sql` | Home-value page leads arrive as sellers wanting a value |
+| `0040_analytics_cohorts.sql` | Analytics: monthly lead cohorts and how far each got |
 
 After `0010`, store the hash of your form key (per environment):
 
