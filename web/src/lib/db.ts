@@ -465,3 +465,22 @@ export async function getOffer(id: string): Promise<Offer | undefined> {
   const { data } = await (await supabase()).from("offers").select(OFFER_COLS).eq("id", id).maybeSingle();
   return data ? toOffer(data as unknown as OfferRow) : undefined;
 }
+
+type Money = { month: string; deals: number; gci: number; agent: number };
+export type Analytics = {
+  days: number; leads: number;
+  by_source: { source: string; leads: number; reached: number; qualified: number; contracted: number; closed: number; median_response_min: number | null }[];
+  response: { median_min: number | null; within_5m: number; within_1h: number; responded: number; never: number };
+  cycle: { deals: number; lead_to_contract_days: number | null; contract_to_close_days: number | null };
+  revenue: Money[]; forecast: Money[];
+  agents: { user_id: string; email: string; role: string; leads: number; median_response_min: number | null; touches: number; active_deals: number; closed: number; closed_agent: number }[];
+  listings: { id: string; address: string; status: string; price: number; days_on_market: number; visitors: number; offers: number; best_offer: number | null }[];
+};
+
+/** Team analytics for the last `days` days (one RPC; aggregation runs in Postgres under the caller's RLS). */
+export async function getAnalytics(days: number): Promise<Analytics | null> {
+  if (!dbEnabled) return null;
+  const { data, error } = await (await supabase()).rpc("team_analytics", { p_days: days });
+  if (error) throw new Error(error.message);
+  return data as Analytics;
+}
