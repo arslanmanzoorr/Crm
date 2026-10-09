@@ -31,6 +31,19 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0002_tasks.sql` | Tasks; AI next action on contacts |
 | `0003_security.sql` | Helper functions moved out of the REST API, size limits, FK indexes, audit log, AI usage metering |
 | `0004_same_org_fks.sql` | Child rows can only point at a contact in the same org |
+| `0005_search_scale.sql` | Trigram lead search, `last_activity_at`, list indexes |
+| `0006_listing_photos.sql` | Private `listing-photos` bucket, org-folder storage policies, `property_media` |
+| `0007_lead_forms.sql` | Public lead forms, `submit_lead()` with rate limits and dedupe, speed-to-lead tasks |
+| `0008_anon_lockdown.sql` | Signed-out visitors have no table access at all |
+| `0009_teams.sql` | Active org per user, roles in policies, invites |
+| `0010_form_rpc_key.sql` | `submit_lead()` only accepts calls carrying the server key |
+| `0011_active_org_rpc.sql` | `active_org()`, idempotent `accept_invite()` |
+
+After `0010`, store the hash of your form key (per environment):
+
+```sql
+insert into private.app_secrets values ('form_rpc', '<sha256 hex of FORM_RPC_KEY>');
+```
 
 Every table has row-level security: a user only ever sees rows of orgs they belong to. Every server action re-checks the session as well.
 
@@ -42,6 +55,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 SITE_URL=https://app.yourdomain.com          # used for auth email links; never taken from request headers
 ANTHROPIC_API_KEY=sk-ant-...                  # AI features (model claude-opus-5-5)
 AI_DAILY_LIMIT=200                            # AI calls per org per 24h (default 200)
+FORM_IP_SALT=<random 32+ bytes hex>           # salts visitor IP hashes on public lead forms
+FORM_RPC_KEY=<random 32+ bytes hex>           # server-only key for submit_lead (DB stores its SHA-256)
 N8N_PUBLISH_WEBHOOK_URL=https://your-n8n/webhook/estateos-publish   # Publish button
 ```
 
