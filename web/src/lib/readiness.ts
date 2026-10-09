@@ -14,6 +14,8 @@ export const DOCS = {
   gift_letter: "Gift letter (if gifted funds)",
 } as const;
 export type Doc = keyof typeof DOCS;
+/** Mid-sentence names ("Send your lender: pay stubs, W-2s"). */
+export const DOC_SHORT: Record<Doc, string> = { pay_stubs: "pay stubs", w2: "W-2s", tax_returns: "tax returns", bank_statements: "bank statements", id: "photo ID", gift_letter: "gift letter" };
 
 export const LOAN_STAGES = {
   not_started: "Not started", preapproved: "Preapproved", application: "Application in", processing: "Processing",

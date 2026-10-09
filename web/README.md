@@ -49,6 +49,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0020_showings.sql` | Showings (booking, status, buyer feedback) and listing showing instructions |
 | `0021_analytics_showings.sql` | Listing funnel counts showings |
 | `0022_financing_partners.sql` | Partner directory and per-buyer financing (lender, loan stage, preapproval, documents) |
+| `0023_client_portal.sql` | Client portal: hashed link tokens, `portal_view` / `portal_message` / `portal_favorite`, listing seller |
 
 After `0010`, store the hash of your form key (per environment):
 

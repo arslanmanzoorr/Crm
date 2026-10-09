@@ -19,7 +19,7 @@ Last updated: 2026-10-09.
 | 9 | Deals & Transactions | 123, 124, 125, 128, 129, 130, 131, 132, 133, 134, 135 (in-app flags), 138, 139 | | 126 | 127, 136, 137, 140 |
 | 10 | Seller Intelligence & CMA | | | 144, 149 | 141–143, 145–148, 150–152 |
 | 11 | Mortgage & Financing | 153, 154, 155, 156, 157, 158, 159, 161 | 162 (in-app warnings) | 160 | |
-| 12 | Client Portal | | | | 163–176 |
+| 12 | Client Portal | 163, 164, 166, 167, 168, 170, 171, 172, 173, 174, 176 | 175 (agent sees portal activity; no client notifications yet) | 175 (email/SMS) | 165, 169 |
 | 13 | Referral & Retention | 177, 178, 179, 180, 181, 182, 183, 185, 186 | | | 184 |
 | 14 | Brokerage & Team Ops | 188 | 187, 194 | | 189–193, 195, 196 |
 | 15 | Commissions & Finance | 198, 199, 206 | 197 (per deal; no plan templates yet), 200 (pending and 30-day view) | 205 | 201–204 |

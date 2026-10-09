@@ -11,7 +11,7 @@ import { supabase } from "@/lib/db";
 import { daysBetween } from "@/lib/deals";
 import { matchListing } from "@/lib/match";
 import { FINANCING, type Financing as Fin } from "@/lib/offers";
-import { DOCS, LOAN_STAGES, type Doc, type LoanStage } from "@/lib/readiness";
+import { DOC_SHORT, DOCS, LOAN_STAGES, type Doc, type LoanStage } from "@/lib/readiness";
 
 export const metadata: Metadata = { title: "Your home journey", robots: { index: false, follow: false } };
 
@@ -59,17 +59,19 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
   const f = p.financing;
   if (f && !f.cash) {
     const missing = (Object.keys(DOCS) as Doc[]).filter((d) => (d !== "gift_letter" || f.gift_funds) && !f.docs.includes(d));
-    if (missing.length) todo.push(`Send your lender: ${missing.map((d) => DOCS[d].replace(/ \(.*\)$/, "").toLowerCase()).join(", ")}`);
+    if (missing.length) todo.push(`Send your lender: ${missing.map((d) => DOC_SHORT[d]).join(", ")}`);
     if (f.preapproval_expires && daysBetween(today, f.preapproval_expires) <= 14) todo.push("Your preapproval expires soon. Ask your lender to refresh it");
   }
   for (const o of p.offers) if (o.status === "countered") todo.push(`Your offer on ${o.address} was countered. Your agent will walk you through it`);
   for (const s of p.showings) if (s.status !== "done" && s.starts_at >= new Date().toISOString()) todo.push(`Showing at ${s.address}`);
 
   const activeDeal = p.deals.find((d) => d.status === "active");
-  const homes = p.listings
-    .map((l) => ({ l, m: matchListing({ type: p.type, ...p.criteria }, l) }))
-    .sort((a, b) => Number(p.favorites.includes(b.l.id)) - Number(p.favorites.includes(a.l.id)) || (b.m?.score ?? -1) - (a.m?.score ?? -1))
-    .slice(0, 12);
+  // Saved homes and homes that fit their search; if nothing fits yet, show what's available.
+  const ranked = p.listings
+    .map((l) => ({ l, m: matchListing({ type: p.type, ...p.criteria }, l), saved: p.favorites.includes(l.id) }))
+    .sort((a, b) => Number(b.saved) - Number(a.saved) || (b.m?.score ?? -1) - (a.m?.score ?? -1));
+  const fitting = ranked.filter((h) => h.saved || h.m);
+  const homes = (fitting.length ? fitting : ranked).slice(0, 12);
 
   return (
     <>
@@ -165,7 +167,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
 
       {homes.length > 0 && (
         <section aria-labelledby="homes" className="flex flex-col gap-3">
-          <h2 id="homes" className="text-xl">Homes for you</h2>
+          <h2 id="homes" className="text-xl">{fitting.length ? "Homes for you" : "Our listings"}</h2>
           <p className="-mt-2 text-sm text-muted">Tap the heart to save one; your agent sees what you like.</p>
           <ul className="grid gap-3 sm:grid-cols-2">
             {homes.map(({ l, m }) => (

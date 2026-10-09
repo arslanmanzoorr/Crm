@@ -6,7 +6,7 @@ import { supabase } from "@/lib/db";
 const TABLES = {
   contacts: "created_at", activities: "ts", tasks: "created_at", properties: "created_at", property_media: "created_at",
   lead_forms: "created_at", memberships: "created_at", open_houses: "created_at", open_house_visits: "ts", deals: "created_at",
-  deal_milestones: "id", offers: "created_at", offer_events: "ts", testimonials: "created_at", showings: "created_at", partners: "created_at", financing: "updated_at",
+  deal_milestones: "id", offers: "created_at", offer_events: "ts", testimonials: "created_at", showings: "created_at", partners: "created_at", financing: "updated_at", favorites: "created_at",
 } as const;
 const PAGE = 1000; // PostgREST's default row cap per request
 
