@@ -64,6 +64,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0035_privacy_requests.sql` | Consumer privacy requests (access/delete/correct/opt out) with 45-day deadline, keyed public RPC |
 | `0036_listing_media_approval.sql` | Virtual tour / floor plan links (https only); agents' listings need owner/admin approval (trigger-enforced) |
 | `0037_portal_tours.sql` | Client portal homes include the tour link |
+| `0038_est_rent.sql` | Estimated monthly rent on listings (investor matching, rental numbers); in the portal too |
 
 After `0010`, store the hash of your form key (per environment):
 

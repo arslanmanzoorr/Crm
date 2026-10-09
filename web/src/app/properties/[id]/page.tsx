@@ -20,7 +20,7 @@ import { SellerUpdateCard } from "@/components/seller-update-card";
 import { Documents } from "@/components/documents";
 import { sellerUpdate } from "@/lib/seller-update";
 import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
-import { matchListing } from "@/lib/match";
+import { matchListing, quickCapRate } from "@/lib/match";
 
 export const metadata: Metadata = { title: "Listing" };
 
@@ -54,6 +54,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         {p.features.map((f) => <Chip key={f}>{f}</Chip>)}
       </div>
       {p.description && <p className="max-w-2xl text-ink/80">{p.description}</p>}
+      {p.estRent ? <p className="text-sm text-muted">Rents for about {money(p.estRent)}/month · ≈{quickCapRate(p.price, p.estRent).toFixed(1)}% cap rate at standard assumptions</p> : null}
       {(p.tourUrl || p.floorPlanUrl) && (
         <div className="flex flex-wrap gap-2">
           {p.tourUrl && <a href={p.tourUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 text-sm hover:bg-surface-3"><Rotate3d aria-hidden className="size-4" /> Virtual tour</a>}
@@ -74,7 +75,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         <Link href={`/tools?tab=payment&price=${p.price}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
           <Calculator aria-hidden className="size-4" /> Payment
         </Link>
-        <Link href={`/tools?tab=invest&price=${p.price}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
+        <Link href={`/tools?tab=invest&price=${p.price}${p.estRent ? `&rent=${p.estRent}` : ""}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
           <TrendingUp aria-hidden className="size-4" /> Rental numbers
         </Link>
         <Link href={`/properties/${p.id}/edit`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">

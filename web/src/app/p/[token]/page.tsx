@@ -23,7 +23,7 @@ type Portal = {
   deals: { address: string; side: "buyer" | "seller"; status: string; close_on: string | null; milestones: { title: string; due_on: string | null; done: boolean }[] }[];
   financing: { cash: boolean; stage: LoanStage; preapproval_expires: string | null; docs: Doc[]; gift_funds: boolean } | null;
   favorites: string[];
-  listings: { id: string; address: string; area: string; price: number; beds: number; baths: number; sqft: number; status: string; features: string[]; tour_url: string | null }[];
+  listings: { id: string; address: string; area: string; price: number; beds: number; baths: number; sqft: number; status: string; features: string[]; tour_url: string | null; est_rent: number | null }[];
   selling: {
     address: string; price: number; status: string; days_on_market: number; showings: number; open_house_visitors: number;
     feedback: { interest: string; rating: number | null; feedback: string; date: string }[];
@@ -68,7 +68,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
   const activeDeal = p.deals.find((d) => d.status === "active");
   // Saved homes and homes that fit their search; if nothing fits yet, show what's available.
   const ranked = p.listings
-    .map((l) => ({ l, m: matchListing({ type: p.type, ...p.criteria }, l), saved: p.favorites.includes(l.id) }))
+    .map((l) => ({ l, m: matchListing({ type: p.type, ...p.criteria }, { ...l, price: Number(l.price), estRent: l.est_rent == null ? null : Number(l.est_rent) }), saved: p.favorites.includes(l.id) }))
     .sort((a, b) => Number(b.saved) - Number(a.saved) || (b.m?.score ?? -1) - (a.m?.score ?? -1));
   const fitting = ranked.filter((h) => h.saved || h.m);
   const homes = (fitting.length ? fitting : ranked).slice(0, 12);

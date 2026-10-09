@@ -134,8 +134,8 @@ export function AffordabilityCalculator({ leads }: { leads: { id: string; name: 
   );
 }
 
-export function InvestmentAnalyzer({ initialPrice, leads }: { initialPrice: number; leads: { id: string; name: string }[] }) {
-  const [x, setX] = useState<Rental>({ price: initialPrice || 300_000, rehab: 15_000, closingPct: 3, downPct: 25, ratePct: 7.25, years: 30, rent: 2600, otherIncome: 0, vacancyPct: 5, taxPct: 1.1, insurance: 1400, hoa: 0, mgmtPct: 8, maintenancePct: 8, otherExpenses: 0 });
+export function InvestmentAnalyzer({ initialPrice, initialRent = 0, leads }: { initialPrice: number; initialRent?: number; leads: { id: string; name: string }[] }) {
+  const [x, setX] = useState<Rental>({ price: initialPrice || 300_000, rehab: 15_000, closingPct: 3, downPct: 25, ratePct: 7.25, years: 30, rent: initialRent || 2600, otherIncome: 0, vacancyPct: 5, taxPct: 1.1, insurance: 1400, hoa: 0, mgmtPct: 8, maintenancePct: 8, otherExpenses: 0 });
   const set = (k: keyof Rental) => (v: number) => setX({ ...x, [k]: v });
   const r = analyzeRental(x);
   const text = `Rental analysis, ${usd(x.price)} purchase${x.rehab ? ` + ${usd(x.rehab)} rehab` : ""}, ${usd(x.rent)}/month rent: NOI ${usd(r.noi)}/yr, cap rate ${pct(r.capRate)}, cash flow ${usd(r.cashFlow / 12)}/month, cash-on-cash ${pct(r.cashOnCash)} on ${usd(r.cashIn)} invested${r.dscr ? `, DSCR ${r.dscr.toFixed(2)}` : ""}. Assumes ${x.vacancyPct}% vacancy, ${x.mgmtPct}% management, ${x.maintenancePct}% maintenance and reserves, ${x.downPct}% down at ${x.ratePct}%.`;

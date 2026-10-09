@@ -120,6 +120,7 @@ const propertyFields = (f: FormData) => ({
     seller_id: UUID.test(str(f, "seller_id")) ? str(f, "seller_id") : null,
     listing_expires: /^\d{4}-\d{2}-\d{2}$/.test(str(f, "listing_expires")) ? str(f, "listing_expires") : null,
     tour_url: httpsOrNull(str(f, "tour_url")),
+    est_rent: Number(str(f, "est_rent")) > 0 ? Number(str(f, "est_rent")) : null,
     floor_plan_url: httpsOrNull(str(f, "floor_plan_url")),
 });
 const httpsOrNull = (v: string) => (/^https:\/\/\S+$/.test(v) && v.length <= 500 ? v : null);
@@ -131,7 +132,7 @@ const MAX_ALERTS = 25;
  * Instant Buyer Matching alerts: a follow-up task for each open buyer a new or cheaper listing fits,
  * assigned to the buyer's owner. Tasks are the alert channel until email/SMS sending is connected.
  */
-async function alertMatches(db: Db, p: { id: string; address: string; area: string; price: number; beds: number; status: string }, why: "New listing" | "Price drop") {
+async function alertMatches(db: Db, p: { id: string; address: string; area: string; price: number; beds: number; status: string; estRent: number | null }, why: "New listing" | "Price drop") {
   if (p.status === "Sold") return;
   const { data: buyers } = await db.from("contacts").select("id,name,type,budget,areas,preferences,owner_id,score")
     .in("type", BUYING_TYPES).not("stage", "in", "(Closed,Lost)").order("score", { ascending: false }).limit(1000);
@@ -159,9 +160,9 @@ export async function saveProperty(_: FormState, f: FormData): Promise<FormState
   const id = str(f, "id");
   const before = id ? (await db.from("properties").select("price").eq("id", id).maybeSingle()).data : null;
   const q = id ? db.from("properties").update(propertyFields(f)).eq("id", id) : db.from("properties").insert(propertyFields(f));
-  const { data, error } = await q.select("id,address,area,price,beds,status").single();
+  const { data, error } = await q.select("id,address,area,price,beds,status,est_rent").single();
   if (error) return { error: error.message };
-  const p = { ...data, price: Number(data.price) };
+  const p = { ...data, price: Number(data.price), estRent: data.est_rent == null ? null : Number(data.est_rent) };
   if (!id) await alertMatches(db, p, "New listing");
   else if (before && p.price < Number(before.price)) await alertMatches(db, p, "Price drop");
   revalidatePath("/", "layout");

@@ -24,7 +24,8 @@ async function Tools({ searchParams }: { searchParams: PageProps<"/tools">["sear
   const [sp, leads] = await Promise.all([searchParams, getLeadOptions()]);
   const tab = TABS.some(([t]) => t === sp.tab) ? (sp.tab as (typeof TABS)[number][0]) : "payment";
   const price = Math.max(0, Math.min(Number(sp.price) || 0, 1e9));
-  const keep = price ? `&price=${price}` : "";
+  const rent = Math.max(0, Math.min(Number(sp.rent) || 0, 1e7));
+  const keep = `${price ? `&price=${price}` : ""}${rent ? `&rent=${rent}` : ""}`;
   return (
     <>
       <nav aria-label="Calculator" className="flex w-fit flex-wrap gap-1 rounded-full bg-surface-2 p-1">
@@ -35,7 +36,7 @@ async function Tools({ searchParams }: { searchParams: PageProps<"/tools">["sear
       </nav>
       {tab === "payment" && <PaymentCalculator initialPrice={price} leads={leads} />}
       {tab === "afford" && <AffordabilityCalculator leads={leads} />}
-      {tab === "invest" && <InvestmentAnalyzer initialPrice={price} leads={leads} />}
+      {tab === "invest" && <InvestmentAnalyzer initialPrice={price} initialRent={rent} leads={leads} />}
     </>
   );
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { matchListing, minBeds, parseBudget } from "./match.ts";
+import { matchListing, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
 
 test("parseBudget reads the ways agents write budgets", () => {
   assert.deepEqual(parseBudget("$600k–$650k"), { min: 600_000, max: 650_000 });
@@ -41,4 +41,18 @@ test("matchListing filters, scores and explains", () => {
 
   assert.equal(matchListing({ type: "buyer", budget: "", areas: [], preferences: [] }, home), null); // nothing known
   assert.deepEqual(matchListing({ type: "buyer", budget: "", areas: ["Westside"], preferences: [] }, home), { score: 80, fits: ["In westside"], gaps: ["No budget set"] });
+});
+
+test("investors: cap rate wants are read and checked against the rent estimate", () => {
+  assert.equal(minCapRate(["Duplex", "Cap rate > 6%"]), 6);
+  assert.equal(minCapRate(["7.5% cap or better"]), 7.5);
+  assert.equal(minCapRate(["Quiet street"]), undefined);
+  // 300k, 2,600/mo: collected 29,640; NOI = 29,640 - 3,300 - 1,200 - 4,742.4 = 20,397.6 -> 6.80%
+  assert.equal(quickCapRate(300_000, 2600).toFixed(2), "6.80");
+  const inv = { type: "investor", budget: "$250k–$400k", areas: ["Riverside"], preferences: ["Cap rate > 6%"] };
+  const home = { area: "Riverside", price: 300_000, beds: 4, status: "Active" };
+  assert.deepEqual(matchListing(inv, { ...home, estRent: 2600 })!.fits, ["In Riverside", "Within budget", "≈6.8% cap rate (wants 6%+)"]);
+  assert.deepEqual(matchListing(inv, { ...home, estRent: 2200 })!.gaps, ["≈5.5% cap rate, wants 6%"]);
+  assert.equal(matchListing(inv, { ...home, estRent: 1500 }), null);
+  assert.deepEqual(matchListing(inv, home)!.gaps, ["No rent estimate to check the cap rate"]);
 });
