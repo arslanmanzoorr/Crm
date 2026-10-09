@@ -14,9 +14,10 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
+import { dbEnabled, getDocuments, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { SellerUpdateCard } from "@/components/seller-update-card";
+import { Documents } from "@/components/documents";
 import { sellerUpdate } from "@/lib/seller-update";
 import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
 import { matchListing } from "@/lib/match";
@@ -77,6 +78,11 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
       <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
         <Buyers p={p} />
       </Suspense>
+      {dbEnabled && (
+        <Suspense fallback={<Skeleton className="h-24 max-w-2xl" />}>
+          <ListingDocs id={p.id} />
+        </Suspense>
+      )}
       {dbEnabled && (
         <Suspense fallback={<Skeleton className="h-24 max-w-2xl" />}>
           <History p={p} />
@@ -342,6 +348,16 @@ async function History({ p }: { p: Property }) {
           ))}
         </ol>
       )}
+    </section>
+  );
+}
+
+async function ListingDocs({ id }: { id: string }) {
+  const docs = await getDocuments({ propertyId: id });
+  return (
+    <section aria-labelledby="docs" className="flex max-w-2xl flex-col gap-3">
+      <h2 id="docs" className="text-xl">Documents</h2>
+      <Documents parent={{ property_id: id }} docs={docs} />
     </section>
   );
 }

@@ -736,3 +736,15 @@ export async function getPropertyHistory(propertyId: string): Promise<PropertyEv
   const res = await (await supabase()).from("property_events").select("kind,old_value,new_value,ts").eq("property_id", propertyId).order("ts", { ascending: false }).limit(100);
   return (must(res) as { kind: PropertyEvent["kind"]; old_value: string | null; new_value: string | null; ts: string }[]).map((e) => ({ kind: e.kind, old: e.old_value, new: e.new_value, ts: e.ts }));
 }
+
+export type StoredDoc = { id: string; name: string; size: number; mime: string; createdAt: string };
+
+export async function getDocuments(by: { propertyId?: string; dealId?: string; contactId?: string }): Promise<StoredDoc[]> {
+  if (!dbEnabled) return [];
+  let q = (await supabase()).from("documents").select("id,name,size,mime,created_at");
+  if (by.propertyId) q = q.eq("property_id", by.propertyId);
+  if (by.dealId) q = q.eq("deal_id", by.dealId);
+  if (by.contactId) q = q.eq("contact_id", by.contactId);
+  const res = await q.order("created_at", { ascending: false }).limit(200);
+  return (must(res) as { id: string; name: string; size: number; mime: string; created_at: string }[]).map((d) => ({ id: d.id, name: d.name, size: Number(d.size), mime: d.mime, createdAt: d.created_at }));
+}

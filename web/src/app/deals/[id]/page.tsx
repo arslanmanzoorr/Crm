@@ -8,7 +8,8 @@ import { DealForm } from "@/components/deal-form";
 import { Chip, Skeleton } from "@/components/ui";
 import { cash, money } from "@/lib/data";
 import { commission, daysBetween, riskFlags } from "@/lib/deals";
-import { EXPENSE_CATEGORIES, getDeal, getExpenses, getFinancing, getMembers } from "@/lib/db";
+import { EXPENSE_CATEGORIES, getDeal, getDocuments, getExpenses, getFinancing, getMembers } from "@/lib/db";
+import { Documents } from "@/components/documents";
 import { DeleteExpense, ExpenseForm, PayoutControls } from "@/components/money-controls";
 import { ReadinessList } from "@/components/readiness-card";
 import { EMPTY_FINANCING, readiness } from "@/lib/readiness";
@@ -31,7 +32,7 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
   const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day, as on /deals
   const flags = riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
   const c = commission(d.price, d.commissionPct, d.agentSplitPct, d.referralPct);
-  const [costs, me] = await Promise.all([getExpenses({ dealId: d.id }), getMembers()]);
+  const [costs, me, docs] = await Promise.all([getExpenses({ dealId: d.id }), getMembers(), getDocuments({ dealId: d.id })]);
   const spent = costs.reduce((n, e) => n + e.amount, 0);
   const isAdmin = me.members.some((m) => m.userId === me.me && (m.role === "owner" || m.role === "admin"));
   const fin = d.side === "buyer" && d.status === "active" ? readiness((await getFinancing(d.contact.id)) ?? EMPTY_FINANCING, { closeOn: d.closeOn, today }) : null;
@@ -87,6 +88,10 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
             <AddMilestone dealId={d.id} />
           </section>
 
+          <section aria-labelledby="docs" className="flex flex-col gap-3">
+            <h2 id="docs" className="text-xl">Documents</h2>
+            <Documents parent={{ deal_id: d.id }} docs={docs} />
+          </section>
           <details className="rounded-card bg-surface-2 p-5">
             <summary className="min-h-11 cursor-pointer content-center text-lg">Edit terms and dates</summary>
             <div className="mt-3"><DealForm deal={d} /></div>

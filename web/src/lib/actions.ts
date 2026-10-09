@@ -12,6 +12,7 @@ import { CONTINGENCIES, FINANCING } from "./offers";
 import { DOCS, LOAN_STAGES } from "./readiness";
 import { cleanSteps, TEMPLATES, TRIGGERS } from "./playbooks";
 import { cleanCma } from "./cma";
+import { checkUpload, safeFileName } from "./docs";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
 
@@ -1264,4 +1265,63 @@ export async function setSplit(userId: string, pct: number): Promise<FormState> 
   if (error) return { error: /Only/.test(error.message) ? error.message : "Couldn't save the split." };
   revalidatePath("/team");
   return { ok: "Saved" };
+}
+
+const DOCS_BUCKET = "documents";
+type DocParent = { property_id?: string; deal_id?: string; contact_id?: string };
+
+/** Step 1 of an upload: a one-time signed slot in the team's folder. The file goes straight to Storage. */
+export async function documentUploadUrl(parent: DocParent, file: { name: string; size: number; type: string }) {
+  if (!dbEnabled) throw new Error(NO_DB.error);
+  const problem = checkUpload(file);
+  if (problem) throw new Error(problem);
+  const ids = Object.values(parent).filter(Boolean);
+  if (ids.length !== 1 || !ids.every((v) => UUID.test(v!))) throw new Error("Attach the file to one listing, deal or lead.");
+  const db = await authed();
+  const { data: org } = await db.rpc("active_org");
+  const path = `${org}/${crypto.randomUUID()}/${safeFileName(file.name)}`;
+  const { data, error } = await db.storage.from(DOCS_BUCKET).createSignedUploadUrl(path);
+  if (error) throw new Error(error.message);
+  return { path, token: data.token };
+}
+
+/** Step 2: record the uploaded file (only paths in the caller's team folder, only files that really landed). */
+export async function confirmDocument(parent: DocParent, doc: { path: string; name: string; size: number; type: string }) {
+  if (!dbEnabled) return;
+  const db = await authed();
+  const { data: org } = await db.rpc("active_org");
+  const [folder, id, file] = doc.path.split("/");
+  if (folder !== org || !UUID.test(id ?? "") || !file || doc.path.split("/").length !== 3) throw new Error("Upload not recognized.");
+  const { data: found } = await db.storage.from(DOCS_BUCKET).list(`${folder}/${id}`);
+  if (!found?.some((o) => o.name === file)) throw new Error("The upload didn't finish. Please try again.");
+  const { error } = await db.from("documents").insert({
+    ...Object.fromEntries(Object.entries(parent).filter(([, v]) => v && UUID.test(v))),
+    name: doc.name.slice(0, 200), path: doc.path, size: Math.round(doc.size), mime: doc.type.slice(0, 120),
+  });
+  if (error) {
+    await db.storage.from(DOCS_BUCKET).remove([doc.path]);
+    throw new Error(error.message);
+  }
+  revalidatePath("/", "layout");
+}
+
+/** A download link that works for one minute. */
+export async function documentUrl(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return null;
+  const db = await authed();
+  const { data: doc } = await db.from("documents").select("path,name").eq("id", id).maybeSingle();
+  if (!doc) return null;
+  const { data } = await db.storage.from(DOCS_BUCKET).createSignedUrl(doc.path, 60, { download: doc.name });
+  return data?.signedUrl ?? null;
+}
+
+export async function deleteDocument(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const db = await authed();
+  const { data: doc } = await db.from("documents").select("path").eq("id", id).maybeSingle();
+  if (!doc) return;
+  await db.storage.from(DOCS_BUCKET).remove([doc.path]);
+  const { error } = await db.from("documents").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
 }
