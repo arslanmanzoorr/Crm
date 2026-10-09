@@ -26,7 +26,7 @@ Last updated: 2026-10-09.
 | 16 | Investor Toolkit | | | | 207–216 |
 | 17 | Automation & Workflows | | 223, 224 | | 217–222, 225, 226 |
 | 18 | Analytics | | | | 227–236 |
-| 19 | Security & Compliance | 237, 239, 240, 241, 244 | 242, 245, 248 | 238 (SSO) | 243, 246, 247 |
+| 19 | Security & Compliance | 237, 239, 240, 241, 244 | 242, 243 (team export; deletion pending), 245, 248 | 238 (SSO) | 246, 247 |
 | 20 | Platform & Mobile | 260 (import) | 250 (responsive web) | 249, 251, 254, 255 | 252, 253, 256–259 |
 
 ## What "needs account" means in practice
@@ -48,5 +48,5 @@ Items that need no outside account are built first, in roadmap phase order:
 1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), buyer criteria and Instant Buyer Matching (84–86, 90, 91), showings and open-house check-in (111, 116–121).
 2. **Closing engine:** deals, offers and transaction milestones with deadlines (123–125, 128–135, 138, 139), commission splits (197–200, 206).
 3. **Growth and analytics:** source and conversion analytics (24, 25, 228–230), past-client anniversaries and retention (177–186), broker views (190–192).
-4. **Privacy rights:** data export and deletion (243), which the Terms and Privacy Policy will reference.
+4. **Privacy rights:** ~~data export~~ (done: Account → Export team data), per-person deletion (243), which the Terms and Privacy Policy will reference.
 5. **Intelligence layer** once an Anthropic key is connected: Ask Your Business, morning briefing, explainable scoring, Deal Rescue.

@@ -1,4 +1,4 @@
-import { ChevronRight, Clapperboard, LogOut, Send, Users } from "lucide-react";
+import { ChevronRight, Clapperboard, Download, LogOut, Send, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -34,6 +34,9 @@ export default function AccountPage() {
           <Link href="/team" className={row}><Users aria-hidden className="size-5 text-muted" /><span className="flex-1">Team and invites</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/studio" className={row}><Clapperboard aria-hidden className="size-5 text-muted" /><span className="flex-1">Video Studio</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/publish" className={row}><Send aria-hidden className="size-5 text-muted" /><span className="flex-1">Publish to socials</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
+          {dbEnabled && (
+            <a href="/api/export" download className={row}><Download aria-hidden className="size-5 text-muted" /><span className="flex-1">Export team data <span className="block text-xs text-muted">JSON file, owners and admins</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></a>
+          )}
         </div>
       </section>
 
