@@ -13,8 +13,10 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getLeadOptions, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
+import { dbEnabled, getLead, getLeadOptions, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
+import { SellerUpdateCard } from "@/components/seller-update-card";
+import { sellerUpdate } from "@/lib/seller-update";
 import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
 import { matchListing } from "@/lib/match";
 
@@ -74,6 +76,11 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
       <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
         <Buyers p={p} />
       </Suspense>
+      {dbEnabled && p.status !== "Sold" && (
+        <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
+          <WeeklyUpdate p={p} />
+        </Suspense>
+      )}
       {dbEnabled && (
         <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
           <Offers p={p} />
@@ -272,6 +279,28 @@ async function Showings({ p }: { p: Property }) {
         <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Book a showing here</summary>
         <div className="mt-3"><ScheduleShowing buyers={buyers} listings={[]} propertyId={p.id} /></div>
       </details>
+    </section>
+  );
+}
+
+/** A ready-to-send weekly update for the seller, from the last 7 days on this listing. */
+async function WeeklyUpdate({ p }: { p: Property }) {
+  const now = new Date().getTime(), since = new Date(now - 7 * 86_400_000).toISOString();
+  const [showings, openHouses, offers, seller] = await Promise.all([
+    getShowings({ propertyId: p.id, from: since }), getOpenHouses(p.id), getOffers({ propertyId: p.id }), p.sellerId ? getLead(p.sellerId) : Promise.resolve(undefined),
+  ]);
+  const draft = sellerUpdate({
+    firstName: seller?.name.split(" ")[0] ?? "there",
+    address: p.address,
+    daysOnMarket: p.createdAt ? Math.max(0, Math.floor((now - Date.parse(p.createdAt)) / 86_400_000)) : 0,
+    showings: showings.filter((s) => s.status === "done" || s.status === "confirmed").filter((s) => Date.parse(s.startsAt) <= now).map((s) => ({ interest: s.interest, feedback: s.feedback })),
+    openHouseVisitors: openHouses.flatMap((o) => o.visits).filter((v) => v.ts >= since).length,
+    offers: offers.filter((o) => o.side === "seller").map((o) => ({ amount: o.amount, status: o.status })),
+  });
+  return (
+    <section aria-labelledby="weekly" className="flex max-w-2xl flex-col gap-3">
+      <h2 id="weekly" className="text-xl">Weekly seller update</h2>
+      <SellerUpdateCard draft={draft} sellerId={p.sellerId ?? null} />
     </section>
   );
 }

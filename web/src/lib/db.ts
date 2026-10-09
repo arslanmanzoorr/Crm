@@ -73,11 +73,11 @@ export function toLead(r: ContactRow): Lead {
 const TONES = mock.properties.map((p) => p.tone);
 // Placeholder gradient keyed to the listing id, so it's the same on every page.
 const toneFor = (id: string) => TONES[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length];
-const toProperty = ({ showing_notes, seller_id, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string; seller_id?: string | null }): Property =>
-  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "", sellerId: seller_id ?? null });
+const toProperty = ({ showing_notes, seller_id, created_at, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string; seller_id?: string | null; created_at?: string }): Property =>
+  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "", sellerId: seller_id ?? null, createdAt: created_at });
 
 const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
-const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes,seller_id";
+const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes,seller_id,created_at";
 
 function must<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);
