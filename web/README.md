@@ -59,6 +59,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0030_finance.sql` | Expenses (per deal / lead source), commission payout approval (guarded), per-agent default split (`set_default_split`) |
 | `0031_analytics_spend.sql` | Lead sources include marketing spend for cost per lead / per closing |
 | `0032_listing_history.sql` | Listing history (status and price changes, by trigger) and listing agreement expiry |
+| `0033_documents.sql` | Documents bucket (private, 25 MB, allowlisted types, team-folder policies) and documents table |
 
 After `0010`, store the hash of your form key (per environment):
 
