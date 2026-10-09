@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Clapperboard, Pencil, Send } from "lucide-react";
+import { Clapperboard, Pencil, Printer, Send } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -9,7 +9,10 @@ import { Chip, Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { MatchReasons } from "@/components/match-reasons";
 import type { Property } from "@/lib/data";
-import { dbEnabled, getOpenBuyers, getProperty } from "@/lib/db";
+import QRCode from "qrcode";
+import { LocalTime } from "@/components/local-time";
+import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
+import { dbEnabled, getOpenBuyers, getOpenHouses, getProperty, type OpenHouse } from "@/lib/db";
 import { matchListing } from "@/lib/match";
 
 export const metadata: Metadata = { title: "Listing" };
@@ -58,6 +61,11 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
       <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
         <Buyers p={p} />
       </Suspense>
+      {dbEnabled && (
+        <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
+          <OpenHouses propertyId={p.id} />
+        </Suspense>
+      )}
       <div className="self-start"><DeleteButton id={p.id} what="listing" /></div>
     </div>
   );
@@ -91,5 +99,67 @@ async function Buyers({ p }: { p: Property }) {
       )}
       {ranked.length > 8 && <p className="text-sm text-muted">Showing the 8 best of {ranked.length}.</p>}
     </section>
+  );
+}
+
+/** Open houses: schedule, a QR code and link for sign-in, and what visitors said (the seller report). */
+async function OpenHouses({ propertyId }: { propertyId: string }) {
+  const list = await getOpenHouses(propertyId);
+  return (
+    <section aria-labelledby="open-houses" className="flex max-w-2xl flex-col gap-3">
+      <h2 id="open-houses" className="text-xl">Open houses</h2>
+      <ScheduleOpenHouse propertyId={propertyId} />
+      {list.length === 0 && <p className="text-sm text-muted">Schedule one to get a sign-in QR code for the door.</p>}
+      {await Promise.all(list.map(async (o) => <OpenHouseCard key={o.id} o={o} propertyId={propertyId} />))}
+    </section>
+  );
+}
+
+async function OpenHouseCard({ o, propertyId }: { o: OpenHouse; propertyId: string }) {
+  const url = `${process.env.SITE_URL ?? ""}/oh/${o.id}`;
+  const qr = await QRCode.toString(url, { type: "svg", margin: 1, color: { dark: "#0a0a0a", light: "#ffffff" } });
+  const rated = o.visits.filter((v) => v.rating !== null);
+  const avg = rated.length ? (rated.reduce((n, v) => n + v.rating!, 0) / rated.length).toFixed(1) : null;
+  const unrepresented = o.visits.filter((v) => !v.hasAgent).length;
+  const said = o.visits.filter((v) => v.feedback);
+  return (
+    <article className="flex flex-col gap-4 rounded-card bg-surface-2 p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h3 className="font-medium"><LocalTime ts={o.startsAt} opts={{ weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} /> – <LocalTime ts={o.endsAt} opts={{ hour: "numeric", minute: "2-digit" }} /></h3>
+          <p className="text-sm text-muted">
+            {o.visits.length} visitor{o.visits.length === 1 ? "" : "s"}
+            {o.visits.length > 0 && ` · ${unrepresented} without an agent`}
+            {avg && ` · rated ${avg}/5`}
+          </p>
+        </div>
+        <a href={`/oh/${o.id}`} target="_blank" rel="noopener" aria-label="Open the sign-in page"
+          className="size-28 shrink-0 overflow-hidden rounded-lg bg-white p-1 [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: qr }} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <CopyLink url={url} />
+        <a href={`/oh/${o.id}/poster`} target="_blank" rel="noopener" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:bg-surface-1">
+          <Printer aria-hidden className="size-4" /> Door poster
+        </a>
+        <DeleteOpenHouse id={o.id} propertyId={propertyId} visits={o.visits.length} />
+      </div>
+      {o.visits.length > 0 && (
+        <details className="group">
+          <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Seller report: who came and what they said</summary>
+          <ul className="mt-2 flex flex-col divide-y divide-white/5 text-sm">
+            {o.visits.map((v, i) => (
+              <li key={`${v.contactId}-${i}`} className="flex flex-col gap-1 py-2">
+                <span className="flex flex-wrap items-baseline justify-between gap-2">
+                  <Link href={`/leads/${v.contactId}`} className="font-medium hover:text-accent">{v.name}</Link>
+                  <span className="text-muted">{v.hasAgent ? "Has an agent" : "No agent"}{v.rating !== null && ` · ${v.rating}/5`}</span>
+                </span>
+                {v.feedback && <q className="text-ink/80">{v.feedback}</q>}
+              </li>
+            ))}
+          </ul>
+          {said.length === 0 && <p className="text-sm text-muted">No written feedback yet.</p>}
+        </details>
+      )}
+    </article>
   );
 }

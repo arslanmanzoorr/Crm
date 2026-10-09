@@ -15,7 +15,7 @@ Last updated: 2026-10-09.
 | 5 | Listings | 69, 70, 72 | | 68, 71 | 73–83 |
 | 6 | Matchmaking | 84, 85, 86, 91 (as tasks) | 90 (lead criteria act as the saved search) | 88 (maps) | 87, 89, 92–94 |
 | 7 | Marketing Studio | 96 | 95, 97, 98, 103, 104 | 100, 101, 102 | 99, 105–110 |
-| 8 | Showings & Open Houses | | 117, 118 | 112 | 111, 113–116, 119–122 |
+| 8 | Showings & Open Houses | 117, 118, 120, 121 | 119 (follow-up task, not a draft yet) | 112 | 111, 113–116, 122 |
 | 9 | Deals & Transactions | | | 126 | 123–125, 127–140 |
 | 10 | Seller Intelligence & CMA | | | 144, 149 | 141–143, 145–148, 150–152 |
 | 11 | Mortgage & Financing | | | 160 | 153–159, 161, 162 |

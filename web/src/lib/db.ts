@@ -354,3 +354,23 @@ export async function getMembers(): Promise<{ me: string; members: Member[]; rou
     routing: (orgRow.data?.routing ?? "off") as "off" | "round_robin",
   };
 }
+
+export type OpenHouse = {
+  id: string; startsAt: string; endsAt: string;
+  visits: { contactId: string; name: string; hasAgent: boolean; rating: number | null; feedback: string; ts: string }[];
+};
+
+/** A listing's open houses, newest first, with who signed in and what they thought (the seller report). */
+export async function getOpenHouses(propertyId: string): Promise<OpenHouse[]> {
+  if (!dbEnabled) return [];
+  type Row = { id: string; starts_at: string; ends_at: string; open_house_visits: { contact_id: string; has_agent: boolean; rating: number | null; feedback: string; ts: string; contacts: { name: string } | null }[] };
+  const res = await (await supabase()).from("open_houses")
+    .select("id,starts_at,ends_at,open_house_visits(contact_id,has_agent,rating,feedback,ts,contacts(name))")
+    .eq("property_id", propertyId).order("starts_at", { ascending: false }).limit(50);
+  return (must(res) as unknown as Row[]).map((o) => ({
+    id: o.id, startsAt: o.starts_at, endsAt: o.ends_at,
+    visits: o.open_house_visits.sort((a, b) => a.ts.localeCompare(b.ts)).map((v) => ({
+      contactId: v.contact_id, name: v.contacts?.name ?? "Deleted lead", hasAgent: v.has_agent, rating: v.rating, feedback: v.feedback, ts: v.ts,
+    })),
+  }));
+}

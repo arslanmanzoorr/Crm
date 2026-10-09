@@ -136,3 +136,7 @@ dialog.palette::backdrop {
     animation-delay: 0ms !important;
   }
 }
+
+@media print {
+  body { background: #fff; }
+}

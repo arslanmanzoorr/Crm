@@ -41,6 +41,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0012_routing_tags_response.sql` | Round-robin routing, tags, first-response time |
 | `0013_form_leads_unowned.sql` | Form leads start unassigned, then routing decides |
 | `0014_erase_on_delete.sql` | Deleting a lead also wipes their details from the audit log (right to delete) |
+| `0015_open_houses.sql` | Open houses, public QR sign-in (`submit_checkin`, keyed), visitor feedback; task assignees must be teammates |
 
 After `0010`, store the hash of your form key (per environment):
 

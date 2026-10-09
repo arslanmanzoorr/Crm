@@ -424,6 +424,17 @@ export async function setCoverPhoto(mediaId: string) {
 const FORM_MIN_MS = 2500; // humans don't finish a form this fast
 
 /** Public lead form submit. Anonymous: the database function does all writing and validation. */
+/** Server key for the public RPCs plus a salted hash of the visitor's IP (raw IPs are never stored). */
+async function visitor() {
+  const salt = process.env.FORM_IP_SALT;
+  const key = process.env.FORM_RPC_KEY;
+  if (!salt || !key) return null;
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "unknown").trim();
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}:${ip}`));
+  return { key, ipHash: Buffer.from(digest).toString("hex").slice(0, 32) };
+}
+
 export async function submitLeadForm(formId: string, _: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   if (!UUID.test(formId)) return { error: "This form is no longer available." };
@@ -431,13 +442,9 @@ export async function submitLeadForm(formId: string, _: FormState, f: FormData):
   const started = Number(str(f, "t"));
   if (str(f, "website") || !started || Date.now() - started < FORM_MIN_MS) return { ok: "Thanks! We'll be in touch shortly." };
 
-  const salt = process.env.FORM_IP_SALT;
-  const key = process.env.FORM_RPC_KEY;
-  if (!salt || !key) return { error: "This form isn't configured yet." };
-  const h = await headers();
-  const ip = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "unknown").trim();
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}:${ip}`));
-  const ipHash = Buffer.from(digest).toString("hex").slice(0, 32);
+  const v = await visitor();
+  if (!v) return { error: "This form isn't configured yet." };
+  const { key, ipHash } = v;
 
   const { data, error } = await (await supabase()).rpc("submit_lead", {
     p_key: key,
@@ -622,4 +629,61 @@ export async function setInRotation(userId: string, on: boolean) {
   const { data } = await (await authed()).rpc("set_rotation", { p_user: userId, p_in: on });
   if (!data) throw new Error(NOT_ALLOWED);
   revalidatePath("/team");
+}
+
+/** Schedule an open house for a listing. Times arrive as ISO from the browser, so they keep the agent's timezone. */
+export async function scheduleOpenHouse(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const property_id = str(f, "property_id");
+  const starts = new Date(str(f, "starts_at")), ends = new Date(str(f, "ends_at"));
+  if (!UUID.test(property_id)) return { error: "Listing not found." };
+  if (isNaN(+starts) || isNaN(+ends)) return { error: "Pick a start and end time." };
+  if (ends <= starts) return { error: "The end time must be after the start." };
+  if (+ends - +starts > 12 * 3600_000) return { error: "An open house can run 12 hours at most." };
+  const { error } = await (await authed()).from("open_houses")
+    .insert({ property_id, starts_at: starts.toISOString(), ends_at: ends.toISOString() });
+  if (error) return { error: error.message };
+  revalidatePath(`/properties/${property_id}`);
+  return { ok: "Open house scheduled" };
+}
+
+export async function deleteOpenHouse(id: string, propertyId: string) {
+  if (!dbEnabled) return;
+  const { error } = await (await authed()).from("open_houses").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/properties/${propertyId}`);
+}
+
+/** Public open-house sign-in (QR code or a tablet at the door). */
+export async function submitCheckin(ohId: string, _: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(ohId)) return { error: "This sign-in sheet is no longer available." };
+  const started = Number(str(f, "t"));
+  if (str(f, "website") || !started || Date.now() - started < FORM_MIN_MS) return { ok: "Thanks for visiting!" };
+  const v = await visitor();
+  if (!v) return { error: "Sign-in isn't configured yet." };
+  const agent = str(f, "has_agent");
+  const rating = Number(str(f, "rating"));
+  const { data, error } = await (await supabase()).rpc("submit_checkin", {
+    p_key: v.key,
+    p_oh: ohId,
+    p_ip_hash: v.ipHash,
+    p_name: str(f, "name"),
+    p_email: str(f, "email"),
+    p_phone: str(f, "phone"),
+    p_has_agent: agent === "yes" ? true : agent === "no" ? false : null,
+    p_rating: rating >= 1 && rating <= 5 ? rating : null,
+    p_feedback: str(f, "feedback"),
+    p_consent_call_sms: f.get("consent_call_sms") === "on",
+    p_consent_email: f.get("consent_email") === "on",
+  });
+  if (error) return { error: "Something went wrong on our side. Please try again." };
+  const results: Record<string, FormState> = {
+    ok: { ok: "Thanks for visiting!" },
+    invalid: { error: "Please add your name, an email or phone number, and whether you have an agent." },
+    closed: { error: "Sign-in for this open house is closed." },
+    limited: { error: "Too many sign-ins right now. Please try again in a few minutes." },
+    forbidden: { error: "Sign-in isn't configured yet." },
+  };
+  return results[data as string] ?? { error: "Something went wrong. Please try again." };
 }
