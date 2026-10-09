@@ -68,6 +68,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0039_valuation_leads.sql` | Home-value page leads arrive as sellers wanting a value |
 | `0040_analytics_cohorts.sql` | Analytics: monthly lead cohorts and how far each got |
 | `0041_onboarding.sql` | New agents get a two-week onboarding checklist as tasks |
+| `0042`–`0044` | Index every foreign key in its own column order, drop redundant single-column indexes, one SELECT policy per table |
 
 After `0010`, store the hash of your form key (per environment):
 
