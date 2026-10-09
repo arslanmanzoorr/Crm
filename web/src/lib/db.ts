@@ -7,6 +7,7 @@ import { likeSafe } from "./search";
 import type { Side } from "./deals";
 import type { Contingency, Financing, OfferTerms } from "./offers";
 import { BUYING_TYPES } from "./match";
+import type { PastClient } from "./retention";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
 
@@ -483,4 +484,57 @@ export async function getAnalytics(days: number): Promise<Analytics | null> {
   const { data, error } = await (await supabase()).rpc("team_analytics", { p_days: days });
   if (error) throw new Error(error.message);
   return data as Analytics;
+}
+
+export type Testimonial = { id: string; contactId: string; name: string; body: string; rating: number | null; publishOk: boolean; receivedOn: string };
+
+/** Everyone we've closed a deal with (latest closing per client), plus referrals and testimonials. */
+export async function getPastClients(): Promise<{ clients: PastClient[]; referrals: Record<string, number>; testimonials: Testimonial[]; reviewUrl: string | null; isAdmin: boolean }> {
+  if (!dbEnabled) return { clients: [], referrals: {}, testimonials: [], reviewUrl: null, isAdmin: false };
+  const db = await supabase();
+  type Row = { id: string; side: "buyer" | "seller"; address: string; close_on: string | null; closed_at: string; review_asked_at: string | null; properties: { address: string } | null; contacts: { id: string; name: string; last_activity_at: string | null } | null };
+  const [closed, active, refs, notes, auth, org] = await Promise.all([
+    db.from("deals").select("id,side,address,close_on,closed_at,review_asked_at,properties(address),contacts(id,name,last_activity_at)")
+      .eq("status", "closed").order("closed_at", { ascending: false }).limit(2000),
+    db.from("deals").select("contact_id").eq("status", "active"),
+    // ponytail: counts referrals in JS; a grouped RPC once a team has tens of thousands of contacts
+    db.from("contacts").select("referred_by").not("referred_by", "is", null).limit(10000),
+    db.from("testimonials").select("id,contact_id,body,rating,publish_ok,received_on,contacts(name)").order("received_on", { ascending: false }).limit(200),
+    db.auth.getUser(),
+    db.rpc("active_org"),
+  ]);
+  const activeIds = new Set((active.data ?? []).map((d) => d.contact_id));
+  const referrals: Record<string, number> = {};
+  for (const r of refs.data ?? []) referrals[r.referred_by] = (referrals[r.referred_by] ?? 0) + 1;
+  type TRow = { id: string; contact_id: string; body: string; rating: number | null; publish_ok: boolean; received_on: string; contacts: { name: string } | null };
+  const testimonials = ((notes.data ?? []) as unknown as TRow[]).map((t) => ({ id: t.id, contactId: t.contact_id, name: t.contacts?.name ?? "", body: t.body, rating: t.rating, publishOk: t.publish_ok, receivedOn: t.received_on }));
+  const withTestimonial = new Set(testimonials.map((t) => t.contactId));
+  const seen = new Set<string>();
+  const clients: PastClient[] = [];
+  for (const d of (must(closed) as unknown as Row[])) {
+    if (!d.contacts || seen.has(d.contacts.id)) continue; // newest closing per client
+    seen.add(d.contacts.id);
+    clients.push({
+      contactId: d.contacts.id, name: d.contacts.name, dealId: d.id, side: d.side, address: d.properties?.address || d.address,
+      closedOn: d.close_on ?? d.closed_at.slice(0, 10), lastTouchOn: d.contacts.last_activity_at?.slice(0, 10) ?? null,
+      reviewAskedOn: d.review_asked_at?.slice(0, 10) ?? null, hasTestimonial: withTestimonial.has(d.contacts.id), activeDeal: activeIds.has(d.contacts.id),
+    });
+  }
+  const [orgRow, me] = await Promise.all([
+    db.from("organizations").select("review_url").eq("id", org.data).maybeSingle(),
+    db.from("memberships").select("role").eq("org_id", org.data).eq("user_id", auth.data.user?.id ?? "").maybeSingle(),
+  ]);
+  return { clients, referrals, testimonials, reviewUrl: orgRow.data?.review_url ?? null, isAdmin: ["owner", "admin"].includes(me.data?.role ?? "") };
+}
+
+/** Who referred this lead, and whom they've referred. */
+export async function getReferrals(contactId: string): Promise<{ referredBy: { id: string; name: string } | null; referred: { id: string; name: string }[] }> {
+  if (!dbEnabled) return { referredBy: null, referred: [] };
+  const db = await supabase();
+  const [me, theirs] = await Promise.all([
+    db.from("contacts").select("referred_by").eq("id", contactId).maybeSingle(),
+    db.from("contacts").select("id,name").eq("referred_by", contactId).order("created_at").limit(100),
+  ]);
+  const by = me.data?.referred_by ? (await db.from("contacts").select("id,name").eq("id", me.data.referred_by).maybeSingle()).data : null;
+  return { referredBy: by, referred: theirs.data ?? [] };
 }

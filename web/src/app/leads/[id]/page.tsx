@@ -11,7 +11,8 @@ import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
-import { getDealsFor, getLead, getMembers, getOffers, getProperties, getTasks } from "@/lib/db";
+import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getReferrals, getTasks } from "@/lib/db";
+import { ReferredBySelect } from "@/components/client-actions";
 import { STATUS_LABEL } from "@/lib/offers";
 import { money } from "@/lib/data";
 import { matchListing, type Match } from "@/lib/match";
@@ -46,7 +47,8 @@ function blockers(lead: Lead) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties, team, deals, offers] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id })]);
+  const [tasks, properties, team, deals, offers, refs, people] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions()]);
+  if (refs.referredBy && !people.some((p) => p.id === refs.referredBy!.id)) people.unshift(refs.referredBy); // keep the current referrer selectable
   const mine = tasks.filter((t) => t.contactId === lead.id);
   const matches = properties
     .map((p) => ({ p, m: matchListing(lead, p) }))
@@ -135,6 +137,21 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
           </div>
 
           <aside className="flex flex-col gap-6">
+            <section aria-labelledby="referrals" className="flex flex-col gap-2">
+              <h2 id="referrals" className="text-xl">Referrals</h2>
+              <div className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 text-sm">
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-muted">Referred by</span>
+                  <ReferredBySelect contactId={lead.id} current={refs.referredBy?.id ?? ""} options={people} />
+                </label>
+                <div>
+                  <p className="text-muted">Has referred</p>
+                  {refs.referred.length === 0 ? <p>Nobody yet</p> : (
+                    <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{refs.referred.map((r) => <li key={r.id}><Link href={`/leads/${r.id}`} className="text-accent hover:underline">{r.name}</Link></li>)}</ul>
+                  )}
+                </div>
+              </div>
+            </section>
             {offers.length > 0 && (
               <section aria-labelledby="offers" className="flex flex-col gap-2">
                 <h2 id="offers" className="text-xl">Offers</h2>

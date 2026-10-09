@@ -868,3 +868,56 @@ export async function offerMove(_: FormState, f: FormData): Promise<FormState> {
   revalidatePath("/", "layout");
   return { ok: kind === "note" ? "Note added" : "Updated" };
 }
+
+/** Mark that we asked a past client for a review (the message itself is copied and sent by the agent). */
+export async function markReviewAsked(dealId: string) {
+  if (!dbEnabled || !UUID.test(dealId)) return;
+  const db = await authed();
+  const { data, error } = await db.from("deals").update({ review_asked_at: new Date().toISOString() }).eq("id", dealId).select("contact_id").single();
+  if (error) throw new Error(error.message);
+  await db.from("activities").insert({ contact_id: data.contact_id, channel: "Note", direction: "out", content: "Asked for a review" });
+  revalidatePath("/", "layout");
+}
+
+/** A quick "I checked in" from the past-clients agenda; resets the relationship clock. */
+export async function logCheckin(contactId: string, what: string) {
+  if (!dbEnabled || !UUID.test(contactId)) return;
+  const { error } = await (await authed()).from("activities").insert({ contact_id: contactId, channel: "Note", direction: "out", content: what.slice(0, 200) || "Checked in" });
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+export async function addTestimonial(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const contact_id = str(f, "contact_id"), deal_id = str(f, "deal_id"), body = str(f, "body").slice(0, 2000);
+  const rating = Number(str(f, "rating"));
+  if (!UUID.test(contact_id) || !body) return { error: "Paste what the client said." };
+  const { error } = await (await authed()).from("testimonials").insert({
+    contact_id, deal_id: UUID.test(deal_id) ? deal_id : null, body,
+    rating: rating >= 1 && rating <= 5 ? rating : null, publish_ok: f.get("publish_ok") === "on",
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: "Testimonial saved" };
+}
+
+export async function setReferredBy(contactId: string, referrerId: string) {
+  if (!dbEnabled || !UUID.test(contactId) || (referrerId && !UUID.test(referrerId)) || referrerId === contactId) return;
+  const db = await authed();
+  const { error } = await db.from("contacts").update({ referred_by: referrerId || null }).eq("id", contactId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+export async function saveReviewUrl(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const url = str(f, "review_url");
+  if (url && (!/^https:\/\/[^\s]+$/.test(url) || url.length > 500)) return { error: "Use a full https:// link." };
+  const db = await authed();
+  const { data: org } = await db.rpc("active_org");
+  const { data, error } = await db.from("organizations").update({ review_url: url || null }).eq("id", org).select("id");
+  if (error) return { error: error.message };
+  if (!data?.length) return { error: "Only owners and admins can change this." };
+  revalidatePath("/clients");
+  return { ok: "Saved" };
+}

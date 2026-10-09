@@ -45,6 +45,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0016_deals.sql` | Deals with milestone checklists and commission terms; erase-on-delete covers deals |
 | `0017_offers.sql` | Offers (both sides) with negotiation history; erase-on-delete covers offers |
 | `0018_analytics.sql` | `team_analytics()`: sources, response time, cycle, revenue, forecast, agents, listing funnel (security invoker, RLS-scoped) |
+| `0019_retention.sql` | Referrals (`referred_by`), review requests per deal, testimonials with publish consent, team review link |
 
 After `0010`, store the hash of your form key (per environment):
 

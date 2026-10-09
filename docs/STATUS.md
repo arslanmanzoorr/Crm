@@ -20,7 +20,7 @@ Last updated: 2026-10-09.
 | 10 | Seller Intelligence & CMA | | | 144, 149 | 141–143, 145–148, 150–152 |
 | 11 | Mortgage & Financing | | | 160 | 153–159, 161, 162 |
 | 12 | Client Portal | | | | 163–176 |
-| 13 | Referral & Retention | | 180 | | 177–179, 181–186 |
+| 13 | Referral & Retention | 177, 178, 179, 180, 182, 183, 185, 186 | | | 181, 184 |
 | 14 | Brokerage & Team Ops | 188 | 187, 194 | | 189–193, 195, 196 |
 | 15 | Commissions & Finance | 198, 199, 206 | 197 (per deal; no plan templates yet), 200 (pending and 30-day view) | 205 | 201–204 |
 | 16 | Investor Toolkit | | | | 207–216 |
@@ -47,6 +47,6 @@ Items that need no outside account are built first, in roadmap phase order:
 
 1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), ~~Instant Buyer Matching (84–86)~~ (done: listing page ranks buyers, lead page ranks listings, with reasons), ~~new-listing and price-drop alerts (91)~~ (done, as tasks for the buyer's owner), showings and open-house check-in (111, 116–121).
 2. **Closing engine:** ~~deals, milestones, deadline flags, commission splits~~ (done), ~~offers, comparison and negotiation history (123–125)~~ (done), Deal Rescue drafts once AI is connected.
-3. **Growth and analytics:** ~~source, conversion, response, cycle, revenue, agent and listing analytics~~ (done; cost-per-lead 25 needs spend data), past-client anniversaries and retention (177–186), broker views (190–192).
+3. **Growth and analytics:** ~~source, conversion, response, cycle, revenue, agent and listing analytics~~ (done; cost-per-lead 25 needs spend data), ~~past-client anniversaries and retention (177–186)~~ (done except partner directory 181 and neighborhood updates 184), broker views (190–192).
 4. **Privacy rights:** ~~data export~~ (done: Account → Export team data), ~~per-person deletion~~ (done: deleting a lead erases its audit copies) (243), which the Terms and Privacy Policy will reference.
 5. **Intelligence layer** once an Anthropic key is connected: Ask Your Business, morning briefing, explainable scoring, Deal Rescue.

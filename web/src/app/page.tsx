@@ -5,7 +5,8 @@ import { Workspace } from "@/components/workspace";
 import { CircleAlert } from "lucide-react";
 import Link from "next/link";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getLeadOptions, getMe, getTasks, getTopLeads, listDeals } from "@/lib/db";
+import { dbEnabled, getLeadOptions, getMe, getPastClients, getTasks, getTopLeads, listDeals } from "@/lib/db";
+import { agenda } from "@/lib/retention";
 
 export const metadata: Metadata = { title: "Workspace" };
 
@@ -22,7 +23,12 @@ async function Home_() {
   return (
     <Reveal>
       <Workspace name={me.name} leads={top.leads} total={top.total} tasks={tasks} options={options}
-        deals={dbEnabled && <Suspense fallback={<Skeleton className="h-32" />}><DealsAtRisk /></Suspense>} />
+        extra={dbEnabled && (
+          <>
+            <Suspense fallback={<Skeleton className="h-32" />}><DealsAtRisk /></Suspense>
+            <Suspense fallback={<Skeleton className="h-32" />}><KeepInTouch /></Suspense>
+          </>
+        )} />
     </Reveal>
   );
 }
@@ -56,6 +62,33 @@ async function DealsAtRisk() {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/** Past clients due a touch today (anniversaries, check-ins, review asks). Quiet when nothing is due. */
+async function KeepInTouch() {
+  const { clients } = await getPastClients();
+  const today = new Date().toISOString().slice(0, 10);
+  const due = agenda(clients, today, 0);
+  if (due.length === 0) return null;
+  return (
+    <section aria-labelledby="keep-in-touch" className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="keep-in-touch" className="text-xl">Keep in touch</h2>
+        <Link href="/clients" className="text-sm text-muted hover:text-accent">All past clients</Link>
+      </div>
+      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        {due.slice(0, 4).map((r) => (
+          <li key={`${r.kind}-${r.contactId}`}>
+            <Link href="/clients" className="flex min-h-14 flex-col justify-center px-4 py-3 hover:bg-surface-3 sm:px-5">
+              <span className="font-medium">{r.name}</span>
+              <span className="text-sm text-ink/80">{r.text}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {due.length > 4 && <p className="-mt-2 text-sm text-muted">+{due.length - 4} more on Past clients</p>}
     </section>
   );
 }
