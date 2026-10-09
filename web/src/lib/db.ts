@@ -71,11 +71,11 @@ export function toLead(r: ContactRow): Lead {
 const TONES = mock.properties.map((p) => p.tone);
 // Placeholder gradient keyed to the listing id, so it's the same on every page.
 const toneFor = (id: string) => TONES[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length];
-const toProperty = ({ showing_notes, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string }): Property =>
-  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "" });
+const toProperty = ({ showing_notes, seller_id, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string; seller_id?: string | null }): Property =>
+  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "", sellerId: seller_id ?? null });
 
 const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
-const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes";
+const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes,seller_id";
 
 function must<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);
@@ -606,4 +606,14 @@ export async function getFinancing(contactId: string): Promise<FinancingRecord |
     stage: data.stage as LoanStage, preapprovalAmount: data.preapproval_amount === null ? null : Number(data.preapproval_amount),
     preapprovalExpires: data.preapproval_expires, docs: data.docs as Doc[], giftFunds: data.gift_funds,
   };
+}
+
+export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;
+
+/** The client's live portal link, if any (the token itself is never stored). */
+export async function getPortalLink(contactId: string): Promise<PortalLinkInfo> {
+  if (!dbEnabled) return null;
+  const { data } = await (await supabase()).from("portal_links").select("created_at,last_seen_at,expires_at")
+    .eq("contact_id", contactId).is("revoked_at", null).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  return data ? { createdAt: data.created_at, lastSeenAt: data.last_seen_at, expiresAt: data.expires_at } : null;
 }

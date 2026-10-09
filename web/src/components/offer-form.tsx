@@ -54,7 +54,7 @@ export function OfferForm({ side, propertyId, contactId, listings }: { side: "bu
                 {Object.entries(FINANCING).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </Labeled>
-            <Labeled label="Down payment %"><input name="down_pct" type="number" min={0} max={100} step={0.1} className={input} /></Labeled>
+            <Labeled label="Down payment %"><input name="down_pct" type="number" min={0} max={100} step={0.01} className={input} /></Labeled>
             <Labeled label="Seller credit" hint="Closing costs the seller pays back"><input name="seller_credit" type="number" inputMode="numeric" min={0} step={1} className={input} /></Labeled>
             <Labeled label="Closing date"><input name="close_on" type="date" className={input} /></Labeled>
           </div>

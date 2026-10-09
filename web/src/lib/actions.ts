@@ -112,6 +112,7 @@ const propertyFields = (f: FormData) => ({
     features: list(f, "features"),
     description: str(f, "description"),
     showing_notes: str(f, "showing_notes").slice(0, 1000),
+    seller_id: UUID.test(str(f, "seller_id")) ? str(f, "seller_id") : null,
 });
 
 const ALERT_MIN_FIT = 70;
@@ -1024,4 +1025,52 @@ export async function saveFinancing(_: FormState, f: FormData): Promise<FormStat
   if (error) return { error: error.message };
   revalidatePath("/", "layout");
   return { ok: "Saved" };
+}
+
+/**
+ * A new private portal link for a client. The token is shown once (only its hash is stored), so creating a
+ * new link revokes the old ones: there's never more than one live link per client.
+ */
+export async function createPortalLink(contactId: string): Promise<{ url?: string; error?: string }> {
+  if (!dbEnabled) return { error: NO_DB.error };
+  if (!UUID.test(contactId)) return { error: "Lead not found." };
+  const db = await authed();
+  const token = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("base64url");
+  const hash = Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token))).toString("hex");
+  await db.from("portal_links").update({ revoked_at: new Date().toISOString() }).eq("contact_id", contactId).is("revoked_at", null);
+  const { error } = await db.from("portal_links").insert({ contact_id: contactId, token_hash: hash });
+  if (error) return { error: error.message };
+  await db.from("activities").insert({ contact_id: contactId, channel: "Note", content: "Client portal link created" });
+  revalidatePath(`/leads/${contactId}`);
+  return { url: `${process.env.SITE_URL ?? ""}/p/${token}` };
+}
+
+export async function revokePortalLinks(contactId: string) {
+  if (!dbEnabled || !UUID.test(contactId)) return;
+  const db = await authed();
+  const { error } = await db.from("portal_links").update({ revoked_at: new Date().toISOString() }).eq("contact_id", contactId).is("revoked_at", null);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/leads/${contactId}`);
+}
+
+const PORTAL_TOKEN = /^[A-Za-z0-9_-]{43}$/;
+
+/** From the client portal (no login): a message to their agent. */
+export async function portalMessage(token: string, _: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!PORTAL_TOKEN.test(token)) return { error: "This link isn't valid anymore." };
+  const { data, error } = await (await supabase()).rpc("portal_message", { p_token: token, p_text: str(f, "text") });
+  if (error) return { error: "Something went wrong. Please try again." };
+  return ({
+    ok: { ok: "Sent. Your agent will get back to you." },
+    invalid: { error: "Write a message first." },
+    limited: { error: "That's a lot of messages in an hour. Please wait a bit, or call your agent." },
+    closed: { error: "This link isn't valid anymore. Ask your agent for a new one." },
+  } as Record<string, FormState>)[data as string] ?? { error: "Something went wrong. Please try again." };
+}
+
+export async function portalFavorite(token: string, propertyId: string, on: boolean) {
+  if (!dbEnabled || !PORTAL_TOKEN.test(token) || !UUID.test(propertyId)) return;
+  await (await supabase()).rpc("portal_favorite", { p_token: token, p_property: propertyId, p_on: on });
+  revalidatePath(`/p/${token}`);
 }

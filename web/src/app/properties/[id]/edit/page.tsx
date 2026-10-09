@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PropertyForm } from "@/components/property-form";
-import { getProperty } from "@/lib/db";
+import { getLeadOptions, getProperty } from "@/lib/db";
 import { Skeleton } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Edit listing" };
@@ -19,13 +19,13 @@ export default function EditPropertyPage({ params }: PageProps<"/properties/[id]
 }
 
 async function Edit({ params }: { params: PageProps<"/properties/[id]/edit">["params"] }) {
-  const p = await getProperty((await params).id);
+  const [p, clients] = await Promise.all([params.then(({ id }) => getProperty(id)), getLeadOptions()]);
   if (!p) notFound();
   return (
     <>
       <Link href={`/properties/${p.id}`} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← {p.address}</Link>
       <h1 className="text-4xl font-light">Edit listing</h1>
-      <PropertyForm p={p} />
+      <PropertyForm p={p} clients={clients} />
     </>
   );
 }

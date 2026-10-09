@@ -7,7 +7,7 @@ import type { Property } from "@/lib/data";
 const STATUSES = ["Active", "Coming soon", "Under contract", "Sold"];
 
 /** New listing, or edit when `p` is given. */
-export function PropertyForm({ p }: { p?: Property }) {
+export function PropertyForm({ p, clients = [] }: { p?: Property; clients?: { id: string; name: string }[] }) {
   return (
     <ActionForm action={saveProperty} className="grid gap-4 rounded-card bg-surface-2 p-6 sm:grid-cols-2">
       {(pending) => (
@@ -15,18 +15,25 @@ export function PropertyForm({ p }: { p?: Property }) {
           {p && <input type="hidden" name="id" value={p.id} />}
           <Field label="Address" name="address" required autoFocus defaultValue={p?.address} />
           <Field label="Area" name="area" placeholder="Westside" defaultValue={p?.area} />
-          <Field label="Price ($)" name="price" type="number" min={0} step={1000} required defaultValue={p?.price} />
+          <Field label="Price ($)" name="price" type="number" min={0} step={1} required defaultValue={p?.price} />
           <label className="flex flex-col gap-1.5 text-sm">
             <span className="text-muted">Status</span>
             <select name="status" className={input} defaultValue={p?.status}>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select>
           </label>
           <Field label="Beds" name="beds" type="number" min={0} defaultValue={p?.beds} />
-          <Field label="Baths" name="baths" type="number" min={0} step={0.5} defaultValue={p?.baths} />
+          <Field label="Baths" name="baths" type="number" min={0} step={0.25} defaultValue={p?.baths} />
           <Field label="Sqft" name="sqft" type="number" min={0} defaultValue={p?.sqft} />
           <Field label="Features" name="features" hint="comma separated" placeholder="Backyard, Garage" defaultValue={p?.features.join(", ")} />
           <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
             <span className="text-muted">Description</span>
             <textarea name="description" rows={4} className={`${input} resize-y`} defaultValue={p?.description} />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
+            <span className="text-muted">Seller <span className="text-xs">(their client portal shows this listing&apos;s activity)</span></span>
+            <select name="seller_id" defaultValue={p?.sellerId ?? ""} className={input}>
+              <option value="">Not set</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
           </label>
           <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
             <span className="text-muted">Showing instructions <span className="text-xs">(team only)</span></span>
