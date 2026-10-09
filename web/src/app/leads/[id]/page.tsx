@@ -1,4 +1,4 @@
-import { FileSignature, Handshake, Mail, MessageSquare, Pencil, Phone } from "lucide-react";
+import { FileSignature, Flame, Handshake, Mail, MessageSquare, Pencil, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,7 +11,7 @@ import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
-import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getFinancing, getPartners, getPortalLink, getReferrals, getShowings, getTasks } from "@/lib/db";
+import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getFinancing, getPartners, getPortalLink, getReferrals, getShowings, getTasks } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { FinancingForm } from "@/components/financing-controls";
 import { PortalControls } from "@/components/portal-controls";
@@ -52,7 +52,7 @@ function blockers(lead: Lead) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties, team, deals, offers, refs, people, showings, financing, partners, portal] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id }), getFinancing(lead.id), getPartners(), getPortalLink(lead.id)]);
+  const [tasks, properties, team, deals, offers, refs, people, showings, financing, partners, portal, signals] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id }), getFinancing(lead.id), getPartners(), getPortalLink(lead.id), getBuyingSignals(lead.id)]);
   if (refs.referredBy && !people.some((p) => p.id === refs.referredBy!.id)) people.unshift(refs.referredBy); // keep the current referrer selectable
   const mine = tasks.filter((t) => t.contactId === lead.id);
   const matches = properties
@@ -106,6 +106,11 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               <Link href={`/deals/new?contact=${lead.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><Handshake aria-hidden className="size-4" /> Open deal</Link>
               {["buyer", "investor"].includes(lead.type ?? "") && <Link href={`/offers/new?contact=${lead.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><FileSignature aria-hidden className="size-4" /> Write offer</Link>}
             </div>
+            {signals.length > 0 && (
+              <ul aria-label="Buying signals" className="flex flex-wrap gap-2">
+                {signals.map((x) => <li key={x.signal} className="flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1.5 text-sm text-accent"><Flame aria-hidden className="size-4" />{x.signal}</li>)}
+              </ul>
+            )}
             {blockedReasons.length > 0 && (
               <p id="contact-blocked" className="text-sm text-muted">
                 Contact limited: {blockedReasons.join(", ")}.{" "}

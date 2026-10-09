@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Reveal, Skeleton, LoadingCards } from "@/components/ui";
 import { Workspace } from "@/components/workspace";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, Flame } from "lucide-react";
 import Link from "next/link";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getLeadOptions, getMe, getPastClients, getShowings, getTasks, getTopLeads, listDeals } from "@/lib/db";
+import { dbEnabled, getBuyingSignals, getLeadOptions, getMe, getPastClients, getShowings, getTasks, getTopLeads, listDeals } from "@/lib/db";
 import { ShowingItem } from "@/components/showing-controls";
 import { agenda } from "@/lib/retention";
 
@@ -26,6 +26,7 @@ async function Home_() {
       <Workspace name={me.name} leads={top.leads} total={top.total} tasks={tasks} options={options}
         extra={dbEnabled && (
           <>
+            <Suspense fallback={<Skeleton className="h-32" />}><Signals /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><ShowingsSoon /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><DealsAtRisk /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><KeepInTouch /></Suspense>
@@ -109,6 +110,38 @@ async function ShowingsSoon() {
       </div>
       <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
         {list.map((s) => <ShowingItem key={s.id} s={s} />)}
+      </ul>
+    </section>
+  );
+}
+
+/** Leads warming up right now, strongest first, each with the reasons. Quiet when there are none. */
+async function Signals() {
+  const all = await getBuyingSignals();
+  if (all.length === 0) return null;
+  const byLead = new Map<string, { name: string; strength: number; reasons: string[] }>();
+  for (const s of all) {
+    const e = byLead.get(s.contactId) ?? { name: s.name, strength: 0, reasons: [] };
+    e.strength += s.strength;
+    e.reasons.push(s.signal);
+    byLead.set(s.contactId, e);
+  }
+  const leads = [...byLead].sort((a, b) => b[1].strength - a[1].strength).slice(0, 5);
+  return (
+    <section aria-labelledby="signals" className="flex flex-col gap-4">
+      <h2 id="signals" className="text-xl">Buying signals</h2>
+      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        {leads.map(([id, l]) => (
+          <li key={id}>
+            <Link href={`/leads/${id}`} className="flex min-h-14 items-start gap-3 px-4 py-3 hover:bg-surface-3 sm:px-5">
+              <Flame aria-hidden className="mt-0.5 size-5 shrink-0 text-accent" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">{l.name}</span>
+                <span className="block text-sm text-ink/80">{l.reasons.join(" · ")}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
       </ul>
     </section>
   );

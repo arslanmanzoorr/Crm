@@ -658,3 +658,14 @@ export async function getTerritories(): Promise<{ area: string; userId: string }
   const res = await (await supabase()).from("territories").select("area,user_id").order("area_key");
   return (must(res) as { area: string; user_id: string }[]).map((t) => ({ area: t.area, userId: t.user_id }));
 }
+
+export type Signal = { contactId: string; name: string; ownerId: string | null; signal: string; strength: number; at: string };
+
+/** Fresh buying signals for the team, or for one lead. */
+export async function getBuyingSignals(contactId?: string): Promise<Signal[]> {
+  if (!dbEnabled) return [];
+  const { data, error } = await (await supabase()).rpc("buying_signals", contactId ? { p_contact: contactId } : {});
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as { contact_id: string; name: string; owner_id: string | null; signal: string; strength: number; at: string }[])
+    .map((s) => ({ contactId: s.contact_id, name: s.name, ownerId: s.owner_id, signal: s.signal, strength: s.strength, at: s.at }));
+}
