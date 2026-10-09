@@ -38,6 +38,11 @@ export function LeadFormSettings({ form, url }: { form: { id: string; public_nam
         <code className="min-w-0 flex-1 truncate rounded-2xl bg-surface-1 px-4 py-3 text-xs">{embed}</code>
         <CopyButton text={embed} label="Copy embed code" />
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted">Home value page for sellers:</span>
+        <code className="min-w-0 flex-1 truncate rounded-2xl bg-surface-1 px-4 py-3 text-xs">{`${url}/value`}</code>
+        <CopyButton text={`${url}/value`} label="Copy link" />
+      </div>
       <ActionForm action={saveLeadForm} className="flex flex-wrap items-end gap-3">
         {(pending) => (
           <>
