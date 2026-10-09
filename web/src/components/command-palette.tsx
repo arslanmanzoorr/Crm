@@ -9,6 +9,7 @@ type Cmd = { id: string; title: string; sub: string; href: string; icon: typeof 
 
 const COMMANDS: Cmd[] = [
   { id: "new-lead", title: "New lead", sub: "Add a buyer, seller or renter", href: "/leads/new", icon: Plus },
+  { id: "import", title: "Import leads", sub: "From a CSV file", href: "/leads/import", icon: Users },
   { id: "new-listing", title: "New listing", sub: "Add a property", href: "/properties/new", icon: Plus },
   { id: "today", title: "Today", sub: "Workspace", href: "/", icon: LayoutGrid },
   { id: "leads", title: "Leads", sub: "All leads", href: "/leads", icon: Users },

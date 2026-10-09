@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Anthropic from "@anthropic-ai/sdk";
+import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
 import { dbEnabled, likeSafe, meterAi, supabase } from "./db";
 
@@ -50,7 +51,7 @@ export async function signOut() {
 const leadFields = (f: FormData) => ({
     name: str(f, "name"),
     type: str(f, "type") || "buyer",
-    email: str(f, "email") || null,
+    email: str(f, "email").toLowerCase() || null,
     phone: str(f, "phone") || null,
     sources: list(f, "sources"),
     budget: str(f, "budget"),
@@ -431,4 +432,60 @@ export async function saveLeadForm(_: FormState, f: FormData): Promise<FormState
   if (error) return { error: error.message };
   revalidatePath("/account");
   return { ok: "Saved" };
+}
+
+export type ImportResult = { created: number; duplicates: number; invalid: number };
+
+/**
+ * CSV import, called in chunks of up to 500 rows. Every row is re-validated here; duplicates
+ * (same email or phone, in this chunk or already in the org) are skipped, never merged silently.
+ * Consent is only recorded when the agent confirms they hold consent records.
+ */
+export async function importLeads(rows: ImportRow[], consentConfirmed: boolean): Promise<ImportResult> {
+  if (!dbEnabled) throw new Error(NO_DB.error);
+  if (!Array.isArray(rows) || rows.length === 0 || rows.length > 500) throw new Error("Send between 1 and 500 rows at a time.");
+  const db = await authed();
+
+  // Re-validate with the same rules the browser used.
+  const map = Object.fromEntries(LEAD_FIELDS.map((f, i) => [f, i])) as Record<LeadField, number>;
+  const clean: ImportRow[] = [];
+  let invalid = 0;
+  for (const r of rows) {
+    const cells = [r?.name, "", "", r?.email, r?.phone, r?.type, r?.source, r?.budget, Array.isArray(r?.areas) ? r.areas.join(";") : "", r?.notes].map((v) => String(v ?? ""));
+    const row = toImportRow(cells, map);
+    if ("error" in row) invalid++;
+    else clean.push(row);
+  }
+
+  const emails = [...new Set(clean.map((r) => r.email).filter(Boolean))];
+  const phones = [...new Set(clean.map((r) => r.phone).filter(Boolean))];
+  const [byEmail, byPhone] = await Promise.all([
+    emails.length ? db.from("contacts").select("email").in("email", emails) : { data: [] },
+    phones.length ? db.from("contacts").select("phone").in("phone", phones) : { data: [] },
+  ]);
+  const seen = new Set<string>([
+    ...(byEmail.data ?? []).map((c) => `e:${c.email}`),
+    ...(byPhone.data ?? []).map((c) => `p:${c.phone}`),
+  ]);
+  const fresh: ImportRow[] = [];
+  let duplicates = 0;
+  for (const r of clean) {
+    const keys = [r.email && `e:${r.email}`, r.phone && `p:${r.phone}`].filter(Boolean) as string[];
+    if (keys.some((k) => seen.has(k))) { duplicates++; continue; }
+    keys.forEach((k) => seen.add(k));
+    fresh.push(r);
+  }
+
+  if (fresh.length) {
+    const { data, error } = await db.from("contacts").insert(fresh.map((r) => ({
+      name: r.name, email: r.email || null, phone: r.phone || null, type: r.type, sources: [r.source],
+      budget: r.budget, areas: r.areas,
+      consent_call: consentConfirmed, consent_sms: consentConfirmed, consent_email: consentConfirmed,
+    }))).select("id");
+    if (error) throw new Error(error.message);
+    const notes = data.flatMap((c, i) => (fresh[i].notes ? [{ contact_id: c.id, channel: "Note", content: `Imported note: ${fresh[i].notes}` }] : []));
+    if (notes.length) await db.from("activities").insert(notes);
+  }
+  revalidatePath("/", "layout");
+  return { created: fresh.length, duplicates, invalid };
 }
