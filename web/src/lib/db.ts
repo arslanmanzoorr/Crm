@@ -754,3 +754,21 @@ export async function getSuppressions(): Promise<{ kind: "email" | "phone"; valu
   const res = await (await supabase()).from("suppressions").select("kind,value,reason,created_at").order("created_at", { ascending: false }).limit(5000);
   return (must(res) as { kind: "email" | "phone"; value: string; reason: string; created_at: string }[]).map((s) => ({ kind: s.kind, value: s.value, reason: s.reason, createdAt: s.created_at }));
 }
+
+export type PrivacyRequest = { id: string; kind: "access" | "delete" | "correct" | "opt_out"; name: string; email: string | null; phone: string | null; state: string | null; details: string; status: "open" | "verifying" | "done" | "denied"; resolution: string; dueOn: string; createdAt: string };
+
+/** Owners and admins see these (RLS); everyone else gets an empty list. */
+export async function getPrivacyRequests(): Promise<PrivacyRequest[]> {
+  if (!dbEnabled) return [];
+  const res = await (await supabase()).from("privacy_requests").select("id,kind,name,email,phone,state,details,status,resolution,due_on,created_at").order("due_on").limit(500);
+  return (must(res) as { id: string; kind: PrivacyRequest["kind"]; name: string; email: string | null; phone: string | null; state: string | null; details: string; status: PrivacyRequest["status"]; resolution: string; due_on: string; created_at: string }[])
+    .map((r) => ({ id: r.id, kind: r.kind, name: r.name, email: r.email, phone: r.phone, state: r.state, details: r.details, status: r.status, resolution: r.resolution, dueOn: r.due_on, createdAt: r.created_at }));
+}
+
+export async function isOwnerOrAdmin(): Promise<boolean> {
+  if (!dbEnabled) return false;
+  const db = await supabase();
+  const [{ data: auth }, org] = await Promise.all([db.auth.getUser(), db.rpc("active_org")]);
+  const { data } = await db.from("memberships").select("role").eq("org_id", org.data).eq("user_id", auth.user?.id ?? "").maybeSingle();
+  return data?.role === "owner" || data?.role === "admin";
+}

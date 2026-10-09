@@ -1364,3 +1364,38 @@ export async function removeSuppression(kind: string, value: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/account");
 }
+
+const PRIVACY_KINDS = ["access", "delete", "correct", "opt_out"];
+
+/** Public privacy request (no login), on the team's form link. */
+export async function submitPrivacyRequest(formId: string, _: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(formId)) return { error: "This page is no longer available." };
+  const started = Number(str(f, "t"));
+  if (str(f, "website") || !started || Date.now() - started < FORM_MIN_MS) return { ok: "Received." };
+  if (!PRIVACY_KINDS.includes(str(f, "kind"))) return { error: "Choose what you'd like us to do." };
+  const v = await visitor();
+  if (!v) return { error: "This page isn't configured yet." };
+  const { data, error } = await (await supabase()).rpc("submit_privacy_request", {
+    p_key: v.key, p_form: formId, p_ip_hash: v.ipHash, p_kind: str(f, "kind"), p_name: str(f, "name"),
+    p_email: str(f, "email"), p_phone: str(f, "phone"), p_state: str(f, "state"), p_details: str(f, "details"),
+  });
+  if (error) return { error: "Something went wrong on our side. Please try again." };
+  return ({
+    ok: { ok: "Received. We'll verify it's you and respond within 45 days." },
+    invalid: { error: "Please add your name and an email or phone number we have on file." },
+    limited: { error: "Too many requests from this connection today. Please try again tomorrow." },
+    closed: { error: "This page is no longer available." },
+    forbidden: { error: "This page isn't configured yet." },
+  } as Record<string, FormState>)[data as string] ?? { error: "Something went wrong. Please try again." };
+}
+
+export async function updatePrivacyRequest(id: string, status: "open" | "verifying" | "done" | "denied", resolution: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(id) || !["open", "verifying", "done", "denied"].includes(status)) return { error: "Unknown request." };
+  const { error } = await (await authed()).from("privacy_requests")
+    .update({ status, resolution: resolution.slice(0, 2000), closed_at: status === "done" || status === "denied" ? new Date().toISOString() : null }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/account");
+  return { ok: "Saved" };
+}

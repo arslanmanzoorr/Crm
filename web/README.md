@@ -61,6 +61,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0032_listing_history.sql` | Listing history (status and price changes, by trigger) and listing agreement expiry |
 | `0033_documents.sql` | Documents bucket (private, 25 MB, allowlisted types, team-folder policies) and documents table |
 | `0034_suppressions.sql` | Team do-not-contact list; matching leads (existing and future) are marked DNC by triggers |
+| `0035_privacy_requests.sql` | Consumer privacy requests (access/delete/correct/opt out) with 45-day deadline, keyed public RPC |
 
 After `0010`, store the hash of your form key (per environment):
 

@@ -5,7 +5,8 @@ import { Suspense } from "react";
 import { Avatar, Reveal } from "@/components/ui";
 import { signOut } from "@/lib/actions";
 import { LeadFormSettings } from "@/components/lead-form-settings";
-import { dbEnabled, getLeadForm, getMe, getSuppressions } from "@/lib/db";
+import { dbEnabled, getLeadForm, getMe, getPrivacyRequests, getSuppressions, isOwnerOrAdmin } from "@/lib/db";
+import { PrivacyRequests } from "@/components/privacy-request";
 import { Suppressions } from "@/components/suppressions";
 
 export const metadata: Metadata = { title: "Account" };
@@ -27,6 +28,12 @@ export default function AccountPage() {
             <Capture />
           </Suspense>
         </section>
+      )}
+
+      {dbEnabled && (
+        <Suspense fallback={null}>
+          <Privacy />
+        </Suspense>
       )}
 
       {dbEnabled && (
@@ -93,4 +100,18 @@ async function Me() {
 
 async function Dnc() {
   return <Suppressions items={await getSuppressions()} />;
+}
+
+/** Owners and admins only (RLS returns nothing to others, and then the section stays hidden). */
+async function Privacy() {
+  const [items, form] = await Promise.all([getPrivacyRequests(), getLeadForm()]);
+  const isAdmin = await isOwnerOrAdmin();
+  if (!isAdmin) return null;
+  return (
+    <section aria-labelledby="privacy" className="flex flex-col gap-2">
+      <h2 id="privacy" className="text-sm text-muted">Privacy requests</h2>
+      <PrivacyRequests items={items} />
+      {form && <p className="text-xs text-muted">Public request page: <a href={`/f/${form.id}/privacy`} className="text-accent underline">/f/{form.id.slice(0, 8)}…/privacy</a>. It&apos;s linked from your lead form; link it from your website&apos;s privacy policy too.</p>}
+    </section>
+  );
 }

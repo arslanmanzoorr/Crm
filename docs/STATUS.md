@@ -26,7 +26,7 @@ Last updated: 2026-10-09.
 | 16 | Investor Toolkit | 208, 209, 210, 211, 214 | | 212 (rent comps) | 207, 213, 215, 216 |
 | 17 | Automation & Workflows | 218, 219, 220, 222, 225, 226 | 217 (structured builder, not a canvas), 223, 224 | | 221 (needs AI key) |
 | 18 | Analytics | 227, 228, 229, 230, 231, 232, 233, 235 | 236 (CSV per table) | | 234 |
-| 19 | Security & Compliance | 237, 239, 240, 241, 242, 244, 248 | 243 (export + erase on delete; no self-serve request form), 245 | 238 (SSO) | 246, 247 |
+| 19 | Security & Compliance | 237, 239, 240, 241, 242, 243, 244, 248 | 245 | 238 (SSO) | 246, 247 |
 | 20 | Platform & Mobile | 260 (import) | 250 (responsive web) | 249, 251, 254, 255 | 252, 253, 256–259 |
 
 ## What "needs account" means in practice
@@ -48,5 +48,5 @@ Items that need no outside account are built first, in roadmap phase order:
 1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), ~~Instant Buyer Matching (84–86)~~ (done: listing page ranks buyers, lead page ranks listings, with reasons), ~~new-listing and price-drop alerts (91)~~ (done, as tasks for the buyer's owner), ~~showings and open-house check-in (111, 115–122)~~ (done).
 2. **Closing engine:** ~~deals, milestones, deadline flags, commission splits~~ (done), ~~offers, comparison and negotiation history (123–125)~~ (done), Deal Rescue drafts once AI is connected.
 3. **Growth and analytics:** ~~source, conversion, response, cycle, revenue, agent and listing analytics~~ (done; cost-per-lead 25 needs spend data), ~~past-client anniversaries and retention (177–186)~~ (done except partner directory 181 and neighborhood updates 184), broker views (190–192).
-4. **Privacy rights:** ~~data export~~ (done: Account → Export team data), ~~per-person deletion~~ (done: deleting a lead erases its audit copies) (243), which the Terms and Privacy Policy will reference.
+4. **Privacy rights:** ~~export, erase on delete, do-not-contact list, public request form with 45-day tracker~~ (done).
 5. **Intelligence layer** once an Anthropic key is connected: Ask Your Business, morning briefing, explainable scoring, Deal Rescue.

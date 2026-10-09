@@ -68,7 +68,7 @@ export function LeadCaptureForm({ formId, who, open, source }: { formId: string;
           </>
         )}
       </ActionForm>
-      <p className="text-center text-xs text-muted">Powered by EstateOS</p>
+      <p className="text-center text-xs text-muted"><a href={`/f/${formId}/privacy`} className="underline hover:text-ink">Your privacy choices</a> · Powered by EstateOS</p>
     </div>
   );
 }
