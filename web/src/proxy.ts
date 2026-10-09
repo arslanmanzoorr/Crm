@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-const PUBLIC = ["/login", "/auth", "/f/", "/legal"]; // /f/<id>: public lead forms
+const PUBLIC = ["/login", "/auth", "/f/", "/legal"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
 
 /** Refreshes the Supabase session cookie and sends signed-out visitors to /login. */
 export async function proxy(req: NextRequest) {
@@ -24,7 +24,7 @@ export async function proxy(req: NextRequest) {
   if (!data.user && !PUBLIC.some((p) => path.startsWith(p)))
     return path.startsWith("/api/")
       ? NextResponse.json({ error: "Sign in again." }, { status: 401 })
-      : NextResponse.redirect(new URL("/login", req.url));
+      : NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(path + req.nextUrl.search)}`, req.url));
   return res;
 }
 

@@ -278,3 +278,41 @@ export async function getLeadForm(): Promise<{ id: string; public_name: string |
   const { data } = await (await supabase()).from("lead_forms").select("id,public_name,enabled").order("created_at").limit(1).maybeSingle();
   return data;
 }
+
+export type Role = "owner" | "admin" | "agent" | "assistant";
+export type Team = {
+  me: { userId: string; role: Role };
+  org: { id: string; name: string };
+  orgs: { id: string; name: string }[];
+  members: { userId: string; email: string; role: Role; joined: string }[];
+  invites: { id: string; email: string; role: Role; expires: string }[];
+};
+
+/** The active org, its members, pending invites (admins only) and every org the user belongs to. */
+export async function getTeam(): Promise<Team | null> {
+  if (!dbEnabled) return null;
+  const db = await supabase();
+  const { data: auth } = await db.auth.getUser();
+  if (!auth.user) return null;
+  const [active, mine] = await Promise.all([
+    db.rpc("active_org"),
+    db.from("memberships").select("org_id,role,organizations(name)").eq("user_id", auth.user.id),
+  ]);
+  const orgId = active.data as string | null;
+  if (!orgId) return null;
+  type Mine = { org_id: string; role: Role; organizations: { name: string } | null };
+  const orgs = ((mine.data ?? []) as unknown as Mine[]).map((m) => ({ id: m.org_id, name: m.organizations?.name ?? "Team", role: m.role }));
+  const current = orgs.find((o) => o.id === orgId)!;
+  const isAdmin = current.role === "owner" || current.role === "admin";
+  const [members, invites] = await Promise.all([
+    db.from("memberships").select("user_id,email,role,created_at").eq("org_id", orgId).order("created_at"),
+    isAdmin ? db.from("invites").select("id,email,role,expires_at").is("accepted_at", null).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }) : { data: [] },
+  ]);
+  return {
+    me: { userId: auth.user.id, role: current.role },
+    org: { id: orgId, name: current.name },
+    orgs: orgs.map(({ id, name }) => ({ id, name })),
+    members: (members.data ?? []).map((m) => ({ userId: m.user_id, email: m.email ?? "", role: m.role as Role, joined: m.created_at })),
+    invites: (invites.data ?? []).map((i) => ({ id: i.id, email: i.email, role: i.role as Role, expires: i.expires_at })),
+  };
+}

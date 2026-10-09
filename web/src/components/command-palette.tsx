@@ -18,6 +18,7 @@ const COMMANDS: Cmd[] = [
   { id: "inbox", title: "Inbox", sub: "Conversations", href: "/inbox", icon: Inbox },
   { id: "studio", title: "Video Studio", sub: "Make a listing video", href: "/studio", icon: Clapperboard },
   { id: "publish", title: "Publish", sub: "Post to socials", href: "/publish", icon: Send },
+  { id: "team", title: "Team", sub: "Members, roles and invites", href: "/team", icon: Users },
   { id: "account", title: "Account", sub: "Profile and sign out", href: "/account", icon: UserRound },
 ];
 

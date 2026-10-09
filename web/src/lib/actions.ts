@@ -7,6 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
 import { dbEnabled, likeSafe, meterAi, supabase } from "./db";
+import { safeNext } from "./search";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -28,18 +29,19 @@ export async function authenticate(_: FormState, f: FormData): Promise<FormState
   if (!dbEnabled) return NO_DB;
   const db = await supabase();
   const creds = { email: str(f, "email"), password: str(f, "password") };
+  const next = safeNext(str(f, "next"));
   if (f.get("mode") !== "signup") {
     const { error } = await db.auth.signInWithPassword(creds);
     if (error) return { error: error.message };
-    redirect("/");
+    redirect(next);
   }
   if (creds.password.length < 8 || creds.password.length > 72) return { error: "Use a password of 8 to 72 characters." };
   // Fixed site URL in production: never build email links from a request header.
   const origin = process.env.SITE_URL ?? (process.env.NODE_ENV === "development" ? (await headers()).get("origin") ?? "" : "");
   if (!origin) return { error: "Sign-up is not configured yet (SITE_URL)." };
-  const { data, error } = await db.auth.signUp({ ...creds, options: { emailRedirectTo: `${origin}/auth/callback` } });
+  const { data, error } = await db.auth.signUp({ ...creds, options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` } });
   if (error) return { error: error.message };
-  if (data.session) redirect("/");
+  if (data.session) redirect(next);
   return { ok: "Check your email for a confirmation link." };
 }
 
@@ -491,4 +493,65 @@ export async function importLeads(rows: ImportRow[], consentConfirmed: boolean):
   }
   revalidatePath("/", "layout");
   return { created: fresh.length, duplicates, invalid };
+}
+
+const ROLES = ["admin", "agent", "assistant"] as const;
+const NOT_ALLOWED = "Only the team owner or an admin can do that.";
+
+export async function inviteMember(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const email = str(f, "email").toLowerCase();
+  const role = str(f, "role");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Enter a valid email address." };
+  if (!ROLES.includes(role as (typeof ROLES)[number])) return { error: "Pick a role." };
+  const db = await authed();
+  const { data: existing } = await db.from("memberships").select("user_id").eq("org_id", (await db.rpc("active_org")).data).eq("email", email).maybeSingle();
+  if (existing) return { error: `${email} is already on this team.` };
+  const { error } = await db.from("invites").insert({ email, role });
+  if (error) return { error: error.code === "23505" ? `${email} already has a pending invite.` : error.code === "42501" ? NOT_ALLOWED : error.message };
+  revalidatePath("/team");
+  return { ok: `Invite created for ${email}. Copy the link below and send it to them.` };
+}
+
+export async function revokeInvite(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  await (await authed()).from("invites").delete().eq("id", id);
+  revalidatePath("/team");
+}
+
+export async function setMemberRole(userId: string, role: string) {
+  if (!dbEnabled || !UUID.test(userId) || !ROLES.includes(role as (typeof ROLES)[number])) throw new Error("Invalid role.");
+  const db = await authed();
+  const { data } = await db.from("memberships").update({ role }).eq("user_id", userId).eq("org_id", (await db.rpc("active_org")).data).select("user_id");
+  if (!data?.length) throw new Error("Only the team owner can change roles.");
+  revalidatePath("/team");
+}
+
+/** Remove a teammate, or leave the team when userId is yourself. */
+export async function removeMember(userId: string) {
+  if (!dbEnabled || !UUID.test(userId)) return;
+  const db = await authed();
+  const { data: me } = await db.auth.getUser();
+  const org = (await db.rpc("active_org")).data;
+  const { data } = await db.from("memberships").delete().eq("user_id", userId).eq("org_id", org).select("user_id");
+  if (!data?.length) throw new Error(userId === me.user?.id ? "Owners can't leave their own team." : NOT_ALLOWED);
+  revalidatePath("/", "layout");
+}
+
+export async function switchOrg(orgId: string) {
+  if (!dbEnabled || !UUID.test(orgId)) return;
+  const { data } = await (await authed()).rpc("set_active_org", { p_org: orgId });
+  if (!data) throw new Error("You're not a member of that team.");
+  revalidatePath("/", "layout");
+}
+
+export async function renameOrg(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const name = str(f, "name").slice(0, 200);
+  if (!name) return { error: "Give your team a name." };
+  const db = await authed();
+  const { data } = await db.from("organizations").update({ name }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/", "layout");
+  return { ok: "Saved" };
 }

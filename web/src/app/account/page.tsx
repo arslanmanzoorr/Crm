@@ -1,4 +1,4 @@
-import { ChevronRight, Clapperboard, LogOut, Send } from "lucide-react";
+import { ChevronRight, Clapperboard, LogOut, Send, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -29,8 +29,9 @@ export default function AccountPage() {
       )}
 
       <section aria-labelledby="tools" className="flex flex-col gap-2">
-        <h2 id="tools" className="text-sm text-muted">Marketing tools</h2>
+        <h2 id="tools" className="text-sm text-muted">Team and tools</h2>
         <div className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          <Link href="/team" className={row}><Users aria-hidden className="size-5 text-muted" /><span className="flex-1">Team and invites</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/studio" className={row}><Clapperboard aria-hidden className="size-5 text-muted" /><span className="flex-1">Video Studio</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/publish" className={row}><Send aria-hidden className="size-5 text-muted" /><span className="flex-1">Publish to socials</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
         </div>

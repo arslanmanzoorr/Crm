@@ -5,3 +5,7 @@
  */
 export const likeSafe = (q: string) =>
   q.toLowerCase().replace(/[%_*\\,()"]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+
+/** Only same-site paths survive as post-login destinations (blocks //evil.com and /\evil.com open redirects). */
+export const safeNext = (n: unknown) =>
+  typeof n === "string" && n.startsWith("/") && !n.startsWith("//") && !n.startsWith("/\\") && !/[\r\n]/.test(n) ? n.slice(0, 300) : "/";

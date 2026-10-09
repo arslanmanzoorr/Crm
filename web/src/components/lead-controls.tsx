@@ -4,7 +4,7 @@ import { Check, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { analyzeLead, deleteLead, deleteProperty, setStage } from "@/lib/actions";
 import { STAGES, type Stage } from "@/lib/data";
-import { ActionForm, input } from "./forms";
+import { ActionForm, inputAuto } from "./forms";
 
 export function StageSelect({ id, stage }: { id: string; stage: Stage }) {
   const [pending, start] = useTransition();
@@ -33,7 +33,7 @@ export function StageSelect({ id, stage }: { id: string; stage: Stage }) {
             }
           });
         }}
-        className={`${input} min-h-11 w-auto`}
+        className={inputAuto}
       >
         {STAGES.map((s) => <option key={s}>{s}</option>)}
       </select>
