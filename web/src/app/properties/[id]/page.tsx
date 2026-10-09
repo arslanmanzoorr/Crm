@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Calculator, ChartNoAxesCombined, Clapperboard, LayoutPanelTop, Pencil, Printer, Rotate3d, Send, TrendingUp } from "lucide-react";
+import { Calculator, ChartNoAxesCombined, Clapperboard, FileImage, LayoutPanelTop, Pencil, Printer, Rotate3d, Send, TrendingUp } from "lucide-react";
 import { approveListing, createCmaFromListing } from "@/lib/actions";
 import Link from "next/link";
 import { daysBetween } from "@/lib/deals";
@@ -78,6 +78,9 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         <Link href={`/tools?tab=invest&price=${p.price}${p.estRent ? `&rent=${p.estRent}` : ""}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
           <TrendingUp aria-hidden className="size-4" /> Rental numbers
         </Link>
+        <a href={`/properties/${p.id}/flyer`} target="_blank" rel="noopener" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
+          <FileImage aria-hidden className="size-4" /> Flyer
+        </a>
         <Link href={`/properties/${p.id}/edit`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
           <Pencil aria-hidden className="size-4" /> Edit
         </Link>
