@@ -15,7 +15,7 @@ Last updated: 2026-10-09.
 | 5 | Listings | 69, 70, 72 | | 68, 71 | 73–83 |
 | 6 | Matchmaking | 84, 85, 86, 91 (as tasks) | 90 (lead criteria act as the saved search) | 88 (maps) | 87, 89, 92–94 |
 | 7 | Marketing Studio | 96 | 95, 97, 98, 103, 104 | 100, 101, 102 | 99, 105–110 |
-| 8 | Showings & Open Houses | 117, 118, 120, 121 | 119 (follow-up task, not a draft yet) | 112 | 111, 113–116, 122 |
+| 8 | Showings & Open Houses | 111, 115, 116, 117, 118, 120, 121, 122 | 112 (.ics files, no two-way sync), 119 (follow-up task, not a draft yet) | 112 (two-way sync) | 113, 114 |
 | 9 | Deals & Transactions | 123, 124, 125, 128, 129, 130, 131, 132, 133, 134, 135 (in-app flags), 138, 139 | | 126 | 127, 136, 137, 140 |
 | 10 | Seller Intelligence & CMA | | | 144, 149 | 141–143, 145–148, 150–152 |
 | 11 | Mortgage & Financing | | | 160 | 153–159, 161, 162 |
@@ -45,7 +45,7 @@ Last updated: 2026-10-09.
 
 Items that need no outside account are built first, in roadmap phase order:
 
-1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), ~~Instant Buyer Matching (84–86)~~ (done: listing page ranks buyers, lead page ranks listings, with reasons), ~~new-listing and price-drop alerts (91)~~ (done, as tasks for the buyer's owner), showings and open-house check-in (111, 116–121).
+1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), ~~Instant Buyer Matching (84–86)~~ (done: listing page ranks buyers, lead page ranks listings, with reasons), ~~new-listing and price-drop alerts (91)~~ (done, as tasks for the buyer's owner), ~~showings and open-house check-in (111, 115–122)~~ (done).
 2. **Closing engine:** ~~deals, milestones, deadline flags, commission splits~~ (done), ~~offers, comparison and negotiation history (123–125)~~ (done), Deal Rescue drafts once AI is connected.
 3. **Growth and analytics:** ~~source, conversion, response, cycle, revenue, agent and listing analytics~~ (done; cost-per-lead 25 needs spend data), ~~past-client anniversaries and retention (177–186)~~ (done except partner directory 181 and neighborhood updates 184), broker views (190–192).
 4. **Privacy rights:** ~~data export~~ (done: Account → Export team data), ~~per-person deletion~~ (done: deleting a lead erases its audit copies) (243), which the Terms and Privacy Policy will reference.

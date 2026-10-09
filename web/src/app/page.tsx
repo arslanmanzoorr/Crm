@@ -5,7 +5,8 @@ import { Workspace } from "@/components/workspace";
 import { CircleAlert } from "lucide-react";
 import Link from "next/link";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getLeadOptions, getMe, getPastClients, getTasks, getTopLeads, listDeals } from "@/lib/db";
+import { dbEnabled, getLeadOptions, getMe, getPastClients, getShowings, getTasks, getTopLeads, listDeals } from "@/lib/db";
+import { ShowingItem } from "@/components/showing-controls";
 import { agenda } from "@/lib/retention";
 
 export const metadata: Metadata = { title: "Workspace" };
@@ -25,6 +26,7 @@ async function Home_() {
       <Workspace name={me.name} leads={top.leads} total={top.total} tasks={tasks} options={options}
         extra={dbEnabled && (
           <>
+            <Suspense fallback={<Skeleton className="h-32" />}><ShowingsSoon /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><DealsAtRisk /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><KeepInTouch /></Suspense>
           </>
@@ -89,6 +91,25 @@ async function KeepInTouch() {
         ))}
       </ul>
       {due.length > 4 && <p className="-mt-2 text-sm text-muted">+{due.length - 4} more on Past clients</p>}
+    </section>
+  );
+}
+
+/** Showings in the next 24 hours, with confirm/copy/calendar actions inline. Quiet when there are none. */
+async function ShowingsSoon() {
+  const now = new Date().getTime();
+  const list = (await getShowings({ from: new Date(now - 3_600_000).toISOString(), to: new Date(now + 86_400_000).toISOString() }))
+    .filter((s) => s.status === "requested" || s.status === "confirmed");
+  if (list.length === 0) return null;
+  return (
+    <section aria-labelledby="showings-soon" className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="showings-soon" className="text-xl">Showings, next 24 hours</h2>
+        <Link href="/showings" className="text-sm text-muted hover:text-accent">All showings</Link>
+      </div>
+      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        {list.map((s) => <ShowingItem key={s.id} s={s} />)}
+      </ul>
     </section>
   );
 }
