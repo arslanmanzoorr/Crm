@@ -97,6 +97,16 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
               <Td>{x.leads}</Td><Td>{mins(x.median_response_min)}</Td><Td>{x.touches}</Td><Td>{x.active_deals}</Td><Td>{x.closed}</Td><Td>{money(Number(x.closed_agent))}</Td>
             </tr>
           ))}
+          {a.agents.length > 1 && (() => {
+            const med = (xs: number[]) => { const v = xs.filter((n) => Number.isFinite(n)).sort((p, q) => p - q); return v.length ? (v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2) : null; };
+            const resp = med(a.agents.map((x) => (x.median_response_min === null ? NaN : Number(x.median_response_min))));
+            return (
+              <tr className="text-muted">
+                <th scope="row" className="py-2.5 pr-4 text-left font-normal italic">Team median</th>
+                <Td>{med(a.agents.map((x) => x.leads))}</Td><Td>{mins(resp)}</Td><Td>{med(a.agents.map((x) => x.touches))}</Td><Td>{med(a.agents.map((x) => x.active_deals))}</Td><Td>{med(a.agents.map((x) => x.closed))}</Td><Td>{money(med(a.agents.map((x) => Number(x.closed_agent))) ?? 0)}</Td>
+              </tr>
+            );
+          })()}
         </Table>
       </Section>
 
