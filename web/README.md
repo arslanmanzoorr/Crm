@@ -54,6 +54,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0025_workflow_task_window.sql` | Automated tasks are due 15 minutes after creation |
 | `0026_territories.sql` | Territories (area → agent), checked before round-robin routing |
 | `0027_buying_signals.sql` | `buying_signals()`: re-engaged, portal saves, liked at showings, open-house touring, newly preapproved |
+| `0028_cmas.sql` | Saved CMAs: subject, agent-entered comps, adjustment rates, net sheet inputs |
 
 After `0010`, store the hash of your form key (per environment):
 

@@ -17,7 +17,7 @@ Last updated: 2026-10-09.
 | 7 | Marketing Studio | 96 | 95, 97, 98, 103, 104 | 100, 101, 102 | 99, 105–110 |
 | 8 | Showings & Open Houses | 111, 115, 116, 117, 118, 120, 121, 122 | 112 (.ics files, no two-way sync), 119 (follow-up task, not a draft yet) | 112 (two-way sync) | 113, 114 |
 | 9 | Deals & Transactions | 123, 124, 125, 128, 129, 130, 131, 132, 133, 134, 135 (in-app flags), 138, 139 | | 126 | 127, 136, 137, 140 |
-| 10 | Seller Intelligence & CMA | | | 144, 149 | 141–143, 145–148, 150–152 |
+| 10 | Seller Intelligence & CMA | 141, 142, 145, 146, 150, 151 | 152 (portal shows weekly activity; no auto-send) | 144, 149 (valuation and public-records feeds) | 143, 147, 148 (need market data) |
 | 11 | Mortgage & Financing | 153, 154, 155, 156, 157, 158, 159, 161 | 162 (in-app warnings) | 160 | |
 | 12 | Client Portal | 163, 164, 166, 167, 168, 170, 171, 172, 173, 174, 176 | 175 (agent sees portal activity; no client notifications yet) | 175 (email/SMS) | 165, 169 |
 | 13 | Referral & Retention | 177, 178, 179, 180, 181, 182, 183, 185, 186 | | | 184 |

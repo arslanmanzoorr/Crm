@@ -31,7 +31,7 @@ function Item({ href, label, icon: Icon, active, className = "" }: { href: strin
 /** Labeled navigation: a bottom bar with the four daily destinations on phones, a full rail on wider screens. */
 export function Sidebar() {
   const path = usePathname();
-  if (path === "/login" || path.startsWith("/legal") || path.startsWith("/f/") || path.startsWith("/oh/") || path.startsWith("/p/")) return null;
+  if (path === "/login" || path.startsWith("/legal") || path.startsWith("/f/") || path.startsWith("/oh/") || path.startsWith("/p/") || path.endsWith("/print")) return null;
   const isActive = (href: string) => (href === "/" ? path === "/" : href === "/leads" ? path.startsWith("/leads") || path.startsWith("/pipeline") : path.startsWith(href));
   const moreActive = path.startsWith("/account") || path.startsWith("/tools") || path.startsWith("/showings") || path.startsWith("/clients") || path.startsWith("/analytics") || path.startsWith("/studio") || path.startsWith("/publish");
   return (

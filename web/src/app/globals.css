@@ -139,4 +139,5 @@ dialog.palette::backdrop {
 
 @media print {
   body { background: #fff; }
+  nav[aria-label="Main"] { display: none !important; }
 }
