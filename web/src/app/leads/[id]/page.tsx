@@ -12,6 +12,7 @@ import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
 import { getLead, getMembers, getProperties, getTasks } from "@/lib/db";
+import { matchListing, type Match } from "@/lib/match";
 import { fmtDuration } from "@/lib/search";
 import { OwnerSelect } from "@/components/owner-select";
 
@@ -45,8 +46,11 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
   if (!lead) notFound();
   const [tasks, properties, team] = await Promise.all([getTasks(), getProperties(), getMembers()]);
   const mine = tasks.filter((t) => t.contactId === lead.id);
-  // ponytail: area match only; swap for pgvector matching once budgets are numeric.
-  const matches = properties.filter((p) => p.status !== "Sold" && lead.areas.includes(p.area)).slice(0, 3);
+  const matches = properties
+    .map((p) => ({ p, m: matchListing(lead, p) }))
+    .filter((x): x is { p: (typeof properties)[number]; m: Match } => x.m !== null)
+    .sort((a, b) => b.m.score - a.m.score)
+    .slice(0, 3);
   const b = blockers(lead);
   const blockedReasons = [...new Set([b.call, b.sms, b.email].filter(Boolean))];
 
@@ -141,8 +145,8 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
             </section>
             {matches.length > 0 && (
               <section aria-labelledby="matches" className="flex flex-col gap-3">
-                <h2 id="matches" className="text-xl">Listings in their areas</h2>
-                {matches.map((p) => <PropertyCard key={p.id} p={p} />)}
+                <h2 id="matches" className="text-xl">Listings that fit</h2>
+                {matches.map(({ p, m }) => <PropertyCard key={p.id} p={p} match={m} />)}
               </section>
             )}
             <div className="self-start"><DeleteButton id={lead.id} what="lead" /></div>

@@ -13,7 +13,7 @@ Last updated: 2026-10-09.
 | 3 | Lead Management | 32, 39, 40, 42, 45 | 33, 34, 36, 44 (round-robin; performance-based not yet), 46 (captured per lead; reports pending), 47 | | 31, 35, 37, 38, 41, 43, 48 |
 | 4 | Communication Hub | 67 | 59, 63 | 49, 50, 51, 53, 54, 55, 56, 57, 58, 60, 61, 64, 66 | 52, 62, 65 |
 | 5 | Listings | 69, 70, 72 | | 68, 71 | 73–83 |
-| 6 | Matchmaking | | 84 | 88 (maps) | 85–87, 89–94 |
+| 6 | Matchmaking | 84, 85, 86 | | 88 (maps) | 87, 89–94 |
 | 7 | Marketing Studio | 96 | 95, 97, 98, 103, 104 | 100, 101, 102 | 99, 105–110 |
 | 8 | Showings & Open Houses | | 117, 118 | 112 | 111, 113–116, 119–122 |
 | 9 | Deals & Transactions | | | 126 | 123–125, 127–140 |
@@ -45,7 +45,7 @@ Last updated: 2026-10-09.
 
 Items that need no outside account are built first, in roadmap phase order:
 
-1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), buyer criteria and Instant Buyer Matching (84–86, 90, 91), showings and open-house check-in (111, 116–121).
+1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), ~~Instant Buyer Matching (84–86)~~ (done: listing page ranks buyers, lead page ranks listings, with reasons), saved searches and alerts (90, 91), showings and open-house check-in (111, 116–121).
 2. **Closing engine:** deals, offers and transaction milestones with deadlines (123–125, 128–135, 138, 139), commission splits (197–200, 206).
 3. **Growth and analytics:** source and conversion analytics (24, 25, 228–230), past-client anniversaries and retention (177–186), broker views (190–192).
 4. **Privacy rights:** ~~data export~~ (done: Account → Export team data), ~~per-person deletion~~ (done: deleting a lead erases its audit copies) (243), which the Terms and Privacy Policy will reference.

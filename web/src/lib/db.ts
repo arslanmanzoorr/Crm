@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { connection } from "next/server";
 import * as mock from "./data";
 import { likeSafe } from "./search";
+import { BUYING_TYPES } from "./match";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
 
@@ -144,6 +145,17 @@ export async function getLead(id: string): Promise<Lead | undefined> {
     .order("ts", { referencedTable: "activities", ascending: false }).limit(200, { referencedTable: "activities" })
     .eq("id", id).maybeSingle();
   return data ? toLead(data as ContactRow) : undefined;
+}
+
+export type Buyer = { id: string; name: string; type: string; budget: string; areas: string[]; preferences: string[]; score: number };
+
+/** Open buyers, investors and renters, for ranking against a listing (src/lib/match.ts). */
+export async function getOpenBuyers(): Promise<Buyer[]> {
+  if (!dbEnabled) return mock.leads.map((l) => ({ id: l.id, name: l.name, type: l.type ?? "buyer", budget: l.budget, areas: l.areas, preferences: l.preferences, score: l.score }));
+  // ponytail: ranks up to 1000 open buyers in JS; move matching into SQL when a team has more
+  const res = await (await supabase()).from("contacts").select("id,name,type,budget,areas,preferences,score")
+    .in("type", BUYING_TYPES).not("stage", "in", "(Closed,Lost)").order("score", { ascending: false }).limit(1000);
+  return must(res) as Buyer[];
 }
 
 type PropertyRow = Parameters<typeof toProperty>[0] & { property_media: { id: string; path: string }[] };

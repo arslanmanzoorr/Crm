@@ -1,7 +1,9 @@
 import { money, type Property } from "@/lib/data";
+import type { Match } from "@/lib/match";
+import { MatchReasons } from "./match-reasons";
 import { Chip, NotchCard } from "./ui";
 
-export function PropertyCard({ p }: { p: Property }) {
+export function PropertyCard({ p, match }: { p: Property; match?: Match }) {
   return (
     <NotchCard label={`Open ${p.address}`} href={`/properties/${p.id}`} className="p-3">
       {p.cover ? (
@@ -21,6 +23,7 @@ export function PropertyCard({ p }: { p: Property }) {
           <Chip>{p.baths} ba</Chip>
           <Chip>{p.sqft.toLocaleString()} sqft</Chip>
         </div>
+        {match && <div className="mt-3"><MatchReasons m={match} /></div>}
       </div>
     </NotchCard>
   );

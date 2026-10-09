@@ -7,7 +7,10 @@ import { DeleteButton } from "@/components/lead-controls";
 import { PhotoManager } from "@/components/photo-manager";
 import { Chip, Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
-import { dbEnabled, getProperty } from "@/lib/db";
+import { MatchReasons } from "@/components/match-reasons";
+import type { Property } from "@/lib/data";
+import { dbEnabled, getOpenBuyers, getProperty } from "@/lib/db";
+import { matchListing } from "@/lib/match";
 
 export const metadata: Metadata = { title: "Listing" };
 
@@ -52,7 +55,41 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         </Link>
       </div>
       {dbEnabled ? <PhotoManager propertyId={p.id} photos={p.photos ?? []} /> : <div className={`aspect-[21/9] rounded-card bg-gradient-to-br ${p.tone}`} />}
+      <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
+        <Buyers p={p} />
+      </Suspense>
       <div className="self-start"><DeleteButton id={p.id} what="listing" /></div>
     </div>
+  );
+}
+
+/** Instant Buyer Matching: open buyers ranked by how well this listing fits what they asked for. */
+async function Buyers({ p }: { p: Property }) {
+  const ranked = (await getOpenBuyers())
+    .map((b) => ({ b, m: matchListing(b, p) }))
+    .filter((x) => x.m !== null)
+    .sort((x, y) => y.m!.score - x.m!.score || y.b.score - x.b.score);
+  return (
+    <section aria-labelledby="buyers" className="flex max-w-2xl flex-col gap-3">
+      <h2 id="buyers" className="text-xl">Buyers who fit {ranked.length > 0 && <span className="text-muted">({ranked.length})</span>}</h2>
+      {ranked.length === 0 ? (
+        <p className="text-sm text-muted">No open buyer has this area and price in their search yet.</p>
+      ) : (
+        <ol className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          {ranked.slice(0, 8).map(({ b, m }) => (
+            <li key={b.id}>
+              <Link href={`/leads/${b.id}`} className="flex min-h-14 flex-col gap-1.5 px-5 py-3 hover:bg-surface-3">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className="truncate font-medium">{b.name}</span>
+                  <span className="shrink-0 text-sm text-muted">{m!.score}% fit{b.budget && ` · ${b.budget}`}</span>
+                </span>
+                <MatchReasons m={m!} />
+              </Link>
+            </li>
+          ))}
+        </ol>
+      )}
+      {ranked.length > 8 && <p className="text-sm text-muted">Showing the 8 best of {ranked.length}.</p>}
+    </section>
   );
 }
