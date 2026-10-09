@@ -53,6 +53,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0024_workflows.sql` | Automation playbooks: trigger enrollment, conditions, stop stages, pg_cron runner with retries |
 | `0025_workflow_task_window.sql` | Automated tasks are due 15 minutes after creation |
 | `0026_territories.sql` | Territories (area → agent), checked before round-robin routing |
+| `0027_buying_signals.sql` | `buying_signals()`: re-engaged, portal saves, liked at showings, open-house touring, newly preapproved |
 
 After `0010`, store the hash of your form key (per environment):
 
