@@ -10,6 +10,7 @@ import { dbEnabled, likeSafe, meterAi, supabase } from "./db";
 import { defaultMilestones } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
 import { DOCS, LOAN_STAGES } from "./readiness";
+import { cleanSteps, TEMPLATES, TRIGGERS } from "./playbooks";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
 
@@ -1073,4 +1074,58 @@ export async function portalFavorite(token: string, propertyId: string, on: bool
   if (!dbEnabled || !PORTAL_TOKEN.test(token) || !UUID.test(propertyId)) return;
   await (await supabase()).rpc("portal_favorite", { p_token: token, p_property: propertyId, p_on: on });
   revalidatePath(`/p/${token}`);
+}
+
+const CONDITION_KEYS = ["type", "source", "stage", "interest", "side", "has_agent"];
+
+/** Install a ready-made playbook (owners and admins; RLS enforces it). */
+export async function installPlaybook(key: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const t = TEMPLATES.find((x) => x.key === key);
+  if (!t) return { error: "Unknown playbook." };
+  const { error } = await (await authed()).from("workflows").insert({ name: t.name, trigger: t.trigger, conditions: t.conditions, steps: t.steps, stop_stages: t.stop, template: t.key });
+  if (error) return { error: error.code === "42501" ? "Only owners and admins can add playbooks." : error.message };
+  revalidatePath("/automations");
+  return { ok: "Playbook on" };
+}
+
+/** Save a custom playbook from the builder. Steps arrive as JSON and are validated here. */
+export async function saveWorkflow(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const name = str(f, "name").slice(0, 120), trigger = str(f, "trigger");
+  if (!name) return { error: "Name the playbook." };
+  if (!(trigger in TRIGGERS)) return { error: "Pick what starts it." };
+  let raw: unknown;
+  try { raw = JSON.parse(str(f, "steps")); } catch { return { error: "Steps couldn't be read." }; }
+  const s = cleanSteps(raw);
+  if ("error" in s) return s;
+  const key = str(f, "condition_key"), value = str(f, "condition_value").slice(0, 60);
+  const conditions = key && value && CONDITION_KEYS.includes(key) ? { [key]: value } : {};
+  const stop = f.getAll("stop").map(String).filter((x) => (mock.STAGES as readonly string[]).includes(x));
+  const { error } = await (await authed()).from("workflows").insert({ name, trigger, conditions, steps: s.steps, stop_stages: stop });
+  if (error) return { error: error.code === "42501" ? "Only owners and admins can add playbooks." : error.message };
+  revalidatePath("/automations");
+  return { ok: "Playbook saved and on" };
+}
+
+export async function setWorkflowEnabled(id: string, enabled: boolean) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("workflows").update({ enabled }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/automations");
+}
+
+export async function deleteWorkflow(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("workflows").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/automations");
+}
+
+/** Give a failed step another go now. */
+export async function retryRun(id: number) {
+  if (!dbEnabled || !Number.isSafeInteger(id)) return;
+  const { error } = await (await authed()).from("workflow_runs").update({ status: "pending", attempts: 0, due_at: new Date().toISOString(), last_error: null }).eq("id", id).eq("status", "failed");
+  if (error) throw new Error(error.message);
+  revalidatePath("/automations");
 }

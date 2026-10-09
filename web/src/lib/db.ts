@@ -8,6 +8,7 @@ import type { Side } from "./deals";
 import type { Contingency, Financing, OfferTerms } from "./offers";
 import { BUYING_TYPES } from "./match";
 import type { PastClient } from "./retention";
+import type { Step, Trigger } from "./playbooks";
 import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
@@ -616,4 +617,37 @@ export async function getPortalLink(contactId: string): Promise<PortalLinkInfo> 
   const { data } = await (await supabase()).from("portal_links").select("created_at,last_seen_at,expires_at")
     .eq("contact_id", contactId).is("revoked_at", null).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(1).maybeSingle();
   return data ? { createdAt: data.created_at, lastSeenAt: data.last_seen_at, expiresAt: data.expires_at } : null;
+}
+
+export type Workflow = {
+  id: string; name: string; trigger: Trigger; conditions: Record<string, string>; steps: Step[]; stopStages: string[]; enabled: boolean; template: string | null;
+  counts: { pending: number; done: number; skipped: number; failed: number };
+};
+export type FailedRun = { id: number; workflow: string; contactId: string; contact: string; error: string; at: string };
+
+/** Playbooks with how many steps are waiting, done, stopped and failed; plus the latest failures. */
+export async function getWorkflows(): Promise<{ workflows: Workflow[]; failed: FailedRun[]; isAdmin: boolean }> {
+  if (!dbEnabled) return { workflows: [], failed: [], isAdmin: false };
+  const db = await supabase();
+  const [w, runs, failed, auth, org] = await Promise.all([
+    db.from("workflows").select("id,name,trigger,conditions,steps,stop_stages,enabled,template").order("created_at"),
+    // ponytail: counts in JS from up to 20k run rows; a grouped view when teams run more
+    db.from("workflow_runs").select("workflow_id,status").limit(20000),
+    db.from("workflow_runs").select("id,last_error,done_at,due_at,workflows(name),contacts(id,name)").eq("status", "failed").order("id", { ascending: false }).limit(20),
+    db.auth.getUser(),
+    db.rpc("active_org"),
+  ]);
+  const counts: Record<string, Workflow["counts"]> = {};
+  for (const r of runs.data ?? []) {
+    const c = (counts[r.workflow_id] ??= { pending: 0, done: 0, skipped: 0, failed: 0 });
+    c[r.status as keyof Workflow["counts"]]++;
+  }
+  const me = await db.from("memberships").select("role").eq("org_id", org.data).eq("user_id", auth.data.user?.id ?? "").maybeSingle();
+  type F = { id: number; last_error: string | null; done_at: string | null; due_at: string; workflows: { name: string } | null; contacts: { id: string; name: string } | null };
+  return {
+    workflows: (must(w) as { id: string; name: string; trigger: Trigger; conditions: Record<string, string>; steps: Step[]; stop_stages: string[]; enabled: boolean; template: string | null }[])
+      .map((x) => ({ ...x, stopStages: x.stop_stages, counts: counts[x.id] ?? { pending: 0, done: 0, skipped: 0, failed: 0 } })),
+    failed: ((failed.data ?? []) as unknown as F[]).map((f) => ({ id: f.id, workflow: f.workflows?.name ?? "", contactId: f.contacts?.id ?? "", contact: f.contacts?.name ?? "", error: f.last_error ?? "", at: f.done_at ?? f.due_at })),
+    isAdmin: ["owner", "admin"].includes(me.data?.role ?? ""),
+  };
 }
