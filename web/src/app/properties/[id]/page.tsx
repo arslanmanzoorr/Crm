@@ -12,7 +12,8 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getOpenBuyers, getOpenHouses, getProperty, type OpenHouse } from "@/lib/db";
+import { dbEnabled, getOffers, getOpenBuyers, getOpenHouses, getProperty, type OpenHouse } from "@/lib/db";
+import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
 import { matchListing } from "@/lib/match";
 
 export const metadata: Metadata = { title: "Listing" };
@@ -61,6 +62,11 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
       <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
         <Buyers p={p} />
       </Suspense>
+      {dbEnabled && (
+        <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
+          <Offers p={p} />
+        </Suspense>
+      )}
       {dbEnabled && (
         <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
           <OpenHouses propertyId={p.id} />
@@ -161,5 +167,52 @@ async function OpenHouseCard({ o, propertyId }: { o: OpenHouse; propertyId: stri
         </details>
       )}
     </article>
+  );
+}
+
+/** Offers received on this listing, side by side, with what makes each one stand out. */
+async function Offers({ p }: { p: Property }) {
+  const offers = (await getOffers({ propertyId: p.id })).filter((o) => o.side === "seller");
+  const strengths = compareOffers(offers);
+  return (
+    <section aria-labelledby="offers" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 id="offers" className="text-xl">Offers {offers.length > 0 && <span className="text-muted">({offers.length})</span>}</h2>
+        <Link href={`/offers/new?property=${p.id}`} className="flex min-h-11 items-center rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3">Record an offer</Link>
+      </div>
+      {offers.length === 0 ? (
+        <p className="text-sm text-muted">When offers come in, record them here to compare price, net, financing and contingencies side by side.</p>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {offers.map((o) => {
+            const dead = o.status === "rejected" || o.status === "withdrawn";
+            return (
+              <li key={o.id}>
+                <Link href={`/offers/${o.id}`} className={`flex h-full flex-col gap-3 rounded-card bg-surface-2 p-5 hover:bg-surface-3 ${dead ? "opacity-60" : ""}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate">{o.buyerName || "Unnamed buyer"}</p>
+                      <p className="text-sm text-muted">{STATUS_LABEL[o.status]}</p>
+                    </div>
+                    <p className="shrink-0 text-xl">{money(o.amount)}</p>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                    <dt className="text-muted">Net of credits</dt><dd className="text-right">{money(netOf(o))}</dd>
+                    <dt className="text-muted">vs. list price</dt><dd className="text-right">{o.amount >= p.price ? "+" : "−"}{money(Math.abs(o.amount - p.price))}</dd>
+                    <dt className="text-muted">Financing</dt><dd className="text-right">{FINANCING[o.financing]}</dd>
+                    <dt className="text-muted">Earnest</dt><dd className="text-right">{o.earnest ? money(o.earnest) : "None"}</dd>
+                    <dt className="text-muted">Closing</dt><dd className="text-right">{o.closeOn ?? "Not set"}</dd>
+                    <dt className="text-muted">Contingencies</dt><dd className="text-right">{o.contingencies.length ? o.contingencies.map((c) => CONTINGENCIES[c]).join(", ") : "None"}</dd>
+                  </dl>
+                  {strengths[o.id].length > 0 && (
+                    <ul className="flex flex-wrap gap-1.5">{strengths[o.id].map((s) => <li key={s}><Chip tone="accent">{s}</Chip></li>)}</ul>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }

@@ -43,6 +43,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0014_erase_on_delete.sql` | Deleting a lead also wipes their details from the audit log (right to delete) |
 | `0015_open_houses.sql` | Open houses, public QR sign-in (`submit_checkin`, keyed), visitor feedback; task assignees must be teammates |
 | `0016_deals.sql` | Deals with milestone checklists and commission terms; erase-on-delete covers deals |
+| `0017_offers.sql` | Offers (both sides) with negotiation history; erase-on-delete covers offers |
 
 After `0010`, store the hash of your form key (per environment):
 

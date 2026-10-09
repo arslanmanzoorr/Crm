@@ -20,12 +20,14 @@ function Labeled({ label, hint, children }: { label: string; hint?: string; chil
 }
 
 /** New deal (pick client and home) or edit terms. Shows the commission split live as numbers change. */
-export function DealForm({ deal, clients, listings, contactId }: { deal?: Deal; clients?: Option[]; listings?: { id: string; address: string }[]; contactId?: string }) {
-  const [price, setPrice] = useState(deal ? String(deal.price) : "");
+export type DealPrefill = { offerId: string; side: "buyer" | "seller"; propertyId: string | null; address: string; price: number; closeOn: string | null };
+
+export function DealForm({ deal, clients, listings, contactId, prefill }: { deal?: Deal; clients?: Option[]; listings?: { id: string; address: string }[]; contactId?: string; prefill?: DealPrefill }) {
+  const [price, setPrice] = useState(deal ? String(deal.price) : prefill ? String(prefill.price) : "");
   const [rate, setRate] = useState(String(deal?.commissionPct ?? 3));
   const [split, setSplit] = useState(String(deal?.agentSplitPct ?? 70));
   const [referral, setReferral] = useState(String(deal?.referralPct ?? 0));
-  const [listing, setListing] = useState(deal?.property?.id ?? "");
+  const [listing, setListing] = useState(deal?.property?.id ?? prefill?.propertyId ?? "");
   const c = commission(Number(price) || 0, Number(rate) || 0, Number(split) || 0, Number(referral) || 0);
 
   return (
@@ -33,6 +35,7 @@ export function DealForm({ deal, clients, listings, contactId }: { deal?: Deal; 
       {(pending) => (
         <>
           {deal && <input type="hidden" name="id" value={deal.id} />}
+          {prefill && <input type="hidden" name="offer_id" value={prefill.offerId} />}
           {!deal && (
             <>
               <Labeled label="Client">
@@ -46,7 +49,7 @@ export function DealForm({ deal, clients, listings, contactId }: { deal?: Deal; 
                 <div className="grid grid-cols-2 gap-2">
                   {[["buyer", "Buyer"], ["seller", "Seller"]].map(([v, l], i) => (
                     <label key={v} className="flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-surface-1 px-4 has-[:checked]:bg-accent has-[:checked]:font-medium has-[:checked]:text-on-light has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent">
-                      <input type="radio" name="side" value={v} defaultChecked={i === 0} className="sr-only" />{l}
+                      <input type="radio" name="side" value={v} defaultChecked={prefill ? prefill.side === v : i === 0} className="sr-only" />{l}
                     </label>
                   ))}
                 </div>
@@ -61,7 +64,7 @@ export function DealForm({ deal, clients, listings, contactId }: { deal?: Deal; 
           )}
           {!listing && (
             <Labeled label="Property address">
-              <input name="address" required defaultValue={deal?.address} maxLength={300} autoComplete="off" placeholder="123 Main St, City, ST" className={input} />
+              <input name="address" required defaultValue={deal?.address ?? prefill?.address} maxLength={300} autoComplete="off" placeholder="123 Main St, City, ST" className={input} />
             </Labeled>
           )}
           <div className="grid gap-4 sm:grid-cols-3">
@@ -72,7 +75,7 @@ export function DealForm({ deal, clients, listings, contactId }: { deal?: Deal; 
               <input name="accepted_on" type="date" required suppressHydrationWarning defaultValue={deal?.acceptedOn ?? new Date().toLocaleDateString("en-CA")} className={input} />
             </Labeled>
             <Labeled label="Closing date">
-              <input name="close_on" type="date" defaultValue={deal?.closeOn ?? ""} className={input} />
+              <input name="close_on" type="date" defaultValue={deal?.closeOn ?? prefill?.closeOn ?? ""} className={input} />
             </Labeled>
           </div>
           {!deal && <p className="-mt-2 text-xs text-muted">We&apos;ll draft the usual milestones from these dates. Check them against the contract; every date is editable.</p>}

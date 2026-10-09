@@ -1,4 +1,4 @@
-import { Handshake, Mail, MessageSquare, Pencil, Phone } from "lucide-react";
+import { FileSignature, Handshake, Mail, MessageSquare, Pencil, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,7 +11,8 @@ import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
-import { getDealsFor, getLead, getMembers, getProperties, getTasks } from "@/lib/db";
+import { getDealsFor, getLead, getMembers, getOffers, getProperties, getTasks } from "@/lib/db";
+import { STATUS_LABEL } from "@/lib/offers";
 import { money } from "@/lib/data";
 import { matchListing, type Match } from "@/lib/match";
 import { fmtDuration } from "@/lib/search";
@@ -45,7 +46,7 @@ function blockers(lead: Lead) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties, team, deals] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id)]);
+  const [tasks, properties, team, deals, offers] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id })]);
   const mine = tasks.filter((t) => t.contactId === lead.id);
   const matches = properties
     .map((p) => ({ p, m: matchListing(lead, p) }))
@@ -96,6 +97,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               )}
               <Link href={`/leads/${lead.id}/edit`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><Pencil aria-hidden className="size-4" /> Edit</Link>
               <Link href={`/deals/new?contact=${lead.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><Handshake aria-hidden className="size-4" /> Open deal</Link>
+              {["buyer", "investor"].includes(lead.type ?? "") && <Link href={`/offers/new?contact=${lead.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><FileSignature aria-hidden className="size-4" /> Write offer</Link>}
             </div>
             {blockedReasons.length > 0 && (
               <p id="contact-blocked" className="text-sm text-muted">
@@ -133,6 +135,21 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
           </div>
 
           <aside className="flex flex-col gap-6">
+            {offers.length > 0 && (
+              <section aria-labelledby="offers" className="flex flex-col gap-2">
+                <h2 id="offers" className="text-xl">Offers</h2>
+                <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+                  {offers.map((o) => (
+                    <li key={o.id}>
+                      <Link href={`/offers/${o.id}`} className="flex min-h-14 flex-col justify-center px-5 py-3 hover:bg-surface-3">
+                        <span className="truncate">{o.address}</span>
+                        <span className="text-sm text-muted">{STATUS_LABEL[o.status]} · {money(o.amount)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             {deals.length > 0 && (
               <section aria-labelledby="deals" className="flex flex-col gap-2">
                 <h2 id="deals" className="text-xl">Deals</h2>

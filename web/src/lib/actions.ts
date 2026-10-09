@@ -8,6 +8,7 @@ import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv"
 import * as mock from "./data";
 import { dbEnabled, likeSafe, meterAi, supabase } from "./db";
 import { defaultMilestones } from "./deals";
+import { CONTINGENCIES, FINANCING } from "./offers";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
 
@@ -731,6 +732,8 @@ export async function createDeal(_: FormState, f: FormData): Promise<FormState> 
   if (msErr) return { error: msErr.message };
   await db.from("contacts").update({ stage: "Under Contract" }).eq("id", contact_id);
   await db.from("activities").insert({ contact_id, channel: "Note", content: `Deal opened (${side} side), under contract` });
+  const offerId = str(f, "offer_id");
+  if (UUID.test(offerId)) await db.from("offers").update({ deal_id: data.id }).eq("id", offerId).eq("status", "accepted");
   revalidatePath("/", "layout");
   redirect(`/deals/${data.id}`);
 }
@@ -792,4 +795,76 @@ export async function deleteMilestone(id: string) {
   const { error } = await (await authed()).from("deal_milestones").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
+}
+
+const money0 = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const amountOf = (f: FormData, k: string) => { const n = Number(str(f, k)); return Number.isFinite(n) && n >= 0 && n < 1e10 ? n : NaN; };
+
+/** Record an offer: one received on our listing (seller side) or one our buyer is making. */
+export async function createOffer(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const db = await authed();
+  const side = str(f, "side") === "seller" ? "seller" : "buyer";
+  const property_id = UUID.test(str(f, "property_id")) ? str(f, "property_id") : null;
+  const contact_id = UUID.test(str(f, "contact_id")) ? str(f, "contact_id") : null;
+  const amount = amountOf(f, "amount"), earnest = amountOf(f, "earnest") || 0, seller_credit = amountOf(f, "seller_credit") || 0;
+  const down = str(f, "down_pct"), close_on = str(f, "close_on"), expires = str(f, "expires_at");
+  const financing = str(f, "financing");
+  const contingencies = f.getAll("contingencies").map(String).filter((c) => c in CONTINGENCIES);
+  if (!amount || Number.isNaN(amount)) return { error: "Enter the offer price." };
+  if (Number.isNaN(earnest) || Number.isNaN(seller_credit)) return { error: "Amounts must be positive numbers." };
+  if (side === "buyer" && !contact_id) return { error: "Pick the buyer." };
+  if (side === "seller" && !property_id) return { error: "Pick the listing." };
+  if (!property_id && !str(f, "address")) return { error: "Pick a listing or type the address." };
+  if (close_on && !DATE.test(close_on)) return { error: "Pick a valid closing date." };
+  if (!(financing in FINANCING)) return { error: "Pick the financing." };
+  const downPct = down === "" ? null : Number(down);
+  if (downPct !== null && !(downPct >= 0 && downPct <= 100)) return { error: "Down payment must be 0–100%." };
+  const exp = expires ? new Date(expires) : null;
+  if (exp && isNaN(+exp)) return { error: "Pick a valid response deadline." };
+
+  const { data, error } = await db.from("offers").insert({
+    side, property_id, contact_id, amount, earnest, seller_credit, financing, contingencies, down_pct: downPct,
+    buyer_name: str(f, "buyer_name").slice(0, 200), address: str(f, "address").slice(0, 300), notes: str(f, "notes").slice(0, 5000),
+    close_on: close_on || null, expires_at: exp?.toISOString() ?? null, status: side === "seller" ? "submitted" : "draft",
+  }).select("id").single();
+  if (error) return { error: error.message };
+  await db.from("offer_events").insert({ offer_id: data.id, kind: side === "seller" ? "received" : "drafted", amount });
+  if (contact_id) await db.from("activities").insert({ contact_id, channel: "Note", content: `Offer drafted at ${money0(amount)}` });
+  revalidatePath("/", "layout");
+  redirect(`/offers/${data.id}`);
+}
+
+type OfferMove = "submitted" | "countered" | "counter_received" | "accepted" | "rejected" | "withdrawn" | "note";
+const MOVE_STATUS: Partial<Record<OfferMove, string>> = { submitted: "submitted", countered: "countered", counter_received: "countered", accepted: "accepted", rejected: "rejected", withdrawn: "withdrawn" };
+
+/** One step in the negotiation. Counters carry a new price, which becomes the offer's current price. */
+export async function offerMove(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const id = str(f, "offer_id"), kind = str(f, "kind") as OfferMove, note = str(f, "note").slice(0, 2000);
+  if (!UUID.test(id) || !(kind in MOVE_STATUS || kind === "note")) return { error: "Unknown step." };
+  const amount = str(f, "amount") ? amountOf(f, "amount") : null;
+  const counter = kind === "countered" || kind === "counter_received";
+  if (counter && (!amount || Number.isNaN(amount))) return { error: "Enter the counter price." };
+  if (kind === "note" && !note) return { error: "Write the note first." };
+  const db = await authed();
+  const { data: offer } = await db.from("offers").select("status,contact_id").eq("id", id).maybeSingle();
+  if (!offer) return { error: "Offer not found." };
+  if (["accepted", "rejected", "withdrawn"].includes(offer.status) && kind !== "note") return { error: "This offer is already decided." };
+
+  const patch: Record<string, unknown> = {};
+  if (MOVE_STATUS[kind]) patch.status = MOVE_STATUS[kind];
+  if (counter) patch.amount = amount;
+  if (Object.keys(patch).length) {
+    const { error } = await db.from("offers").update(patch).eq("id", id);
+    if (error) return { error: error.message };
+  }
+  const { error } = await db.from("offer_events").insert({ offer_id: id, kind, amount: counter ? amount : null, note });
+  if (error) return { error: error.message };
+  if (offer.contact_id && kind !== "note") {
+    const words = { submitted: "submitted", countered: "countered", counter_received: "counter received", accepted: "accepted", rejected: "rejected", withdrawn: "withdrawn" } as const;
+    await db.from("activities").insert({ contact_id: offer.contact_id, channel: "Note", content: `Offer ${words[kind]}${counter ? ` at ${money0(amount!)}` : ""}` });
+  }
+  revalidatePath("/", "layout");
+  return { ok: kind === "note" ? "Note added" : "Updated" };
 }

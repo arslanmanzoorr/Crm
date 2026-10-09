@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import * as mock from "./data";
 import { likeSafe } from "./search";
 import type { Side } from "./deals";
+import type { Contingency, Financing, OfferTerms } from "./offers";
 import { BUYING_TYPES } from "./match";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
@@ -427,4 +428,40 @@ export async function getDealsFor(contactId: string): Promise<Deal[]> {
   if (!dbEnabled) return [];
   const res = await (await supabase()).from("deals").select(DEAL_COLS).eq("contact_id", contactId).order("created_at", { ascending: false });
   return (must(res) as unknown as DealRow[]).map(toDeal);
+}
+
+export type OfferEvent = { kind: string; amount: number | null; note: string; ts: string };
+export type Offer = OfferTerms & {
+  side: Side; address: string; buyerName: string; downPct: number | null; expiresAt: string | null; notes: string; dealId: string | null; createdAt: string;
+  property: { id: string; address: string } | null; contact: { id: string; name: string } | null; events: OfferEvent[];
+};
+type OfferRow = {
+  id: string; side: Side; amount: string | number; earnest: string | number; seller_credit: string | number; financing: Financing; contingencies: Contingency[];
+  close_on: string | null; status: string; address: string; buyer_name: string; down_pct: string | number | null; expires_at: string | null; notes: string;
+  deal_id: string | null; created_at: string; properties: { id: string; address: string } | null; contacts: { id: string; name: string } | null;
+  offer_events: { kind: string; amount: string | number | null; note: string; ts: string }[];
+};
+const OFFER_COLS = "id,side,amount,earnest,seller_credit,financing,contingencies,close_on,status,address,buyer_name,down_pct,expires_at,notes,deal_id,created_at,properties(id,address),contacts(id,name),offer_events(kind,amount,note,ts)";
+const toOffer = (r: OfferRow): Offer => ({
+  id: r.id, side: r.side, amount: Number(r.amount), earnest: Number(r.earnest), sellerCredit: Number(r.seller_credit), financing: r.financing,
+  contingencies: r.contingencies, closeOn: r.close_on, status: r.status, address: r.properties?.address || r.address, buyerName: r.buyer_name,
+  downPct: r.down_pct === null ? null : Number(r.down_pct), expiresAt: r.expires_at, notes: r.notes, dealId: r.deal_id, createdAt: r.created_at,
+  property: r.properties, contact: r.contacts,
+  events: [...r.offer_events].sort((a, b) => a.ts.localeCompare(b.ts)).map((e) => ({ kind: e.kind, amount: e.amount === null ? null : Number(e.amount), note: e.note, ts: e.ts })),
+});
+
+/** Offers on a listing, or made by a buyer client. Newest first. */
+export async function getOffers(by: { propertyId?: string; contactId?: string }): Promise<Offer[]> {
+  if (!dbEnabled) return [];
+  let q = (await supabase()).from("offers").select(OFFER_COLS);
+  if (by.propertyId) q = q.eq("property_id", by.propertyId);
+  if (by.contactId) q = q.eq("contact_id", by.contactId);
+  const res = await q.order("created_at", { ascending: false }).limit(100);
+  return (must(res) as unknown as OfferRow[]).map(toOffer);
+}
+
+export async function getOffer(id: string): Promise<Offer | undefined> {
+  if (!dbEnabled || !/^[0-9a-f-]{36}$/i.test(id)) return undefined;
+  const { data } = await (await supabase()).from("offers").select(OFFER_COLS).eq("id", id).maybeSingle();
+  return data ? toOffer(data as unknown as OfferRow) : undefined;
 }

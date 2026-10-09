@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { DealForm } from "@/components/deal-form";
 import { Skeleton } from "@/components/ui";
-import { getLead, getLeadOptions, getProperties } from "@/lib/db";
+import { getLead, getLeadOptions, getOffer, getProperties } from "@/lib/db";
 
 export const metadata: Metadata = { title: "New deal" };
 
@@ -26,5 +26,9 @@ async function Form({ searchParams }: { searchParams: PageProps<"/deals/new">["s
     const lead = await getLead(contact); // older leads fall outside the recent-200 picker
     if (lead) clients.unshift({ id: lead.id, name: lead.name });
   }
-  return <DealForm clients={clients} listings={listings.filter((p) => p.status !== "Sold").map(({ id, address }) => ({ id, address }))} contactId={contact} />;
+  const offer = typeof sp.offer === "string" ? await getOffer(sp.offer) : undefined;
+  const prefill = offer?.status === "accepted"
+    ? { offerId: offer.id, side: offer.side, propertyId: offer.property?.id ?? null, address: offer.property ? "" : offer.address, price: offer.amount, closeOn: offer.closeOn }
+    : undefined;
+  return <DealForm clients={clients} listings={listings.filter((p) => p.status !== "Sold").map(({ id, address }) => ({ id, address }))} contactId={contact} prefill={prefill} />;
 }
