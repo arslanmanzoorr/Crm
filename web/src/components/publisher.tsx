@@ -1,5 +1,6 @@
 "use client";
 
+import { FairHousingHints } from "./fair-housing";
 import { Send, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { askAi } from "@/lib/ai";
@@ -92,6 +93,7 @@ export function Publisher({ properties, initialPropertyId }: { properties: Prope
               placeholder="Caption…"
               className="resize-none rounded-2xl bg-surface-1 p-3 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-accent"
             />
+            <FairHousingHints text={captions[p] ?? ""} />
           </label>
         ))}
       </div>

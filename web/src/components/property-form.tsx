@@ -3,6 +3,7 @@
 import { ActionForm, Field, input, primaryBtn } from "@/components/forms";
 import { saveProperty } from "@/lib/actions";
 import type { Property } from "@/lib/data";
+import { DescriptionField } from "./fair-housing";
 
 const STATUSES = ["Active", "Coming soon", "Under contract", "Sold"];
 
@@ -24,10 +25,7 @@ export function PropertyForm({ p, clients = [] }: { p?: Property; clients?: { id
           <Field label="Baths" name="baths" type="number" min={0} step={0.25} defaultValue={p?.baths} />
           <Field label="Sqft" name="sqft" type="number" min={0} defaultValue={p?.sqft} />
           <Field label="Features" name="features" hint="comma separated" placeholder="Backyard, Garage" defaultValue={p?.features.join(", ")} />
-          <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
-            <span className="text-muted">Description</span>
-            <textarea name="description" rows={4} className={`${input} resize-y`} defaultValue={p?.description} />
-          </label>
+          <DescriptionField defaultValue={p?.description} />
           <label className="flex flex-col gap-1.5 text-sm">
             <span className="text-muted">Listing agreement ends</span>
             <input name="listing_expires" type="date" defaultValue={p?.listingExpires ?? ""} className={input} />
