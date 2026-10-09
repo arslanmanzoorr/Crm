@@ -11,6 +11,7 @@ import { defaultMilestones } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
 import { DOCS, LOAN_STAGES } from "./readiness";
 import { cleanSteps, TEMPLATES, TRIGGERS } from "./playbooks";
+import { cleanCma } from "./cma";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
 
@@ -1145,4 +1146,54 @@ export async function removeTerritory(area: string) {
   const { error } = await (await authed()).from("territories").delete().eq("area_key", area.trim().toLowerCase());
   if (error) throw new Error(error.message);
   revalidatePath("/team");
+}
+
+const CMA_DEFAULTS = { rates: { perSqft: 100, perBed: 10_000, perBath: 7_500 }, net: { commissionPct: 5, closingPct: 1.5, payoff: 0, concessions: 0, other: 0 } };
+
+/** Start a CMA from one of our listings or a typed address. */
+export async function createCma(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const db = await authed();
+  const property_id = str(f, "property_id");
+  let address = str(f, "address").slice(0, 300), subject = { sqft: Number(str(f, "sqft")) || 0, beds: Number(str(f, "beds")) || 0, baths: Number(str(f, "baths")) || 0 };
+  let seller: string | null = null;
+  if (UUID.test(property_id)) {
+    const { data: p } = await db.from("properties").select("address,sqft,beds,baths,seller_id").eq("id", property_id).maybeSingle();
+    if (!p) return { error: "Listing not found." };
+    address = p.address; subject = { sqft: p.sqft, beds: p.beds, baths: Number(p.baths) }; seller = p.seller_id;
+  }
+  if (!address) return { error: "Pick a listing or type the address." };
+  const { data, error } = await db.from("cmas").insert({
+    property_id: UUID.test(property_id) ? property_id : null, contact_id: seller, address, subject, ...CMA_DEFAULTS,
+  }).select("id").single();
+  if (error) return { error: error.message };
+  redirect(`/cma/${data.id}`);
+}
+
+export async function saveCma(id: string, payload: unknown): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(id)) return { error: "CMA not found." };
+  const c = cleanCma(payload);
+  if ("error" in c) return c;
+  const { error } = await (await authed()).from("cmas").update({
+    subject: c.subject, comps: c.comps, rates: c.rates, net: c.net, list_price: c.listPrice, notes: c.notes, updated_at: new Date().toISOString(),
+  }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath(`/cma/${id}`);
+  revalidatePath("/cma");
+  return { ok: "Saved" };
+}
+
+export async function deleteCma(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("cmas").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/cma");
+  redirect("/cma");
+}
+
+/** "CMA" button on a listing page. */
+export async function createCmaFromListing(f: FormData) {
+  const r = await createCma(undefined, f);
+  if (r?.error) throw new Error(r.error);
 }

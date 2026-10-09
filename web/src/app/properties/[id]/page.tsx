@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Calculator, Clapperboard, Pencil, Printer, Send, TrendingUp } from "lucide-react";
+import { Calculator, ChartNoAxesCombined, Clapperboard, Pencil, Printer, Send, TrendingUp } from "lucide-react";
+import { createCmaFromListing } from "@/lib/actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -55,6 +56,10 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         <Link href={`/publish?property=${p.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-light px-5 font-medium text-on-light hover:bg-white">
           <Send aria-hidden className="size-4" /> Post to socials
         </Link>
+        <form action={createCmaFromListing} className="contents">
+          <input type="hidden" name="property_id" value={p.id} />
+          <button className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3"><ChartNoAxesCombined aria-hidden className="size-4" /> CMA</button>
+        </form>
         <Link href={`/tools?tab=payment&price=${p.price}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
           <Calculator aria-hidden className="size-4" /> Payment
         </Link>

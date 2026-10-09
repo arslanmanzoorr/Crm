@@ -9,6 +9,7 @@ import type { Contingency, Financing, OfferTerms } from "./offers";
 import { BUYING_TYPES } from "./match";
 import type { PastClient } from "./retention";
 import type { Step, Trigger } from "./playbooks";
+import type { Comp, Home, NetInputs, Rates } from "./cma";
 import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
@@ -668,4 +669,23 @@ export async function getBuyingSignals(contactId?: string): Promise<Signal[]> {
   if (error) throw new Error(error.message);
   return ((data ?? []) as { contact_id: string; name: string; owner_id: string | null; signal: string; strength: number; at: string }[])
     .map((s) => ({ contactId: s.contact_id, name: s.name, ownerId: s.owner_id, signal: s.signal, strength: s.strength, at: s.at }));
+}
+
+export type Cma = {
+  id: string; address: string; propertyId: string | null; contactId: string | null; subject: Home; comps: Comp[]; rates: Rates; net: NetInputs;
+  listPrice: number | null; notes: string; updatedAt: string;
+};
+type CmaRow = { id: string; address: string; property_id: string | null; contact_id: string | null; subject: Home; comps: Comp[]; rates: Rates; net: NetInputs; list_price: number | string | null; notes: string; updated_at: string };
+const toCma = (r: CmaRow): Cma => ({ id: r.id, address: r.address, propertyId: r.property_id, contactId: r.contact_id, subject: r.subject, comps: r.comps, rates: r.rates, net: r.net, listPrice: r.list_price === null ? null : Number(r.list_price), notes: r.notes, updatedAt: r.updated_at });
+
+export async function listCmas(): Promise<Cma[]> {
+  if (!dbEnabled) return [];
+  const res = await (await supabase()).from("cmas").select("id,address,property_id,contact_id,subject,comps,rates,net,list_price,notes,updated_at").order("updated_at", { ascending: false }).limit(200);
+  return (must(res) as CmaRow[]).map(toCma);
+}
+
+export async function getCma(id: string): Promise<Cma | undefined> {
+  if (!dbEnabled || !/^[0-9a-f-]{36}$/i.test(id)) return undefined;
+  const { data } = await (await supabase()).from("cmas").select("id,address,property_id,contact_id,subject,comps,rates,net,list_price,notes,updated_at").eq("id", id).maybeSingle();
+  return data ? toCma(data as CmaRow) : undefined;
 }

@@ -44,3 +44,34 @@ export function sellerNet(price: number, n: NetInputs) {
   const net = price - commission - closing - n.payoff - n.concessions - n.other;
   return { price, commission, closing, payoff: n.payoff, concessions: n.concessions, other: n.other, net };
 }
+
+const num = (v: unknown, lo: number, hi: number) => { const n = Number(v); return Number.isFinite(n) && n >= lo && n <= hi ? n : NaN; };
+
+/** Validate a CMA coming from the editor. Returns clean data or the first problem, in words. */
+export function cleanCma(raw: unknown): { subject: Home; comps: Comp[]; rates: Rates; net: NetInputs; listPrice: number | null; notes: string } | { error: string } {
+  const x = (raw ?? {}) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const subject = { sqft: num(x.subject?.sqft, 0, 100_000), beds: num(x.subject?.beds, 0, 50), baths: num(x.subject?.baths, 0, 50) };
+  if (Object.values(subject).some(Number.isNaN)) return { error: "Check the subject home's size, beds and baths." };
+  const rates = { perSqft: num(x.rates?.perSqft, 0, 5000), perBed: num(x.rates?.perBed, 0, 1e6), perBath: num(x.rates?.perBath, 0, 1e6) };
+  if (Object.values(rates).some(Number.isNaN)) return { error: "Adjustment rates must be positive numbers." };
+  const net = { commissionPct: num(x.net?.commissionPct, 0, 100), closingPct: num(x.net?.closingPct, 0, 100), payoff: num(x.net?.payoff, 0, 1e10), concessions: num(x.net?.concessions, 0, 1e10), other: num(x.net?.other, 0, 1e10) };
+  if (Object.values(net).some(Number.isNaN)) return { error: "Check the net sheet numbers." };
+  if (!Array.isArray(x.comps) || x.comps.length > 30) return { error: "Up to 30 comps." };
+  const comps: Comp[] = [];
+  for (const [i, c] of x.comps.entries()) {
+    const comp = {
+      id: String(c?.id ?? i).slice(0, 40), address: String(c?.address ?? "").trim().slice(0, 300),
+      status: (["sold", "pending", "active"].includes(c?.status) ? c.status : "sold") as Comp["status"],
+      price: num(c?.price, 1, 1e10), sqft: num(c?.sqft, 0, 100_000), beds: num(c?.beds, 0, 50), baths: num(c?.baths, 0, 50),
+      soldOn: typeof c?.soldOn === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.soldOn) ? c.soldOn : null,
+      dom: c?.dom === null || c?.dom === "" || c?.dom === undefined ? null : num(c.dom, 0, 5000),
+      adjust: num(c?.adjust ?? 0, -1e9, 1e9), note: String(c?.note ?? "").slice(0, 500),
+    };
+    if (!comp.address) return { error: `Comp ${i + 1}: add the address.` };
+    if ([comp.price, comp.sqft, comp.beds, comp.baths, comp.adjust].some(Number.isNaN) || (comp.dom !== null && Number.isNaN(comp.dom))) return { error: `Comp ${i + 1}: check the numbers.` };
+    comps.push(comp);
+  }
+  const lp = x.listPrice === null || x.listPrice === "" || x.listPrice === undefined ? null : num(x.listPrice, 1, 1e10);
+  if (lp !== null && Number.isNaN(lp)) return { error: "List price must be a positive number." };
+  return { subject, comps, rates, net, listPrice: lp, notes: String(x.notes ?? "").slice(0, 5000) };
+}
