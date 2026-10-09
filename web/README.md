@@ -52,6 +52,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0023_client_portal.sql` | Client portal: hashed link tokens, `portal_view` / `portal_message` / `portal_favorite`, listing seller |
 | `0024_workflows.sql` | Automation playbooks: trigger enrollment, conditions, stop stages, pg_cron runner with retries |
 | `0025_workflow_task_window.sql` | Automated tasks are due 15 minutes after creation |
+| `0026_territories.sql` | Territories (area → agent), checked before round-robin routing |
 
 After `0010`, store the hash of your form key (per environment):
 

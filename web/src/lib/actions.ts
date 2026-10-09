@@ -1129,3 +1129,20 @@ export async function retryRun(id: number) {
   if (error) throw new Error(error.message);
   revalidatePath("/automations");
 }
+
+export async function addTerritory(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const area = str(f, "area").slice(0, 80), user_id = str(f, "user_id");
+  if (!area || !UUID.test(user_id)) return { error: "Name the area and pick the agent." };
+  const { error } = await (await authed()).from("territories").insert({ area, user_id });
+  if (error) return { error: error.code === "23505" ? "That area already has an agent. Remove it first to reassign." : error.code === "42501" ? "Only owners and admins can set territories." : error.message };
+  revalidatePath("/team");
+  return { ok: `${area} assigned` };
+}
+
+export async function removeTerritory(area: string) {
+  if (!dbEnabled) return;
+  const { error } = await (await authed()).from("territories").delete().eq("area_key", area.trim().toLowerCase());
+  if (error) throw new Error(error.message);
+  revalidatePath("/team");
+}

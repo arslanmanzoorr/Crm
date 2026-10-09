@@ -651,3 +651,10 @@ export async function getWorkflows(): Promise<{ workflows: Workflow[]; failed: F
     isAdmin: ["owner", "admin"].includes(me.data?.role ?? ""),
   };
 }
+
+/** Areas and who owns them. */
+export async function getTerritories(): Promise<{ area: string; userId: string }[]> {
+  if (!dbEnabled) return [];
+  const res = await (await supabase()).from("territories").select("area,user_id").order("area_key");
+  return (must(res) as { area: string; user_id: string }[]).map((t) => ({ area: t.area, userId: t.user_id }));
+}
