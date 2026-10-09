@@ -15,7 +15,7 @@ Last updated: 2026-10-09.
 | 5 | Listings | 69, 70, 72, 73 (links), 74, 75, 76, 77, 78, 79, 80, 81, 82, 83 | | 68, 71 | |
 | 6 | Matchmaking | 84, 85, 86, 91 (as tasks) | 90 (lead criteria act as the saved search) | 88 (maps) | 87, 89, 92–94 |
 | 7 | Marketing Studio | 96 | 95, 97, 98, 103, 104 | 100, 101, 102 | 99, 105–110 |
-| 8 | Showings & Open Houses | 111, 115, 116, 117, 118, 120, 121, 122 | 112 (.ics files, no two-way sync), 119 (follow-up task, not a draft yet) | 112 (two-way sync) | 113, 114 |
+| 8 | Showings & Open Houses | 111, 113, 115, 116, 117, 118, 120, 121, 122 | 112 (.ics files, no two-way sync), 119 (follow-up task, not a draft yet) | 112 (two-way sync), 114 (route optimization needs maps) | |
 | 9 | Deals & Transactions | 136 (team-private document room), 123, 124, 125, 128, 129, 130, 131, 132, 133, 134, 135 (in-app flags), 138, 139 | | 126 | 127, 137, 140 |
 | 10 | Seller Intelligence & CMA | 141, 142, 145, 146, 150, 151 | 152 (drafted on the listing page; agent sends) | 144, 149 (valuation and public-records feeds) | 143, 147, 148 (need market data) |
 | 11 | Mortgage & Financing | 153, 154, 155, 156, 157, 158, 159, 161 | 162 (in-app warnings) | 160 | |

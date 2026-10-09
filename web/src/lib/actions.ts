@@ -13,6 +13,7 @@ import { DOCS, LOAN_STAGES } from "./readiness";
 import { cleanSteps, TEMPLATES, TRIGGERS } from "./playbooks";
 import { cleanCma } from "./cma";
 import { checkUpload, safeFileName } from "./docs";
+import { planTour } from "./showings";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
 
@@ -1412,4 +1413,24 @@ export async function approveListing(id: string) {
   const { error } = await db.from("properties").update({ approved_at: new Date().toISOString(), approved_by: auth.user?.id }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
+}
+
+/** Book a tour: several homes for one buyer, back to back in the order given. */
+export async function scheduleTour(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const contact_id = str(f, "contact_id");
+  const ids = f.getAll("property_id").map(String).filter((x) => UUID.test(x));
+  const minutes = Number(str(f, "minutes")), travel = Number(str(f, "travel"));
+  if (!UUID.test(contact_id)) return { error: "Lead not found." };
+  if (ids.length < 2) return { error: "Pick at least two homes for a tour." };
+  if (new Set(ids).size !== ids.length) return { error: "Each home once, please." };
+  if (!(minutes >= 10 && minutes <= 120) || !(travel >= 0 && travel <= 120)) return { error: "Check the minutes per home and travel time." };
+  const slots = planTour(str(f, "starts_at"), ids.length, minutes, travel);
+  if (slots.length !== ids.length) return { error: "Pick a start time (up to 12 homes)." };
+  const db = await authed();
+  const { error } = await db.from("showings").insert(ids.map((property_id, i) => ({ contact_id, property_id, starts_at: slots[i].startsAt, ends_at: slots[i].endsAt, notes: `Tour stop ${i + 1} of ${ids.length}` })));
+  if (error) return { error: error.message };
+  await db.from("contacts").update({ stage: "Showing" }).eq("id", contact_id).in("stage", ["New", "Contacted", "Qualified"]);
+  revalidatePath("/", "layout");
+  return { ok: `Tour booked: ${ids.length} showings` };
 }

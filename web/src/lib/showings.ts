@@ -54,3 +54,13 @@ export function ics(e: { uid: string; startsAt: string; endsAt: string; title: s
     "END:VEVENT", "END:VCALENDAR",
   ].map(fold).join("\r\n") + "\r\n";
 }
+
+/** Back-to-back slots for a tour: each home gets `minutes`, with `travel` minutes between homes. */
+export function planTour(startIso: string, count: number, minutes: number, travel: number): { startsAt: string; endsAt: string }[] {
+  const start = Date.parse(startIso);
+  if (!Number.isFinite(start) || count < 1 || minutes < 5 || travel < 0) return [];
+  return Array.from({ length: Math.min(count, 12) }, (_, i) => {
+    const s = start + i * (minutes + travel) * 60_000;
+    return { startsAt: new Date(s).toISOString(), endsAt: new Date(s + minutes * 60_000).toISOString() };
+  });
+}

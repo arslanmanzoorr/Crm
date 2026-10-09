@@ -13,6 +13,7 @@ import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/com
 import type { Lead } from "@/lib/data";
 import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFinancing, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
+import { TourPlanner } from "@/components/tour-planner";
 import { FinancingForm } from "@/components/financing-controls";
 import { PortalControls } from "@/components/portal-controls";
 import { PeopleLinks } from "@/components/people-links";
@@ -149,6 +150,10 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                     {showings.map((s) => <ShowingItem key={s.id} s={s} showBuyer={false} />)}
                   </ul>
                 )}
+                <details>
+                  <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Plan a tour (several homes)</summary>
+                  <div className="mt-3"><TourPlanner contactId={lead.id} listings={properties.filter((p) => p.status === "Active" || p.status === "Coming soon").map(({ id, address }) => ({ id, address }))} /></div>
+                </details>
                 <details>
                   <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Book a showing</summary>
                   <div className="mt-3"><ScheduleShowing contactId={lead.id} listings={properties.filter((p) => p.status !== "Sold").map(({ id, address }) => ({ id, address }))} /></div>

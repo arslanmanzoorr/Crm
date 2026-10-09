@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { conflicts, ics } from "./showings.ts";
+import { conflicts, ics, planTour } from "./showings.ts";
 
 const s = (id: string, start: string, end: string, agentId = "a", status = "confirmed") => ({ id, agentId, startsAt: `2026-10-10T${start}:00Z`, endsAt: `2026-10-10T${end}:00Z`, status });
 
@@ -27,4 +27,11 @@ test("ics escapes text, uses UTC and folds long lines at 75 octets", () => {
   assert.ok(out.includes("Lockbox 1234\\nCall first."));
   for (const line of out.split("\r\n")) assert.ok(Buffer.byteLength(line) <= 75, line);
   assert.ok(out.endsWith("END:VCALENDAR\r\n"));
+});
+
+test("planTour books homes back to back with travel time between", () => {
+  const slots = planTour("2026-10-10T15:00:00.000Z", 3, 30, 15);
+  assert.deepEqual(slots.map((s) => [s.startsAt.slice(11, 16), s.endsAt.slice(11, 16)]), [["15:00", "15:30"], ["15:45", "16:15"], ["16:30", "17:00"]]);
+  assert.deepEqual(planTour("nope", 3, 30, 15), []);
+  assert.equal(planTour("2026-10-10T15:00:00Z", 40, 30, 0).length, 12); // a tour tops out at 12 homes
 });
