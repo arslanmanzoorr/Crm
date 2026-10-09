@@ -394,13 +394,15 @@ export async function submitLeadForm(formId: string, _: FormState, f: FormData):
   if (str(f, "website") || !started || Date.now() - started < FORM_MIN_MS) return { ok: "Thanks! We'll be in touch shortly." };
 
   const salt = process.env.FORM_IP_SALT;
-  if (!salt) return { error: "This form isn't configured yet." };
+  const key = process.env.FORM_RPC_KEY;
+  if (!salt || !key) return { error: "This form isn't configured yet." };
   const h = await headers();
   const ip = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "unknown").trim();
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}:${ip}`));
   const ipHash = Buffer.from(digest).toString("hex").slice(0, 32);
 
   const { data, error } = await (await supabase()).rpc("submit_lead", {
+    p_key: key,
     p_form: formId,
     p_ip_hash: ipHash,
     p_name: str(f, "name"),
@@ -417,6 +419,7 @@ export async function submitLeadForm(formId: string, _: FormState, f: FormData):
     invalid: { error: "Please add your name and a valid email or phone number." },
     closed: { error: "This form is no longer accepting submissions." },
     limited: { error: "Too many submissions from this connection. Please try again later." },
+    forbidden: { error: "This form isn't configured yet." },
   };
   return results[data as string] ?? { error: "Something went wrong. Please try again." };
 }
