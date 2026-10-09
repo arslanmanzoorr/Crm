@@ -23,7 +23,7 @@ type Portal = {
   deals: { address: string; side: "buyer" | "seller"; status: string; close_on: string | null; milestones: { title: string; due_on: string | null; done: boolean }[] }[];
   financing: { cash: boolean; stage: LoanStage; preapproval_expires: string | null; docs: Doc[]; gift_funds: boolean } | null;
   favorites: string[];
-  listings: { id: string; address: string; area: string; price: number; beds: number; baths: number; sqft: number; status: string; features: string[] }[];
+  listings: { id: string; address: string; area: string; price: number; beds: number; baths: number; sqft: number; status: string; features: string[]; tour_url: string | null }[];
   selling: {
     address: string; price: number; status: string; days_on_market: number; showings: number; open_house_visitors: number;
     feedback: { interest: string; rating: number | null; feedback: string; date: string }[];
@@ -181,6 +181,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
                   <FavoriteButton token={token} propertyId={l.id} on={p.favorites.includes(l.id)} address={l.address} />
                 </div>
                 {m && <MatchReasons m={m} />}
+                {l.tour_url && <a href={l.tour_url} target="_blank" rel="noopener noreferrer" className="w-fit text-sm text-accent underline">Take the virtual tour</a>}
               </li>
             ))}
           </ul>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Calculator, ChartNoAxesCombined, Clapperboard, Pencil, Printer, Send, TrendingUp } from "lucide-react";
-import { createCmaFromListing } from "@/lib/actions";
+import { Calculator, ChartNoAxesCombined, Clapperboard, LayoutPanelTop, Pencil, Printer, Rotate3d, Send, TrendingUp } from "lucide-react";
+import { approveListing, createCmaFromListing } from "@/lib/actions";
 import Link from "next/link";
 import { daysBetween } from "@/lib/deals";
 import { notFound } from "next/navigation";
@@ -14,7 +14,7 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getDocuments, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
+import { dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { SellerUpdateCard } from "@/components/seller-update-card";
 import { Documents } from "@/components/documents";
@@ -46,6 +46,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         </div>
         <span className="text-4xl font-light text-accent sm:text-5xl">{money(p.price)}</span>
       </header>
+      {!p.approved && <ApprovalBanner id={p.id} />}
       <div className="flex flex-wrap gap-2">
         <Chip>{p.beds} beds</Chip>
         <Chip>{p.baths} baths</Chip>
@@ -53,6 +54,12 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         {p.features.map((f) => <Chip key={f}>{f}</Chip>)}
       </div>
       {p.description && <p className="max-w-2xl text-ink/80">{p.description}</p>}
+      {(p.tourUrl || p.floorPlanUrl) && (
+        <div className="flex flex-wrap gap-2">
+          {p.tourUrl && <a href={p.tourUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 text-sm hover:bg-surface-3"><Rotate3d aria-hidden className="size-4" /> Virtual tour</a>}
+          {p.floorPlanUrl && <a href={p.floorPlanUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 text-sm hover:bg-surface-3"><LayoutPanelTop aria-hidden className="size-4" /> Floor plan</a>}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         <Link href={`/studio?property=${p.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 font-medium text-on-light hover:bg-accent-strong">
           <Clapperboard aria-hidden className="size-4" /> Make video
@@ -359,5 +366,20 @@ async function ListingDocs({ id }: { id: string }) {
       <h2 id="docs" className="text-xl">Documents</h2>
       <Documents parent={{ property_id: id }} docs={docs} />
     </section>
+  );
+}
+
+/** Agents' new listings wait for an owner or admin before they're marketed. */
+async function ApprovalBanner({ id }: { id: string }) {
+  const admin = await isOwnerOrAdmin();
+  return (
+    <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-card bg-surface-2 p-4 text-sm">
+      <span>Waiting for broker approval. It can&apos;t be posted to social media until it&apos;s approved.</span>
+      {admin && (
+        <form action={approveListing.bind(null, id)}>
+          <button className="min-h-11 rounded-full bg-accent px-5 font-medium text-on-light hover:bg-accent-strong">Approve listing</button>
+        </form>
+      )}
+    </div>
   );
 }

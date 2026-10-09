@@ -119,7 +119,10 @@ const propertyFields = (f: FormData) => ({
     showing_notes: str(f, "showing_notes").slice(0, 1000),
     seller_id: UUID.test(str(f, "seller_id")) ? str(f, "seller_id") : null,
     listing_expires: /^\d{4}-\d{2}-\d{2}$/.test(str(f, "listing_expires")) ? str(f, "listing_expires") : null,
+    tour_url: httpsOrNull(str(f, "tour_url")),
+    floor_plan_url: httpsOrNull(str(f, "floor_plan_url")),
 });
+const httpsOrNull = (v: string) => (/^https:\/\/\S+$/.test(v) && v.length <= 500 ? v : null);
 
 const ALERT_MIN_FIT = 70;
 const MAX_ALERTS = 25;
@@ -1398,4 +1401,14 @@ export async function updatePrivacyRequest(id: string, status: "open" | "verifyi
   if (error) return { error: error.message };
   revalidatePath("/account");
   return { ok: "Saved" };
+}
+
+/** Owners and admins approve listings agents added (the database ignores anyone else). */
+export async function approveListing(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const db = await authed();
+  const { data: auth } = await db.auth.getUser();
+  const { error } = await db.from("properties").update({ approved_at: new Date().toISOString(), approved_by: auth.user?.id }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
 }

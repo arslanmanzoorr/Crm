@@ -46,6 +46,9 @@ export type Property = {
   sellerId?: string | null; // the seller client (their portal shows this listing)
   createdAt?: string;
   listingExpires?: string | null; // listing agreement end date
+  tourUrl?: string | null;
+  floorPlanUrl?: string | null;
+  approved?: boolean; // agents' new listings wait for an owner/admin
   tone: string; // placeholder cover gradient when a listing has no photos
   cover?: string; // signed URL of the first photo
   photos?: { id: string; url: string }[]; // full gallery (listing page only)

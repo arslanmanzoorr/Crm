@@ -15,5 +15,6 @@ export default function PublishPage({ searchParams }: PageProps<"/publish">) {
 
 async function PublisherFor({ searchParams }: { searchParams: PageProps<"/publish">["searchParams"] }) {
   const id = (await searchParams).property;
-  return <Publisher properties={await getProperties()} initialPropertyId={typeof id === "string" ? id : ""} />;
+  // Agents' listings waiting for broker approval can't be marketed yet.
+  return <Publisher properties={(await getProperties()).filter((p) => p.approved !== false)} initialPropertyId={typeof id === "string" ? id : ""} />;
 }

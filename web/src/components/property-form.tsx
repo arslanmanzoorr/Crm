@@ -26,6 +26,8 @@ export function PropertyForm({ p, clients = [] }: { p?: Property; clients?: { id
           <Field label="Sqft" name="sqft" type="number" min={0} defaultValue={p?.sqft} />
           <Field label="Features" name="features" hint="comma separated" placeholder="Backyard, Garage" defaultValue={p?.features.join(", ")} />
           <DescriptionField defaultValue={p?.description} />
+          <Field label="Virtual tour link" name="tour_url" type="url" placeholder="https://" pattern="https://.*" defaultValue={p?.tourUrl ?? ""} />
+          <Field label="Floor plan link" name="floor_plan_url" type="url" placeholder="https://" pattern="https://.*" defaultValue={p?.floorPlanUrl ?? ""} />
           <label className="flex flex-col gap-1.5 text-sm">
             <span className="text-muted">Listing agreement ends</span>
             <input name="listing_expires" type="date" defaultValue={p?.listingExpires ?? ""} className={input} />
