@@ -11,11 +11,12 @@ import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
-import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFinancing, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks } from "@/lib/db";
+import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFinancing, getHoldings, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { TourPlanner } from "@/components/tour-planner";
 import { FinancingForm } from "@/components/financing-controls";
 import { PortalControls } from "@/components/portal-controls";
+import { OwnedHomes } from "@/components/owned-homes";
 import { PeopleLinks } from "@/components/people-links";
 import { Documents } from "@/components/documents";
 import { ReadinessList } from "@/components/readiness-card";
@@ -55,7 +56,7 @@ function blockers(lead: Lead) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties, team, deals, offers, refs, people, showings, financing, partners, portal, signals, links, docs] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id }), getFinancing(lead.id), getPartners(), getPortalLink(lead.id), getBuyingSignals(lead.id), getLinks(lead.id), getDocuments({ contactId: lead.id })]);
+  const [tasks, properties, team, deals, offers, refs, people, showings, financing, partners, portal, signals, links, docs, homes] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id }), getFinancing(lead.id), getPartners(), getPortalLink(lead.id), getBuyingSignals(lead.id), getLinks(lead.id), getDocuments({ contactId: lead.id }), getHoldings(lead.id)]);
   if (refs.referredBy && !people.some((p) => p.id === refs.referredBy!.id)) people.unshift(refs.referredBy); // keep the current referrer selectable
   const mine = tasks.filter((t) => t.contactId === lead.id);
   const matches = properties
@@ -188,6 +189,10 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
             <section aria-labelledby="lead-docs" className="flex flex-col gap-2">
               <h2 id="lead-docs" className="text-xl">Documents</h2>
               <Documents parent={{ contact_id: lead.id }} docs={docs} />
+            </section>
+            <section aria-labelledby="owned" className="flex flex-col gap-2">
+              <h2 id="owned" className="text-xl">Homes they own</h2>
+              <div className="rounded-card bg-surface-2 p-5"><OwnedHomes contactId={lead.id} homes={homes} /></div>
             </section>
             <section aria-labelledby="people" className="flex flex-col gap-2">
               <h2 id="people" className="text-xl">People</h2>

@@ -70,3 +70,25 @@ export function analyzeRental(x: Rental) {
     onePercent: x.price > 0 && x.rent >= x.price * 0.01,
   };
 }
+
+export type OwnedHome = { purchasePrice: number | null; valueEstimate: number | null; loanBalance: number; monthlyRent: number; monthlyCosts: number };
+
+/**
+ * A client's holdings at a glance. Homes with no value estimate count at purchase price; homes with neither
+ * add nothing to value or equity (so equity is never invented). Yield is net rent over value, rentals only.
+ */
+export function portfolio(homes: OwnedHome[]) {
+  let value = 0, loans = 0, cost = 0, gain = 0, rentValue = 0, net = 0;
+  for (const h of homes) {
+    const v = h.valueEstimate ?? h.purchasePrice ?? 0;
+    value += v; loans += h.loanBalance;
+    if (h.purchasePrice && h.valueEstimate) { cost += h.purchasePrice; gain += h.valueEstimate - h.purchasePrice; }
+    if (h.monthlyRent > 0) { rentValue += v; net += (h.monthlyRent - h.monthlyCosts) * 12; }
+  }
+  return {
+    value, loans, equity: value - loans,
+    appreciationPct: cost > 0 ? (gain / cost) * 100 : null,
+    annualNet: net,
+    yieldPct: rentValue > 0 ? (net / rentValue) * 100 : null,
+  };
+}

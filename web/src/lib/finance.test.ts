@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { analyzeRental, maxPrice, monthlyCost, payment } from "./finance.ts";
+import { analyzeRental, maxPrice, monthlyCost, payment, portfolio } from "./finance.ts";
 
 const near = (a: number, b: number, tol = 0.01) => assert.ok(Math.abs(a - b) <= tol, `${a} != ${b}`);
 
@@ -47,4 +47,19 @@ test("analyzeRental: NOI, cap rate, cash flow, cash-on-cash, DSCR", () => {
   near(r.cashOnCash, (r.cashFlow / 104_000) * 100);
   near(r.dscr!, r.noi / r.debt);
   assert.equal(r.onePercent, false);           // 2800 < 3000
+});
+
+test("portfolio: equity, appreciation only where both prices are known, yield on rentals only", () => {
+  const p = portfolio([
+    { purchasePrice: 300_000, valueEstimate: 450_000, loanBalance: 200_000, monthlyRent: 0, monthlyCosts: 0 },   // their home
+    { purchasePrice: 200_000, valueEstimate: 250_000, loanBalance: 150_000, monthlyRent: 2_000, monthlyCosts: 1_000 }, // rental
+    { purchasePrice: 100_000, valueEstimate: null, loanBalance: 0, monthlyRent: 0, monthlyCosts: 0 },          // no estimate: counts at cost, no gain
+  ]);
+  assert.equal(p.value, 800_000);
+  assert.equal(p.equity, 450_000);
+  assert.equal(p.appreciationPct, 40);  // 200k gain on 500k cost
+  assert.equal(p.annualNet, 12_000);
+  assert.equal(p.yieldPct, 4.8);        // 12k on 250k
+  const empty = portfolio([{ purchasePrice: null, valueEstimate: null, loanBalance: 0, monthlyRent: 0, monthlyCosts: 0 }]);
+  assert.deepEqual([empty.value, empty.appreciationPct, empty.yieldPct], [0, null, null]);
 });

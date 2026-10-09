@@ -611,6 +611,23 @@ export async function getFinancing(contactId: string): Promise<FinancingRecord |
   };
 }
 
+export type Holding = {
+  id: string; address: string; purchasePrice: number | null; purchasedOn: string | null; valueEstimate: number | null;
+  loanBalance: number; monthlyRent: number; monthlyCosts: number; notes: string;
+};
+
+export async function getHoldings(contactId: string): Promise<Holding[]> {
+  if (!dbEnabled) return [];
+  const { data } = await (await supabase()).from("owned_homes")
+    .select("id,address,purchase_price,purchased_on,value_estimate,loan_balance,monthly_rent,monthly_costs,notes")
+    .eq("contact_id", contactId).order("purchased_on", { ascending: true, nullsFirst: false });
+  const n = (v: unknown) => (v === null ? null : Number(v));
+  return (data ?? []).map((h) => ({
+    id: h.id, address: h.address, purchasePrice: n(h.purchase_price), purchasedOn: h.purchased_on, valueEstimate: n(h.value_estimate),
+    loanBalance: Number(h.loan_balance), monthlyRent: Number(h.monthly_rent), monthlyCosts: Number(h.monthly_costs), notes: h.notes,
+  }));
+}
+
 export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;
 
 /** The client's live portal link, if any (the token itself is never stored). */

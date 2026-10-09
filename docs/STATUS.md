@@ -23,7 +23,7 @@ Last updated: 2026-10-09.
 | 13 | Referral & Retention | 177, 178, 179, 180, 181, 182, 183, 185, 186 | | | 184 |
 | 14 | Brokerage & Team Ops | 188, 189, 190, 193, 195 | 187, 191, 192, 194, 196 (territories; no offices) | | |
 | 15 | Commissions & Finance | 198, 199, 201, 202, 203, 204, 206 | 197 (default split per agent; no caps or tiers), 200 (pending and 30-day view) | 205 | |
-| 16 | Investor Toolkit | 207, 208, 209, 210, 211, 214, 216 | 213 (portal hearts) | 212 (rent comps) | 215 |
+| 16 | Investor Toolkit | 207, 208, 209, 210, 211, 214, 215 (homes they own: equity, yield), 216 | 213 (portal hearts) | 212 (rent comps) | — |
 | 17 | Automation & Workflows | 218, 219, 220, 222, 225, 226 | 217 (structured builder, not a canvas), 223, 224 | | 221 (needs AI key) |
 | 18 | Analytics | 227, 228, 229, 230, 231, 232, 233, 234, 235 | 236 (CSV per table) | | |
 | 19 | Security & Compliance | 237, 239, 240, 241, 242, 243, 244, 248 | 245 | 238 (SSO) | 246, 247 |

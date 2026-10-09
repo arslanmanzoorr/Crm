@@ -1042,6 +1042,36 @@ export async function saveFinancing(_: FormState, f: FormData): Promise<FormStat
   return { ok: "Saved" };
 }
 
+/** Add or update a home the client owns. Blank money fields mean unknown, not zero, for price and value. */
+export async function saveOwnedHome(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const id = str(f, "id"), contact_id = str(f, "contact_id"), address = str(f, "address").slice(0, 300), bought = str(f, "purchased_on");
+  if (!UUID.test(contact_id)) return { error: "Lead not found." };
+  if (!address) return { error: "Add the address." };
+  if (bought && !DATE.test(bought)) return { error: "Pick a valid purchase date." };
+  const opt = (k: string) => (str(f, k) ? Number(str(f, k)) : null);
+  const row = {
+    contact_id, address, purchased_on: bought || null, notes: str(f, "notes").slice(0, 2000),
+    purchase_price: opt("purchase_price"), value_estimate: opt("value_estimate"),
+    loan_balance: num(f, "loan_balance"), monthly_rent: num(f, "monthly_rent"), monthly_costs: num(f, "monthly_costs"),
+    updated_at: new Date().toISOString(),
+  };
+  if ([row.purchase_price, row.value_estimate].some((n) => n !== null && !(n > 0 && n < 1e10))
+    || !(row.loan_balance >= 0 && row.loan_balance < 1e10) || [row.monthly_rent, row.monthly_costs].some((n) => !(n >= 0 && n < 1e8))) return { error: "Amounts must be positive numbers." };
+  const db = await authed();
+  const { error } = UUID.test(id) ? await db.from("owned_homes").update(row).eq("id", id) : await db.from("owned_homes").insert(row);
+  if (error) return { error: error.message };
+  revalidatePath(`/leads/${contact_id}`);
+  return { ok: "Saved" };
+}
+
+export async function deleteOwnedHome(id: string, contactId: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("owned_homes").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/leads/${contactId}`);
+}
+
 /**
  * A new private portal link for a client. The token is shown once (only its hash is stored), so creating a
  * new link revokes the old ones: there's never more than one live link per client.
