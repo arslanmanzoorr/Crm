@@ -12,7 +12,8 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getOffers, getOpenBuyers, getOpenHouses, getProperty, type OpenHouse } from "@/lib/db";
+import { dbEnabled, getLeadOptions, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
+import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
 import { matchListing } from "@/lib/match";
 
@@ -65,6 +66,11 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
       {dbEnabled && (
         <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
           <Offers p={p} />
+        </Suspense>
+      )}
+      {dbEnabled && (
+        <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
+          <Showings p={p} />
         </Suspense>
       )}
       {dbEnabled && (
@@ -213,6 +219,48 @@ async function Offers({ p }: { p: Property }) {
           })}
         </ul>
       )}
+    </section>
+  );
+}
+
+const INTEREST_WORD = { not_interested: "Not for them", maybe: "Maybe", interested: "Interested", offer: "Wants to offer" } as const;
+
+/** Showings on this listing: what's booked, and what buyers thought (part of the seller report). */
+async function Showings({ p }: { p: Property }) {
+  const [list, buyers] = await Promise.all([getShowings({ propertyId: p.id }), getLeadOptions()]);
+  const now = new Date().getTime();
+  const upcoming = list.filter((s) => Date.parse(s.endsAt) >= now && (s.status === "requested" || s.status === "confirmed"));
+  const heard = list.filter((s) => s.interest).reverse();
+  const tally = Object.fromEntries(Object.keys(INTEREST_WORD).map((k) => [k, heard.filter((s) => s.interest === k).length])) as Record<keyof typeof INTEREST_WORD, number>;
+  return (
+    <section aria-labelledby="showings" className="flex max-w-2xl flex-col gap-3">
+      <h2 id="showings" className="text-xl">Showings {list.length > 0 && <span className="text-muted">({list.filter((s) => s.status !== "cancelled").length})</span>}</h2>
+      {p.showingNotes && <p className="text-sm text-ink/80">Instructions: {p.showingNotes}</p>}
+      {upcoming.length > 0 && (
+        <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          {upcoming.map((s) => <ShowingItem key={s.id} s={s} />)}
+        </ul>
+      )}
+      {heard.length > 0 && (
+        <details className="rounded-card bg-surface-2 p-5">
+          <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">
+            Seller report: {heard.length} buyer{heard.length === 1 ? "" : "s"} gave feedback ({(Object.keys(INTEREST_WORD) as (keyof typeof INTEREST_WORD)[]).filter((k) => tally[k]).map((k) => `${tally[k]} ${INTEREST_WORD[k].toLowerCase()}`).join(", ")})
+          </summary>
+          <ul className="mt-2 flex flex-col divide-y divide-white/5 text-sm">
+            {heard.map((s) => (
+              <li key={s.id} className="flex flex-col gap-1 py-2">
+                <span className="flex flex-wrap justify-between gap-2"><span>{INTEREST_WORD[s.interest!]}{s.rating && ` · ${s.rating}/5`}</span><span className="text-muted"><LocalTime ts={s.startsAt} opts={{ month: "short", day: "numeric" }} /></span></span>
+                {s.feedback && <q className="text-ink/80">{s.feedback}</q>}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-muted">Buyer names stay private; share this with the seller as is.</p>
+        </details>
+      )}
+      <details className="rounded-card bg-surface-2 p-5">
+        <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Book a showing here</summary>
+        <div className="mt-3"><ScheduleShowing buyers={buyers} listings={[]} propertyId={p.id} /></div>
+      </details>
     </section>
   );
 }

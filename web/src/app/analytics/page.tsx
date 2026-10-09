@@ -102,11 +102,11 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
 
       <Section id="listings" title="Listings" note="Active inventory, longest on market first.">
         {a.listings.length === 0 ? <Empty>No active listings.</Empty> : (
-          <Table head={["Listing", "Status", "Days on market", "Open house visitors", "Offers", "Best offer vs. price"]}>
+          <Table head={["Listing", "Status", "Days on market", "Open house visitors", "Showings", "Offers", "Best offer vs. price"]}>
             {a.listings.map((l) => (
               <tr key={l.id}>
                 <th scope="row" className="max-w-64 truncate py-2.5 pr-4 text-left font-normal"><Link href={`/properties/${l.id}`} className="hover:text-accent">{l.address}</Link></th>
-                <Td>{l.status}</Td><Td>{l.days_on_market}</Td><Td>{l.visitors}</Td><Td>{l.offers}</Td>
+                <Td>{l.status}</Td><Td>{l.days_on_market}</Td><Td>{l.visitors}</Td><Td>{l.showings}</Td><Td>{l.offers}{l.showings > 0 && <Dim> {pct(l.offers, l.showings)}</Dim>}</Td>
                 <Td>{l.best_offer === null ? "–" : <>{money(Number(l.best_offer))} <Dim>{Number(l.best_offer) >= Number(l.price) ? "+" : "−"}{money(Math.abs(Number(l.best_offer) - Number(l.price)))}</Dim></>}</Td>
               </tr>
             ))}

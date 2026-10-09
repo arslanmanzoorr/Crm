@@ -28,6 +28,10 @@ export function PropertyForm({ p }: { p?: Property }) {
             <span className="text-muted">Description</span>
             <textarea name="description" rows={4} className={`${input} resize-y`} defaultValue={p?.description} />
           </label>
+          <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
+            <span className="text-muted">Showing instructions <span className="text-xs">(team only)</span></span>
+            <textarea name="showing_notes" rows={2} maxLength={1000} placeholder="Lockbox code, notice needed, pets, best times" className={`${input} resize-y`} defaultValue={p?.showingNotes} />
+          </label>
           <button disabled={pending} className={`${primaryBtn} w-fit`}>{pending ? "Saving…" : "Save listing"}</button>
         </>
       )}

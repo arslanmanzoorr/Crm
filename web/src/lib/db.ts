@@ -70,11 +70,11 @@ export function toLead(r: ContactRow): Lead {
 const TONES = mock.properties.map((p) => p.tone);
 // Placeholder gradient keyed to the listing id, so it's the same on every page.
 const toneFor = (id: string) => TONES[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length];
-const toProperty = (r: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string }): Property =>
-  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id) });
+const toProperty = ({ showing_notes, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string }): Property =>
+  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "" });
 
 const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
-const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description";
+const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes";
 
 function must<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);
@@ -475,7 +475,7 @@ export type Analytics = {
   cycle: { deals: number; lead_to_contract_days: number | null; contract_to_close_days: number | null };
   revenue: Money[]; forecast: Money[];
   agents: { user_id: string; email: string; role: string; leads: number; median_response_min: number | null; touches: number; active_deals: number; closed: number; closed_agent: number }[];
-  listings: { id: string; address: string; status: string; price: number; days_on_market: number; visitors: number; offers: number; best_offer: number | null }[];
+  listings: { id: string; address: string; status: string; price: number; days_on_market: number; visitors: number; showings: number; offers: number; best_offer: number | null }[];
 };
 
 /** Team analytics for the last `days` days (one RPC; aggregation runs in Postgres under the caller's RLS). */
@@ -537,4 +537,41 @@ export async function getReferrals(contactId: string): Promise<{ referredBy: { i
   ]);
   const by = me.data?.referred_by ? (await db.from("contacts").select("id,name").eq("id", me.data.referred_by).maybeSingle()).data : null;
   return { referredBy: by, referred: theirs.data ?? [] };
+}
+
+export type Showing = {
+  id: string; startsAt: string; endsAt: string; status: "requested" | "confirmed" | "done" | "cancelled" | "no_show";
+  interest: "not_interested" | "maybe" | "interested" | "offer" | null; rating: number | null; feedback: string; notes: string; agentId: string | null;
+  address: string; showingNotes: string; property: { id: string; price: number } | null;
+  contact: { id: string; name: string; phone: string; email: string };
+};
+type ShowingRow = {
+  id: string; starts_at: string; ends_at: string; status: Showing["status"]; interest: Showing["interest"]; rating: number | null; feedback: string; notes: string;
+  agent_id: string | null; address: string; properties: { id: string; address: string; price: number | string; showing_notes: string } | null;
+  contacts: { id: string; name: string; phone: string | null; email: string | null } | null;
+};
+const SHOWING_COLS = "id,starts_at,ends_at,status,interest,rating,feedback,notes,agent_id,address,properties(id,address,price,showing_notes),contacts(id,name,phone,email)";
+const toShowing = (r: ShowingRow): Showing => ({
+  id: r.id, startsAt: r.starts_at, endsAt: r.ends_at, status: r.status, interest: r.interest, rating: r.rating, feedback: r.feedback, notes: r.notes, agentId: r.agent_id,
+  address: r.properties?.address || r.address, showingNotes: r.properties?.showing_notes ?? "",
+  property: r.properties ? { id: r.properties.id, price: Number(r.properties.price) } : null,
+  contact: { id: r.contacts?.id ?? "", name: r.contacts?.name ?? "Deleted lead", phone: r.contacts?.phone ?? "", email: r.contacts?.email ?? "" },
+});
+
+/** Showings by time window, buyer or listing. Ordered by start time. */
+export async function getShowings(by: { from?: string; to?: string; contactId?: string; propertyId?: string }): Promise<Showing[]> {
+  if (!dbEnabled) return [];
+  let q = (await supabase()).from("showings").select(SHOWING_COLS);
+  if (by.from) q = q.gte("starts_at", by.from);
+  if (by.to) q = q.lt("starts_at", by.to);
+  if (by.contactId) q = q.eq("contact_id", by.contactId);
+  if (by.propertyId) q = q.eq("property_id", by.propertyId);
+  const res = await q.order("starts_at").limit(500);
+  return (must(res) as unknown as ShowingRow[]).map(toShowing);
+}
+
+export async function getShowing(id: string): Promise<Showing | undefined> {
+  if (!dbEnabled || !/^[0-9a-f-]{36}$/i.test(id)) return undefined;
+  const { data } = await (await supabase()).from("showings").select(SHOWING_COLS).eq("id", id).maybeSingle();
+  return data ? toShowing(data as unknown as ShowingRow) : undefined;
 }

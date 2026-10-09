@@ -42,6 +42,7 @@ export type Property = {
   status: "Active" | "Coming soon" | "Under contract" | "Sold";
   features: string[];
   description: string;
+  showingNotes?: string; // lockbox, notice, pets (team only)
   tone: string; // placeholder cover gradient when a listing has no photos
   cover?: string; // signed URL of the first photo
   photos?: { id: string; url: string }[]; // full gallery (listing page only)

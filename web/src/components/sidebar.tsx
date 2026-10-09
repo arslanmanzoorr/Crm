@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartColumn, CircleUserRound, Clapperboard, Handshake, HeartHandshake, Home, Inbox, LayoutGrid, Menu, Search, Send, Users } from "lucide-react";
+import { CalendarDays, ChartColumn, CircleUserRound, Clapperboard, Handshake, HeartHandshake, Home, Inbox, LayoutGrid, Menu, Search, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CommandPalette, openPalette } from "./command-palette";
@@ -9,6 +9,7 @@ const nav = [
   { label: "Today", href: "/", icon: LayoutGrid, phone: true },
   { label: "Leads", href: "/leads", icon: Users, phone: true },
   { label: "Listings", href: "/properties", icon: Home, phone: true },
+  { label: "Showings", href: "/showings", icon: CalendarDays, phone: false },
   { label: "Deals", href: "/deals", icon: Handshake, phone: true },
   { label: "Inbox", href: "/inbox", icon: Inbox, phone: true },
   { label: "Clients", href: "/clients", icon: HeartHandshake, phone: false },
@@ -33,7 +34,7 @@ export function Sidebar() {
   const path = usePathname();
   if (path === "/login" || path.startsWith("/legal") || path.startsWith("/f/") || path.startsWith("/oh/")) return null;
   const isActive = (href: string) => (href === "/" ? path === "/" : href === "/leads" ? path.startsWith("/leads") || path.startsWith("/pipeline") : path.startsWith(href));
-  const moreActive = path.startsWith("/account") || path.startsWith("/clients") || path.startsWith("/analytics") || path.startsWith("/studio") || path.startsWith("/publish");
+  const moreActive = path.startsWith("/account") || path.startsWith("/showings") || path.startsWith("/clients") || path.startsWith("/analytics") || path.startsWith("/studio") || path.startsWith("/publish");
   return (
     <>
     <CommandPalette />

@@ -11,7 +11,8 @@ import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
-import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getReferrals, getTasks } from "@/lib/db";
+import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getReferrals, getShowings, getTasks } from "@/lib/db";
+import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { ReferredBySelect } from "@/components/client-actions";
 import { STATUS_LABEL } from "@/lib/offers";
 import { money } from "@/lib/data";
@@ -47,7 +48,7 @@ function blockers(lead: Lead) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties, team, deals, offers, refs, people] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions()]);
+  const [tasks, properties, team, deals, offers, refs, people, showings] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id })]);
   if (refs.referredBy && !people.some((p) => p.id === refs.referredBy!.id)) people.unshift(refs.referredBy); // keep the current referrer selectable
   const mine = tasks.filter((t) => t.contactId === lead.id);
   const matches = properties
@@ -112,6 +113,20 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
 
         <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="flex min-w-0 flex-col gap-6">
+            {["buyer", "investor", "renter"].includes(lead.type ?? "") && (
+              <section aria-labelledby="showings" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 sm:p-6">
+                <h2 id="showings" className="text-xl">Showings</h2>
+                {showings.length > 0 && (
+                  <ul className="-mx-5 flex flex-col divide-y divide-white/5 sm:-mx-6">
+                    {showings.map((s) => <ShowingItem key={s.id} s={s} showBuyer={false} />)}
+                  </ul>
+                )}
+                <details>
+                  <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Book a showing</summary>
+                  <div className="mt-3"><ScheduleShowing contactId={lead.id} listings={properties.filter((p) => p.status !== "Sold").map(({ id, address }) => ({ id, address }))} /></div>
+                </details>
+              </section>
+            )}
             <section aria-labelledby="tasks" className="rounded-card bg-surface-2 p-5 sm:p-6">
               <h2 id="tasks" className="mb-4 text-xl">Tasks</h2>
               <TaskForm contactId={lead.id} />

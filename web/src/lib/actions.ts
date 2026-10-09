@@ -110,6 +110,7 @@ const propertyFields = (f: FormData) => ({
     status: str(f, "status") || "Active",
     features: list(f, "features"),
     description: str(f, "description"),
+    showing_notes: str(f, "showing_notes").slice(0, 1000),
 });
 
 const ALERT_MIN_FIT = 70;
@@ -920,4 +921,53 @@ export async function saveReviewUrl(_: FormState, f: FormData): Promise<FormStat
   if (!data?.length) return { error: "Only owners and admins can change this." };
   revalidatePath("/clients");
   return { ok: "Saved" };
+}
+
+const SHOWING_STATUS = ["requested", "confirmed", "done", "cancelled", "no_show"] as const;
+const INTEREST = ["not_interested", "maybe", "interested", "offer"] as const;
+
+/** Book a showing for a buyer. Start time arrives as ISO from the browser (the agent's timezone). */
+export async function scheduleShowing(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const contact_id = str(f, "contact_id"), property_id = str(f, "property_id"), address = str(f, "address").slice(0, 300);
+  const start = new Date(str(f, "starts_at"));
+  const minutes = Number(str(f, "minutes") || 30);
+  if (!UUID.test(contact_id)) return { error: "Pick the buyer." };
+  if (!UUID.test(property_id) && !address) return { error: "Pick a listing or type the address." };
+  if (isNaN(+start)) return { error: "Pick a date and time." };
+  if (!(minutes >= 10 && minutes <= 240)) return { error: "Length must be 10 minutes to 4 hours." };
+  const db = await authed();
+  const { error } = await db.from("showings").insert({
+    contact_id, property_id: UUID.test(property_id) ? property_id : null, address: UUID.test(property_id) ? "" : address,
+    starts_at: start.toISOString(), ends_at: new Date(+start + minutes * 60_000).toISOString(), notes: str(f, "notes").slice(0, 2000),
+  });
+  if (error) return { error: error.message };
+  await db.from("contacts").update({ stage: "Showing" }).eq("id", contact_id).in("stage", ["New", "Contacted", "Qualified"]);
+  revalidatePath("/", "layout");
+  return { ok: "Showing booked" };
+}
+
+export async function setShowingStatus(id: string, status: (typeof SHOWING_STATUS)[number]) {
+  if (!dbEnabled || !UUID.test(id) || !SHOWING_STATUS.includes(status)) return;
+  const { error } = await (await authed()).from("showings").update({ status }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+/** After the showing: how the buyer felt. Goes on the buyer's timeline and into the seller report. */
+export async function saveShowingFeedback(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const id = str(f, "id"), interest = str(f, "interest"), feedback = str(f, "feedback").slice(0, 2000), rating = Number(str(f, "rating"));
+  if (!UUID.test(id)) return { error: "Showing not found." };
+  if (!INTEREST.includes(interest as (typeof INTEREST)[number])) return { error: "How interested were they?" };
+  const db = await authed();
+  const { data, error } = await db.from("showings")
+    .update({ status: "done", interest, feedback, rating: rating >= 1 && rating <= 5 ? rating : null })
+    .eq("id", id).select("contact_id,address,properties(address)").single();
+  if (error) return { error: error.message };
+  const where = (data.properties as unknown as { address: string } | null)?.address || data.address;
+  const words = { not_interested: "not interested", maybe: "on the fence", interested: "interested", offer: "wants to make an offer" } as const;
+  await db.from("activities").insert({ contact_id: data.contact_id, channel: "Note", direction: "in", content: `Saw ${where}: ${words[interest as keyof typeof words]}${feedback ? `. "${feedback}"` : ""}` });
+  revalidatePath("/", "layout");
+  return { ok: "Feedback saved" };
 }
