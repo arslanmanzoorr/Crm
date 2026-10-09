@@ -1,4 +1,4 @@
-import { CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
+import { Calculator, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -33,6 +33,7 @@ export default function AccountPage() {
         <div className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
           <Link href="/showings" className={`${row} md:hidden`}><CalendarDays aria-hidden className="size-5 text-muted" /><span className="flex-1">Showings</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/clients" className={`${row} md:hidden`}><HeartHandshake aria-hidden className="size-5 text-muted" /><span className="flex-1">Past clients</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
+          <Link href="/tools" className={`${row} md:hidden`}><Calculator aria-hidden className="size-5 text-muted" /><span className="flex-1">Calculators</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/analytics" className={`${row} md:hidden`}><ChartColumn aria-hidden className="size-5 text-muted" /><span className="flex-1">Analytics</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/team" className={row}><Users aria-hidden className="size-5 text-muted" /><span className="flex-1">Team and invites</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/studio" className={row}><Clapperboard aria-hidden className="size-5 text-muted" /><span className="flex-1">Video Studio</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>

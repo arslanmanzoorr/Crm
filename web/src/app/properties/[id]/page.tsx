@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Clapperboard, Pencil, Printer, Send } from "lucide-react";
+import { Calculator, Clapperboard, Pencil, Printer, Send, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -54,6 +54,12 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         </Link>
         <Link href={`/publish?property=${p.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-light px-5 font-medium text-on-light hover:bg-white">
           <Send aria-hidden className="size-4" /> Post to socials
+        </Link>
+        <Link href={`/tools?tab=payment&price=${p.price}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
+          <Calculator aria-hidden className="size-4" /> Payment
+        </Link>
+        <Link href={`/tools?tab=invest&price=${p.price}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
+          <TrendingUp aria-hidden className="size-4" /> Rental numbers
         </Link>
         <Link href={`/properties/${p.id}/edit`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
           <Pencil aria-hidden className="size-4" /> Edit

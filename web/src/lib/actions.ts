@@ -971,3 +971,13 @@ export async function saveShowingFeedback(_: FormState, f: FormData): Promise<Fo
   revalidatePath("/", "layout");
   return { ok: "Feedback saved" };
 }
+
+/** File a calculator summary on a lead's timeline. */
+export async function saveNoteToLead(contactId: string, text: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(contactId) || !text.trim()) return { error: "Pick a lead." };
+  const { error } = await (await authed()).from("activities").insert({ contact_id: contactId, channel: "Note", direction: "out", content: text.slice(0, 4000) });
+  if (error) return { error: error.message };
+  revalidatePath(`/leads/${contactId}`);
+  return { ok: "Saved to the lead's timeline" };
+}
