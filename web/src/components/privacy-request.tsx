@@ -22,7 +22,7 @@ export function PrivacyRequestForm({ formId, who }: { formId: string; who: strin
       <div role="status" className="flex flex-col items-center gap-3 rounded-card bg-surface-2 p-10 text-center">
         <CircleCheck aria-hidden className="size-10 text-accent" />
         <h1 className="text-2xl">Request received</h1>
-        <p className="text-muted">{who} will confirm it&apos;s you, then respond within 45 days.</p>
+        <p className="text-muted">{who.charAt(0).toUpperCase() + who.slice(1)} will confirm it&apos;s you, then respond within 45 days.</p>
       </div>
     );
   const action = async (s: Parameters<typeof submitPrivacyRequest>[1], f: FormData) => {

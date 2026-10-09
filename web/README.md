@@ -65,6 +65,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0036_listing_media_approval.sql` | Virtual tour / floor plan links (https only); agents' listings need owner/admin approval (trigger-enforced) |
 | `0037_portal_tours.sql` | Client portal homes include the tour link |
 | `0038_est_rent.sql` | Estimated monthly rent on listings (investor matching, rental numbers); in the portal too |
+| `0039_valuation_leads.sql` | Home-value page leads arrive as sellers wanting a value |
 
 After `0010`, store the hash of your form key (per environment):
 

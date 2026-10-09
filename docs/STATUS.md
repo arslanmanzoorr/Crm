@@ -9,7 +9,7 @@ Last updated: 2026-10-09.
 | # | Module | Done | Partial | Needs account | Not started |
 |---|---|---|---|---|---|
 | 1 | AI Command Center | | 2, 5, 8, 10 | 9 (speech) | 1, 3, 4, 6, 7, 11, 12 |
-| 2 | Lead Generation | 17, 24, 25, 30 | 18, 19, 21 | 13, 14, 15, 16, 22, 23, 27, 29 | 20, 26, 28 |
+| 2 | Lead Generation | 17, 20, 24, 25, 30 | 18, 19, 21 | 13, 14, 15, 16, 22, 23, 27, 29 | 26, 28 |
 | 3 | Lead Management | 31, 32, 35, 37, 39, 40, 41, 42, 43, 45, 46, 48 | 33, 34, 36, 38, 44 (territory then round-robin; performance-based not yet), 47 | | |
 | 4 | Communication Hub | 67 | 59, 63 | 49, 50, 51, 53, 54, 55, 56, 57, 58, 60, 61, 64, 66 | 52, 62, 65 |
 | 5 | Listings | 69, 70, 72, 73 (links), 74, 75, 76, 77, 78, 79, 80, 81, 82, 83 | | 68, 71 | |
