@@ -5,7 +5,8 @@ import { Suspense } from "react";
 import { Avatar, Reveal } from "@/components/ui";
 import { signOut } from "@/lib/actions";
 import { LeadFormSettings } from "@/components/lead-form-settings";
-import { dbEnabled, getLeadForm, getMe } from "@/lib/db";
+import { dbEnabled, getLeadForm, getMe, getSuppressions } from "@/lib/db";
+import { Suppressions } from "@/components/suppressions";
 
 export const metadata: Metadata = { title: "Account" };
 
@@ -24,6 +25,15 @@ export default function AccountPage() {
           <h2 id="capture" className="text-sm text-muted">Lead capture form</h2>
           <Suspense fallback={<div className="h-64 rounded-card bg-surface-2" />}>
             <Capture />
+          </Suspense>
+        </section>
+      )}
+
+      {dbEnabled && (
+        <section aria-labelledby="dnc" className="flex flex-col gap-2">
+          <h2 id="dnc" className="text-sm text-muted">Do-not-contact list</h2>
+          <Suspense fallback={<div className="h-32 rounded-card bg-surface-2" />}>
+            <Dnc />
           </Suspense>
         </section>
       )}
@@ -79,4 +89,8 @@ async function Me() {
       </div>
     </Reveal>
   );
+}
+
+async function Dnc() {
+  return <Suppressions items={await getSuppressions()} />;
 }

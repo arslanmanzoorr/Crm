@@ -1344,3 +1344,23 @@ async function removeLeadFiles(db: Db, contactIds: string[]) {
   const { data: docs } = await db.from("documents").select("path").or(filter);
   if (docs?.length) await db.storage.from("documents").remove(docs.map((d) => d.path));
 }
+
+/** Add an email or phone to the team do-not-contact list; matching leads are marked DNC by the database. */
+export async function addSuppression(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const value = str(f, "value").slice(0, 320), reason = str(f, "reason").slice(0, 200);
+  const kind = value.includes("@") ? "email" : "phone";
+  if (kind === "email" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return { error: "That email doesn't look right." };
+  if (kind === "phone" && value.replace(/[^0-9]/g, "").length < 7) return { error: "Enter an email or a phone number." };
+  const { error } = await (await authed()).from("suppressions").insert({ kind, value, reason });
+  if (error) return { error: error.code === "23505" ? "Already on the list." : error.message };
+  revalidatePath("/", "layout");
+  return { ok: "Added. Matching leads are now do-not-contact." };
+}
+
+export async function removeSuppression(kind: string, value: string) {
+  if (!dbEnabled || !["email", "phone"].includes(kind)) return;
+  const { error } = await (await authed()).from("suppressions").delete().eq("kind", kind).eq("value", value);
+  if (error) throw new Error(error.message);
+  revalidatePath("/account");
+}

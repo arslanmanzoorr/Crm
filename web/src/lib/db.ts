@@ -748,3 +748,9 @@ export async function getDocuments(by: { propertyId?: string; dealId?: string; c
   const res = await q.order("created_at", { ascending: false }).limit(200);
   return (must(res) as { id: string; name: string; size: number; mime: string; created_at: string }[]).map((d) => ({ id: d.id, name: d.name, size: Number(d.size), mime: d.mime, createdAt: d.created_at }));
 }
+
+export async function getSuppressions(): Promise<{ kind: "email" | "phone"; value: string; reason: string; createdAt: string }[]> {
+  if (!dbEnabled) return [];
+  const res = await (await supabase()).from("suppressions").select("kind,value,reason,created_at").order("created_at", { ascending: false }).limit(5000);
+  return (must(res) as { kind: "email" | "phone"; value: string; reason: string; created_at: string }[]).map((s) => ({ kind: s.kind, value: s.value, reason: s.reason, createdAt: s.created_at }));
+}
