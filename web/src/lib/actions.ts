@@ -1197,3 +1197,27 @@ export async function createCmaFromListing(f: FormData) {
   const r = await createCma(undefined, f);
   if (r?.error) throw new Error(r.error);
 }
+
+const pair = (x: string, y: string) => (x < y ? { a: x, b: y } : { a: y, b: x });
+
+export async function linkContacts(contactId: string, _: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const other = str(f, "other"), kind = str(f, "kind");
+  if (!UUID.test(contactId) || !UUID.test(other)) return { error: "Pick the person." };
+  if (other === contactId) return { error: "That's the same person." };
+  if (!["household", "family", "friend", "colleague", "other"].includes(kind)) return { error: "Pick how they're related." };
+  const { error } = await (await authed()).from("contact_links").upsert({ ...pair(contactId, other), kind, note: str(f, "note").slice(0, 200) });
+  if (error) return { error: error.message };
+  revalidatePath(`/leads/${contactId}`);
+  revalidatePath(`/leads/${other}`);
+  return { ok: "Linked" };
+}
+
+export async function unlinkContacts(contactId: string, other: string) {
+  if (!dbEnabled || !UUID.test(contactId) || !UUID.test(other)) return;
+  const { a, b } = pair(contactId, other);
+  const { error } = await (await authed()).from("contact_links").delete().eq("a", a).eq("b", b);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/leads/${contactId}`);
+  revalidatePath(`/leads/${other}`);
+}

@@ -689,3 +689,19 @@ export async function getCma(id: string): Promise<Cma | undefined> {
   const { data } = await (await supabase()).from("cmas").select("id,address,property_id,contact_id,subject,comps,rates,net,list_price,notes,updated_at").eq("id", id).maybeSingle();
   return data ? toCma(data as CmaRow) : undefined;
 }
+
+export const LINK_KINDS = { household: "Household", family: "Family", friend: "Friend", colleague: "Colleague", other: "Other" } as const;
+export type Linked = { id: string; name: string; kind: keyof typeof LINK_KINDS; note: string; stage: string };
+
+/** People related to a lead, from either side of the link. */
+export async function getLinks(contactId: string): Promise<Linked[]> {
+  if (!dbEnabled) return [];
+  type Row = { a: string; b: string; kind: Linked["kind"]; note: string; ca: { id: string; name: string; stage: string } | null; cb: { id: string; name: string; stage: string } | null };
+  const res = await (await supabase()).from("contact_links")
+    .select("a,b,kind,note,ca:contacts!contact_links_a_org_id_fkey(id,name,stage),cb:contacts!contact_links_b_org_id_fkey(id,name,stage)")
+    .or(`a.eq.${contactId},b.eq.${contactId}`);
+  return (must(res) as unknown as Row[]).map((r) => {
+    const other = r.a === contactId ? r.cb : r.ca;
+    return { id: other?.id ?? "", name: other?.name ?? "", kind: r.kind, note: r.note, stage: other?.stage ?? "" };
+  }).filter((l) => l.id);
+}
