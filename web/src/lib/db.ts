@@ -8,6 +8,7 @@ import type { Side } from "./deals";
 import type { Contingency, Financing, OfferTerms } from "./offers";
 import { BUYING_TYPES } from "./match";
 import type { PastClient } from "./retention";
+import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
 
@@ -574,4 +575,35 @@ export async function getShowing(id: string): Promise<Showing | undefined> {
   if (!dbEnabled || !/^[0-9a-f-]{36}$/i.test(id)) return undefined;
   const { data } = await (await supabase()).from("showings").select(SHOWING_COLS).eq("id", id).maybeSingle();
   return data ? toShowing(data as unknown as ShowingRow) : undefined;
+}
+
+export type Partner = { id: string; kind: string; name: string; company: string; email: string; phone: string; notes: string; clients: number };
+
+/** Referral partners, with how many clients use each (lenders, via financing). */
+export async function getPartners(): Promise<Partner[]> {
+  if (!dbEnabled) return [];
+  const db = await supabase();
+  const [rows, fin] = await Promise.all([
+    db.from("partners").select("id,kind,name,company,email,phone,notes").order("kind").order("name").limit(1000),
+    db.from("financing").select("lender_id").not("lender_id", "is", null).limit(10000),
+  ]);
+  const used: Record<string, number> = {};
+  for (const f of fin.data ?? []) used[f.lender_id] = (used[f.lender_id] ?? 0) + 1;
+  return (must(rows) as Omit<Partner, "clients">[]).map((p) => ({ ...p, email: p.email ?? "", phone: p.phone ?? "", clients: used[p.id] ?? 0 }));
+}
+
+export type FinancingRecord = BuyerFinancing & { lenderId: string | null; lenderPhone: string; lenderEmail: string };
+
+export async function getFinancing(contactId: string): Promise<FinancingRecord | null> {
+  if (!dbEnabled) return null;
+  const { data } = await (await supabase()).from("financing")
+    .select("cash,lender_id,stage,preapproval_amount,preapproval_expires,docs,gift_funds,partners(name,company,phone,email)")
+    .eq("contact_id", contactId).maybeSingle();
+  if (!data) return null;
+  const p = data.partners as unknown as { name: string; company: string; phone: string | null; email: string | null } | null;
+  return {
+    cash: data.cash, lenderId: data.lender_id, lender: p ? [p.name, p.company].filter(Boolean).join(", ") : null, lenderPhone: p?.phone ?? "", lenderEmail: p?.email ?? "",
+    stage: data.stage as LoanStage, preapprovalAmount: data.preapproval_amount === null ? null : Number(data.preapproval_amount),
+    preapprovalExpires: data.preapproval_expires, docs: data.docs as Doc[], giftFunds: data.gift_funds,
+  };
 }

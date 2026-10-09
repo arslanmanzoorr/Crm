@@ -9,6 +9,7 @@ import * as mock from "./data";
 import { dbEnabled, likeSafe, meterAi, supabase } from "./db";
 import { defaultMilestones } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
+import { DOCS, LOAN_STAGES } from "./readiness";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
 
@@ -980,4 +981,47 @@ export async function saveNoteToLead(contactId: string, text: string): Promise<F
   if (error) return { error: error.message };
   revalidatePath(`/leads/${contactId}`);
   return { ok: "Saved to the lead's timeline" };
+}
+
+const PARTNER_KINDS = ["lender", "inspector", "title", "attorney", "insurance", "contractor", "appraiser", "other"];
+
+export async function savePartner(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const kind = str(f, "kind"), name = str(f, "name").slice(0, 200);
+  if (!PARTNER_KINDS.includes(kind) || !name) return { error: "Add a name and pick what they do." };
+  const email = str(f, "email").slice(0, 320), phone = str(f, "phone").slice(0, 30);
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "That email doesn't look right." };
+  const { error } = await (await authed()).from("partners").insert({
+    kind, name, company: str(f, "company").slice(0, 200), email: email || null, phone: phone || null, notes: str(f, "notes").slice(0, 2000),
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/partners");
+  return { ok: "Partner added" };
+}
+
+export async function deletePartner(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("partners").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+/** Record what's known about a buyer's financing. Facts only; nothing here judges credit. */
+export async function saveFinancing(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const contact_id = str(f, "contact_id"), lender = str(f, "lender_id"), stage = str(f, "stage");
+  const amount = str(f, "preapproval_amount"), expires = str(f, "preapproval_expires");
+  if (!UUID.test(contact_id)) return { error: "Lead not found." };
+  if (!(stage in LOAN_STAGES)) return { error: "Pick the loan stage." };
+  const n = amount ? Number(amount) : null;
+  if (n !== null && !(n > 0 && n < 1e10)) return { error: "Preapproval amount must be a positive number." };
+  if (expires && !DATE.test(expires)) return { error: "Pick a valid expiry date." };
+  const docs = f.getAll("docs").map(String).filter((d) => d in DOCS);
+  const { error } = await (await authed()).from("financing").upsert({
+    contact_id, cash: f.get("cash") === "on", lender_id: UUID.test(lender) ? lender : null, stage,
+    preapproval_amount: n, preapproval_expires: expires || null, docs, gift_funds: f.get("gift_funds") === "on", updated_at: new Date().toISOString(),
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: "Saved" };
 }

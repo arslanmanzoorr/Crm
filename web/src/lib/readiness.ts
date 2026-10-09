@@ -2,6 +2,9 @@
 // it only compares what's been recorded against what the deal needs.
 import { daysBetween } from "./deals.ts";
 
+export const PARTNER_KINDS = { lender: "Lender", inspector: "Inspector", title: "Title / escrow", attorney: "Attorney", insurance: "Insurance agent", contractor: "Contractor", appraiser: "Appraiser", other: "Other" } as const;
+export const PARTNER_GROUPS = { lender: "Lenders", inspector: "Inspectors", title: "Title and escrow", attorney: "Attorneys", insurance: "Insurance agents", contractor: "Contractors", appraiser: "Appraisers", other: "Other" } as const;
+
 export const DOCS = {
   pay_stubs: "Pay stubs (last 30 days)",
   w2: "W-2s (last 2 years)",
@@ -22,6 +25,9 @@ export type Financing = {
   cash: boolean; lender: string | null; stage: LoanStage;
   preapprovalAmount: number | null; preapprovalExpires: string | null; docs: Doc[]; giftFunds: boolean;
 };
+
+/** A buyer with nothing recorded yet. */
+export const EMPTY_FINANCING: Financing = { cash: false, lender: null, stage: "not_started", preapprovalAmount: null, preapprovalExpires: null, docs: [], giftFunds: false };
 
 export type Readiness = { level: "ready" | "gaps" | "blocked"; items: { level: "high" | "medium"; text: string }[]; missingDocs: Doc[] };
 

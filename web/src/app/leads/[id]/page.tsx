@@ -11,8 +11,11 @@ import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
-import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getReferrals, getShowings, getTasks } from "@/lib/db";
+import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getFinancing, getPartners, getReferrals, getShowings, getTasks } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
+import { FinancingForm } from "@/components/financing-controls";
+import { ReadinessList } from "@/components/readiness-card";
+import { EMPTY_FINANCING, readiness } from "@/lib/readiness";
 import { ReferredBySelect } from "@/components/client-actions";
 import { STATUS_LABEL } from "@/lib/offers";
 import { money } from "@/lib/data";
@@ -48,7 +51,7 @@ function blockers(lead: Lead) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties, team, deals, offers, refs, people, showings] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id })]);
+  const [tasks, properties, team, deals, offers, refs, people, showings, financing, partners] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id }), getFinancing(lead.id), getPartners()]);
   if (refs.referredBy && !people.some((p) => p.id === refs.referredBy!.id)) people.unshift(refs.referredBy); // keep the current referrer selectable
   const mine = tasks.filter((t) => t.contactId === lead.id);
   const matches = properties
@@ -113,6 +116,23 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
 
         <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="flex min-w-0 flex-col gap-6">
+            {["buyer", "investor"].includes(lead.type ?? "") && (() => {
+              const liveOffer = offers.find((o) => ["draft", "submitted", "countered"].includes(o.status));
+              const activeDeal = deals.find((d) => d.status === "active" && d.side === "buyer");
+              const r = readiness(financing ?? EMPTY_FINANCING,
+                { offerAmount: liveOffer?.amount ?? null, closeOn: activeDeal?.closeOn ?? null, today: new Date().toISOString().slice(0, 10) });
+              return (
+                <section aria-labelledby="financing" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 sm:p-6">
+                  <h2 id="financing" className="text-xl">Financing</h2>
+                  <ReadinessList r={r} />
+                  {financing?.lender && <p className="text-sm text-muted">Lender: <span className="text-ink">{financing.lender}</span>{financing.lenderPhone && <> · <a href={`tel:${financing.lenderPhone}`} className="hover:text-accent">{financing.lenderPhone}</a></>}</p>}
+                  <details>
+                    <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">{financing ? "Update financing" : "Record financing"}</summary>
+                    <div className="mt-3"><FinancingForm contactId={lead.id} f={financing} lenders={partners.filter((p) => p.kind === "lender").map((p) => ({ id: p.id, label: [p.name, p.company].filter(Boolean).join(", ") }))} /></div>
+                  </details>
+                </section>
+              );
+            })()}
             {["buyer", "investor", "renter"].includes(lead.type ?? "") && (
               <section aria-labelledby="showings" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 sm:p-6">
                 <h2 id="showings" className="text-xl">Showings</h2>

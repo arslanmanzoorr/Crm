@@ -7,7 +7,9 @@ import { LocalTime } from "@/components/local-time";
 import { OfferMoves, OfferNote } from "@/components/offer-moves";
 import { Chip, Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
-import { getOffer } from "@/lib/db";
+import { getFinancing, getOffer } from "@/lib/db";
+import { ReadinessList } from "@/components/readiness-card";
+import { EMPTY_FINANCING, readiness } from "@/lib/readiness";
 import { CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
 
 export const metadata: Metadata = { title: "Offer" };
@@ -35,6 +37,7 @@ const EVENT: Record<string, (side: string) => string> = {
 async function OfferView({ params }: { params: PageProps<"/offers/[id]">["params"] }) {
   const o = await getOffer((await params).id);
   if (!o) notFound();
+  const fin = o.side === "buyer" && o.contact ? readiness((await getFinancing(o.contact.id)) ?? EMPTY_FINANCING, { offerAmount: o.amount, closeOn: o.closeOn, today: new Date().toISOString().slice(0, 10) }) : null;
   const live = !["accepted", "rejected", "withdrawn"].includes(o.status);
   const back = o.side === "seller" && o.property ? { href: `/properties/${o.property.id}`, label: "← Listing" } : o.contact ? { href: `/leads/${o.contact.id}`, label: `← ${o.contact.name}` } : { href: "/deals", label: "← Deals" };
   const dealHref = `/deals/new?offer=${o.id}${o.contact ? `&contact=${o.contact.id}` : ""}`;
@@ -60,6 +63,12 @@ async function OfferView({ params }: { params: PageProps<"/offers/[id]">["params
 
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-6">
+          {fin && ["draft", "submitted", "countered"].includes(o.status) && (
+            <section aria-label="Financing readiness" className={`rounded-card p-5 ${fin.level === "blocked" ? "bg-score-1/10" : "bg-surface-2"}`}>
+              <ReadinessList r={fin} />
+              {o.contact && <Link href={`/leads/${o.contact.id}#financing`} className="mt-2 inline-block text-sm text-accent">Update financing</Link>}
+            </section>
+          )}
           <section aria-labelledby="terms" className="rounded-card bg-surface-2 p-5">
             <h2 id="terms" className="text-lg">Terms</h2>
             <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">

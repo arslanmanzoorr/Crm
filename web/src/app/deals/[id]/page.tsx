@@ -8,7 +8,9 @@ import { DealForm } from "@/components/deal-form";
 import { Chip, Skeleton } from "@/components/ui";
 import { cash, money } from "@/lib/data";
 import { commission, daysBetween, riskFlags } from "@/lib/deals";
-import { getDeal } from "@/lib/db";
+import { getDeal, getFinancing } from "@/lib/db";
+import { ReadinessList } from "@/components/readiness-card";
+import { EMPTY_FINANCING, readiness } from "@/lib/readiness";
 
 export const metadata: Metadata = { title: "Deal" };
 
@@ -28,6 +30,7 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
   const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day, as on /deals
   const flags = riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
   const c = commission(d.price, d.commissionPct, d.agentSplitPct, d.referralPct);
+  const fin = d.side === "buyer" && d.status === "active" ? readiness((await getFinancing(d.contact.id)) ?? EMPTY_FINANCING, { closeOn: d.closeOn, today }) : null;
   const done = d.milestones.filter((m) => m.doneAt).length;
 
   return (
@@ -62,6 +65,12 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
             )}
           </section>
 
+          {fin && (
+            <section aria-label="Financing readiness" className="rounded-card bg-surface-2 p-5">
+              <ReadinessList r={fin} />
+              <Link href={`/leads/${d.contact.id}#financing`} className="mt-2 inline-block text-sm text-accent">Update financing</Link>
+            </section>
+          )}
           <section aria-labelledby="steps" className="flex flex-col gap-3">
             <div className="flex items-baseline justify-between gap-3">
               <h2 id="steps" className="text-xl">Milestones</h2>
