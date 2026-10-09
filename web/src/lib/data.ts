@@ -233,3 +233,5 @@ export const mockThreads: Thread[] = threadsSeed.map((t) => {
 export const leadById = (id: string) => leads.find((l) => l.id === id);
 export const propertyById = (id: string) => properties.find((p) => p.id === id);
 export const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+/** Dollars and cents when there are cents: commission parts must add up to the gross on screen. */
+export const cash = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: Number.isInteger(n) ? 0 : 2 });

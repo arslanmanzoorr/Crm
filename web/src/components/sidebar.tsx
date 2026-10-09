@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleUserRound, Clapperboard, Home, Inbox, LayoutGrid, Menu, Search, Send, Users } from "lucide-react";
+import { CircleUserRound, Clapperboard, Handshake, Home, Inbox, LayoutGrid, Menu, Search, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CommandPalette, openPalette } from "./command-palette";
@@ -9,6 +9,7 @@ const nav = [
   { label: "Today", href: "/", icon: LayoutGrid, phone: true },
   { label: "Leads", href: "/leads", icon: Users, phone: true },
   { label: "Listings", href: "/properties", icon: Home, phone: true },
+  { label: "Deals", href: "/deals", icon: Handshake, phone: true },
   { label: "Inbox", href: "/inbox", icon: Inbox, phone: true },
   { label: "Studio", href: "/studio", icon: Clapperboard, phone: false },
   { label: "Publish", href: "/publish", icon: Send, phone: false },

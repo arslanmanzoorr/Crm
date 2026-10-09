@@ -1,4 +1,4 @@
-import { Mail, MessageSquare, Pencil, Phone } from "lucide-react";
+import { Handshake, Mail, MessageSquare, Pencil, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,7 +11,8 @@ import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
-import { getLead, getMembers, getProperties, getTasks } from "@/lib/db";
+import { getDealsFor, getLead, getMembers, getProperties, getTasks } from "@/lib/db";
+import { money } from "@/lib/data";
 import { matchListing, type Match } from "@/lib/match";
 import { fmtDuration } from "@/lib/search";
 import { OwnerSelect } from "@/components/owner-select";
@@ -44,7 +45,7 @@ function blockers(lead: Lead) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties, team] = await Promise.all([getTasks(), getProperties(), getMembers()]);
+  const [tasks, properties, team, deals] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id)]);
   const mine = tasks.filter((t) => t.contactId === lead.id);
   const matches = properties
     .map((p) => ({ p, m: matchListing(lead, p) }))
@@ -94,6 +95,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 ),
               )}
               <Link href={`/leads/${lead.id}/edit`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><Pencil aria-hidden className="size-4" /> Edit</Link>
+              <Link href={`/deals/new?contact=${lead.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><Handshake aria-hidden className="size-4" /> Open deal</Link>
             </div>
             {blockedReasons.length > 0 && (
               <p id="contact-blocked" className="text-sm text-muted">
@@ -131,6 +133,23 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
           </div>
 
           <aside className="flex flex-col gap-6">
+            {deals.length > 0 && (
+              <section aria-labelledby="deals" className="flex flex-col gap-2">
+                <h2 id="deals" className="text-xl">Deals</h2>
+                <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+                  {deals.map((d) => (
+                    <li key={d.id}>
+                      <Link href={`/deals/${d.id}`} className="flex min-h-14 flex-col justify-center px-5 py-3 hover:bg-surface-3">
+                        <span className="truncate">{d.address}</span>
+                        <span className="text-sm text-muted">
+                          {d.status === "active" ? "Under contract" : d.status === "closed" ? "Closed" : "Fell through"} · {money(d.price)} · {d.milestones.filter((m) => m.doneAt).length}/{d.milestones.length} done
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             <section aria-labelledby="ai-profile" className="flex flex-col gap-4 rounded-card bg-surface-light p-5 text-on-light sm:p-6">
               <h2 id="ai-profile" className="text-2xl">AI profile</h2>
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">

@@ -7,6 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
 import { dbEnabled, likeSafe, meterAi, supabase } from "./db";
+import { defaultMilestones } from "./deals";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
 
@@ -686,4 +687,109 @@ export async function submitCheckin(ohId: string, _: FormState, f: FormData): Pr
     forbidden: { error: "Sign-in isn't configured yet." },
   };
   return results[data as string] ?? { error: "Something went wrong. Please try again." };
+}
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const pct = (f: FormData, k: string, fallback: number) => {
+  const v = str(f, k);
+  const n = v === "" ? fallback : Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : NaN;
+};
+
+function dealTerms(f: FormData): { error: string } | Record<string, unknown> {
+  const price = Number(str(f, "price"));
+  const accepted_on = str(f, "accepted_on"), close_on = str(f, "close_on");
+  const terms = {
+    price, accepted_on, close_on: close_on || null,
+    address: str(f, "address").slice(0, 300),
+    commission_pct: pct(f, "commission_pct", 3), agent_split_pct: pct(f, "agent_split_pct", 70), referral_pct: pct(f, "referral_pct", 0),
+    notes: str(f, "notes").slice(0, 5000),
+  };
+  if (!Number.isFinite(price) || price <= 0) return { error: "Enter the contract price." };
+  if (!DATE.test(accepted_on)) return { error: "Enter the date the offer was accepted." };
+  if (close_on && (!DATE.test(close_on) || close_on < accepted_on)) return { error: "Closing can't be before acceptance." };
+  if ([terms.commission_pct, terms.agent_split_pct, terms.referral_pct].some(Number.isNaN)) return { error: "Percentages must be between 0 and 100." };
+  return terms;
+}
+
+/** Open a deal for a client: default milestone timeline, and the lead moves to Under Contract. */
+export async function createDeal(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const db = await authed();
+  const contact_id = str(f, "contact_id"), property_id = str(f, "property_id");
+  const side = str(f, "side") === "seller" ? "seller" : "buyer";
+  if (!UUID.test(contact_id)) return { error: "Pick the client." };
+  const terms = dealTerms(f);
+  if ("error" in terms) return terms as FormState;
+  if (!property_id && !terms.address) return { error: "Pick a listing or type the property address." };
+  const { data, error } = await db.from("deals")
+    .insert({ ...terms, contact_id, side, property_id: UUID.test(property_id) ? property_id : null })
+    .select("id").single();
+  if (error) return { error: error.message };
+  const steps = defaultMilestones(side, terms.accepted_on as string, terms.close_on as string | null);
+  const { error: msErr } = await db.from("deal_milestones").insert(steps.map((m, i) => ({ deal_id: data.id, title: m.title, due_on: m.dueOn, position: i })));
+  if (msErr) return { error: msErr.message };
+  await db.from("contacts").update({ stage: "Under Contract" }).eq("id", contact_id);
+  await db.from("activities").insert({ contact_id, channel: "Note", content: `Deal opened (${side} side), under contract` });
+  revalidatePath("/", "layout");
+  redirect(`/deals/${data.id}`);
+}
+
+export async function updateDeal(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const id = str(f, "id");
+  if (!UUID.test(id)) return { error: "Deal not found." };
+  const terms = dealTerms(f);
+  if ("error" in terms) return terms as FormState;
+  const { error } = await (await authed()).from("deals").update(terms).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: "Saved" };
+}
+
+/** Close or drop a deal; the client's stage follows. */
+export async function setDealStatus(id: string, status: "active" | "closed" | "fell_through") {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const db = await authed();
+  const { data, error } = await db.from("deals")
+    .update({ status, closed_at: status === "closed" ? new Date().toISOString() : null })
+    .eq("id", id).select("contact_id").single();
+  if (error) throw new Error(error.message);
+  const stage = status === "closed" ? "Closed" : status === "active" ? "Under Contract" : "Qualified";
+  await db.from("contacts").update({ stage }).eq("id", data.contact_id);
+  const what = { closed: "Deal closed", fell_through: "Deal fell through", active: "Deal reopened" }[status];
+  await db.from("activities").insert({ contact_id: data.contact_id, channel: "Note", content: what });
+  revalidatePath("/", "layout");
+}
+
+export async function setMilestoneDone(id: string, done: boolean) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("deal_milestones").update({ done_at: done ? new Date().toISOString() : null }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+export async function setMilestoneDate(id: string, dueOn: string) {
+  if (!dbEnabled || !UUID.test(id) || (dueOn && !DATE.test(dueOn))) return;
+  const { error } = await (await authed()).from("deal_milestones").update({ due_on: dueOn || null }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+export async function addMilestone(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const deal_id = str(f, "deal_id"), title = str(f, "title").slice(0, 200), due = str(f, "due_on");
+  if (!UUID.test(deal_id) || !title) return { error: "Name the step." };
+  if (due && !DATE.test(due)) return { error: "Pick a valid date." };
+  const { error } = await (await authed()).from("deal_milestones").insert({ deal_id, title, due_on: due || null, position: 100 });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: "Added" };
+}
+
+export async function deleteMilestone(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("deal_milestones").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
 }

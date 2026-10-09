@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { connection } from "next/server";
 import * as mock from "./data";
 import { likeSafe } from "./search";
+import type { Side } from "./deals";
 import { BUYING_TYPES } from "./match";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
@@ -373,4 +374,57 @@ export async function getOpenHouses(propertyId: string): Promise<OpenHouse[]> {
       contactId: v.contact_id, name: v.contacts?.name ?? "Deleted lead", hasAgent: v.has_agent, rating: v.rating, feedback: v.feedback, ts: v.ts,
     })),
   }));
+}
+
+export type DealMilestone = { id: string; title: string; dueOn: string | null; doneAt: string | null };
+export type Deal = {
+  id: string; side: Side; status: "active" | "closed" | "fell_through"; price: number; address: string;
+  acceptedOn: string; closeOn: string | null; closedAt: string | null; notes: string;
+  commissionPct: number; agentSplitPct: number; referralPct: number; ownerId: string | null;
+  contact: { id: string; name: string; lastActivityAt: string | null };
+  property: { id: string; address: string } | null;
+  milestones: DealMilestone[];
+};
+type DealRow = {
+  id: string; side: Side; status: Deal["status"]; price: number | string; address: string; accepted_on: string; close_on: string | null;
+  closed_at: string | null; notes: string; commission_pct: number | string; agent_split_pct: number | string; referral_pct: number | string; owner_id: string | null;
+  contacts: { id: string; name: string; last_activity_at: string | null } | null;
+  properties: { id: string; address: string } | null;
+  deal_milestones: { id: string; title: string; due_on: string | null; done_at: string | null; position: number }[];
+};
+const DEAL_COLS = "id,side,status,price,address,accepted_on,close_on,closed_at,notes,commission_pct,agent_split_pct,referral_pct,owner_id,contacts(id,name,last_activity_at),properties(id,address),deal_milestones(id,title,due_on,done_at,position)";
+
+const toDeal = (r: DealRow): Deal => ({
+  id: r.id, side: r.side, status: r.status, price: Number(r.price), acceptedOn: r.accepted_on, closeOn: r.close_on, closedAt: r.closed_at,
+  address: r.properties?.address || r.address, notes: r.notes, ownerId: r.owner_id,
+  commissionPct: Number(r.commission_pct), agentSplitPct: Number(r.agent_split_pct), referralPct: Number(r.referral_pct),
+  contact: { id: r.contacts?.id ?? "", name: r.contacts?.name ?? "Deleted lead", lastActivityAt: r.contacts?.last_activity_at ?? null },
+  property: r.properties,
+  milestones: [...r.deal_milestones]
+    .sort((a, b) => (a.due_on ?? "9999").localeCompare(b.due_on ?? "9999") || a.position - b.position)
+    .map((m) => ({ id: m.id, title: m.title, dueOn: m.due_on, doneAt: m.done_at })),
+});
+
+/** Active deals plus everything closed this calendar year (for earnings), soonest closing first. */
+export async function listDeals(): Promise<Deal[]> {
+  if (!dbEnabled) return [];
+  const db = await supabase(); // first: marks the request dynamic before the clock is read
+  const yearStart = `${new Date().getFullYear()}-01-01`;
+  const res = await db.from("deals").select(DEAL_COLS)
+    .or(`status.eq.active,closed_at.gte.${yearStart}`)
+    .order("close_on", { ascending: true, nullsFirst: false }).limit(500);
+  return (must(res) as unknown as DealRow[]).map(toDeal);
+}
+
+export async function getDeal(id: string): Promise<Deal | undefined> {
+  if (!dbEnabled || !/^[0-9a-f-]{36}$/i.test(id)) return undefined;
+  const { data } = await (await supabase()).from("deals").select(DEAL_COLS).eq("id", id).maybeSingle();
+  return data ? toDeal(data as unknown as DealRow) : undefined;
+}
+
+/** A client's deals, for the lead page. */
+export async function getDealsFor(contactId: string): Promise<Deal[]> {
+  if (!dbEnabled) return [];
+  const res = await (await supabase()).from("deals").select(DEAL_COLS).eq("contact_id", contactId).order("created_at", { ascending: false });
+  return (must(res) as unknown as DealRow[]).map(toDeal);
 }

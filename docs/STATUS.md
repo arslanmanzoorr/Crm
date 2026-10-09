@@ -16,13 +16,13 @@ Last updated: 2026-10-09.
 | 6 | Matchmaking | 84, 85, 86, 91 (as tasks) | 90 (lead criteria act as the saved search) | 88 (maps) | 87, 89, 92–94 |
 | 7 | Marketing Studio | 96 | 95, 97, 98, 103, 104 | 100, 101, 102 | 99, 105–110 |
 | 8 | Showings & Open Houses | 117, 118, 120, 121 | 119 (follow-up task, not a draft yet) | 112 | 111, 113–116, 122 |
-| 9 | Deals & Transactions | | | 126 | 123–125, 127–140 |
+| 9 | Deals & Transactions | 128, 129, 130, 131, 132, 133, 134, 135 (in-app flags), 138, 139 | | 126 | 123–125, 127, 136, 137, 140 |
 | 10 | Seller Intelligence & CMA | | | 144, 149 | 141–143, 145–148, 150–152 |
 | 11 | Mortgage & Financing | | | 160 | 153–159, 161, 162 |
 | 12 | Client Portal | | | | 163–176 |
 | 13 | Referral & Retention | | 180 | | 177–179, 181–186 |
 | 14 | Brokerage & Team Ops | 188 | 187, 194 | | 189–193, 195, 196 |
-| 15 | Commissions & Finance | | | 205 | 197–204, 206 |
+| 15 | Commissions & Finance | 198, 199, 206 | 197 (per deal; no plan templates yet), 200 (pending and 30-day view) | 205 | 201–204 |
 | 16 | Investor Toolkit | | | | 207–216 |
 | 17 | Automation & Workflows | | 223, 224 | | 217–222, 225, 226 |
 | 18 | Analytics | | | | 227–236 |
@@ -46,7 +46,7 @@ Last updated: 2026-10-09.
 Items that need no outside account are built first, in roadmap phase order:
 
 1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), ~~Instant Buyer Matching (84–86)~~ (done: listing page ranks buyers, lead page ranks listings, with reasons), ~~new-listing and price-drop alerts (91)~~ (done, as tasks for the buyer's owner), showings and open-house check-in (111, 116–121).
-2. **Closing engine:** deals, offers and transaction milestones with deadlines (123–125, 128–135, 138, 139), commission splits (197–200, 206).
+2. **Closing engine:** ~~deals, milestones, deadline flags, commission splits~~ (done), offers and negotiation history (123–125), Deal Rescue drafts once AI is connected.
 3. **Growth and analytics:** source and conversion analytics (24, 25, 228–230), past-client anniversaries and retention (177–186), broker views (190–192).
 4. **Privacy rights:** ~~data export~~ (done: Account → Export team data), ~~per-person deletion~~ (done: deleting a lead erases its audit copies) (243), which the Terms and Privacy Policy will reference.
 5. **Intelligence layer** once an Anthropic key is connected: Ask Your Business, morning briefing, explainable scoring, Deal Rescue.
