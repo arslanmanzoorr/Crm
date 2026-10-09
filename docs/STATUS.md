@@ -18,12 +18,12 @@ Last updated: 2026-10-09.
 | 8 | Showings & Open Houses | 111, 115, 116, 117, 118, 120, 121, 122 | 112 (.ics files, no two-way sync), 119 (follow-up task, not a draft yet) | 112 (two-way sync) | 113, 114 |
 | 9 | Deals & Transactions | 123, 124, 125, 128, 129, 130, 131, 132, 133, 134, 135 (in-app flags), 138, 139 | | 126 | 127, 136, 137, 140 |
 | 10 | Seller Intelligence & CMA | | | 144, 149 | 141–143, 145–148, 150–152 |
-| 11 | Mortgage & Financing | | | 160 | 153–159, 161, 162 |
+| 11 | Mortgage & Financing | 153, 154, 158, 159 | | 160 | 155–157, 161, 162 |
 | 12 | Client Portal | | | | 163–176 |
 | 13 | Referral & Retention | 177, 178, 179, 180, 182, 183, 185, 186 | | | 181, 184 |
 | 14 | Brokerage & Team Ops | 188 | 187, 194 | | 189–193, 195, 196 |
 | 15 | Commissions & Finance | 198, 199, 206 | 197 (per deal; no plan templates yet), 200 (pending and 30-day view) | 205 | 201–204 |
-| 16 | Investor Toolkit | | | | 207–216 |
+| 16 | Investor Toolkit | 208, 209, 210, 211, 214 | | 212 (rent comps) | 207, 213, 215, 216 |
 | 17 | Automation & Workflows | | 223, 224 | | 217–222, 225, 226 |
 | 18 | Analytics | 227, 228, 229, 230, 231, 232, 235 | 236 (CSV per table) | | 233, 234 |
 | 19 | Security & Compliance | 237, 239, 240, 241, 244 | 242, 243 (export + erase on delete; no self-serve request form), 245, 248 | 238 (SSO) | 246, 247 |
