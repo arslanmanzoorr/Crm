@@ -4,8 +4,9 @@ import { Reveal, Skeleton, LoadingCards } from "@/components/ui";
 import { Workspace } from "@/components/workspace";
 import { CircleAlert, Flame } from "lucide-react";
 import Link from "next/link";
+import { daysBetween } from "@/lib/deals";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getBuyingSignals, getLeadOptions, getMe, getPastClients, getShowings, getTasks, getTopLeads, listDeals } from "@/lib/db";
+import { dbEnabled, getBuyingSignals, getLeadOptions, getProperties, getMe, getPastClients, getShowings, getTasks, getTopLeads, listDeals } from "@/lib/db";
 import { ShowingItem } from "@/components/showing-controls";
 import { agenda } from "@/lib/retention";
 
@@ -29,6 +30,7 @@ async function Home_() {
             <Suspense fallback={<Skeleton className="h-32" />}><Signals /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><ShowingsSoon /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><DealsAtRisk /></Suspense>
+            <Suspense fallback={<Skeleton className="h-32" />}><ExpiringListings /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><KeepInTouch /></Suspense>
           </>
         )} />
@@ -139,6 +141,33 @@ async function Signals() {
                 <span className="block font-medium">{l.name}</span>
                 <span className="block text-sm text-ink/80">{l.reasons.join(" · ")}</span>
               </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Listing agreements ending within 30 days (or already ended): time to renew or reprice. */
+async function ExpiringListings() {
+  const listings = await getProperties();
+  const now = new Date().getTime();
+  const soon = listings
+    .filter((p) => p.listingExpires && p.status !== "Sold")
+    .map((p) => ({ p, left: daysBetween(new Date(now).toISOString().slice(0, 10), p.listingExpires!) }))
+    .filter((x) => x.left <= 30)
+    .sort((a, b) => a.left - b.left);
+  if (soon.length === 0) return null;
+  return (
+    <section aria-labelledby="expiring" className="flex flex-col gap-4">
+      <h2 id="expiring" className="text-xl">Listing agreements ending</h2>
+      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        {soon.map(({ p, left }) => (
+          <li key={p.id}>
+            <Link href={`/properties/${p.id}`} className="flex min-h-14 items-center justify-between gap-3 px-4 py-3 hover:bg-surface-3 sm:px-5">
+              <span className="truncate font-medium">{p.address}</span>
+              <span className={`shrink-0 text-sm ${left <= 7 ? "text-score-1" : "text-muted"}`}>{left < 0 ? `Ended ${-left} days ago` : left === 0 ? "Ends today" : `Ends in ${left} days`}</span>
             </Link>
           </li>
         ))}

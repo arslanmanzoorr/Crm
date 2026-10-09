@@ -115,6 +115,7 @@ const propertyFields = (f: FormData) => ({
     description: str(f, "description"),
     showing_notes: str(f, "showing_notes").slice(0, 1000),
     seller_id: UUID.test(str(f, "seller_id")) ? str(f, "seller_id") : null,
+    listing_expires: /^\d{4}-\d{2}-\d{2}$/.test(str(f, "listing_expires")) ? str(f, "listing_expires") : null,
 });
 
 const ALERT_MIN_FIT = 70;

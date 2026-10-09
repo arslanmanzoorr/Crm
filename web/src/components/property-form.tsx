@@ -28,6 +28,10 @@ export function PropertyForm({ p, clients = [] }: { p?: Property; clients?: { id
             <span className="text-muted">Description</span>
             <textarea name="description" rows={4} className={`${input} resize-y`} defaultValue={p?.description} />
           </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="text-muted">Listing agreement ends</span>
+            <input name="listing_expires" type="date" defaultValue={p?.listingExpires ?? ""} className={input} />
+          </label>
           <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
             <span className="text-muted">Seller <span className="text-xs">(their client portal shows this listing&apos;s activity)</span></span>
             <select name="seller_id" defaultValue={p?.sellerId ?? ""} className={input}>

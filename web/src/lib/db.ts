@@ -73,11 +73,11 @@ export function toLead(r: ContactRow): Lead {
 const TONES = mock.properties.map((p) => p.tone);
 // Placeholder gradient keyed to the listing id, so it's the same on every page.
 const toneFor = (id: string) => TONES[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length];
-const toProperty = ({ showing_notes, seller_id, created_at, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string; seller_id?: string | null; created_at?: string }): Property =>
-  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "", sellerId: seller_id ?? null, createdAt: created_at });
+const toProperty = ({ showing_notes, seller_id, created_at, listing_expires, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string; seller_id?: string | null; created_at?: string; listing_expires?: string | null }): Property =>
+  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "", sellerId: seller_id ?? null, createdAt: created_at, listingExpires: listing_expires ?? null });
 
 const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
-const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes,seller_id,created_at";
+const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes,seller_id,created_at,listing_expires";
 
 function must<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);
@@ -727,4 +727,12 @@ export async function getSplits(): Promise<Record<string, number>> {
   const { data: org } = await db.rpc("active_org");
   const { data } = await db.from("memberships").select("user_id,default_split_pct").eq("org_id", org);
   return Object.fromEntries((data ?? []).map((m) => [m.user_id, Number(m.default_split_pct)]));
+}
+
+export type PropertyEvent = { kind: "listed" | "price" | "status"; old: string | null; new: string | null; ts: string };
+
+export async function getPropertyHistory(propertyId: string): Promise<PropertyEvent[]> {
+  if (!dbEnabled) return [];
+  const res = await (await supabase()).from("property_events").select("kind,old_value,new_value,ts").eq("property_id", propertyId).order("ts", { ascending: false }).limit(100);
+  return (must(res) as { kind: PropertyEvent["kind"]; old_value: string | null; new_value: string | null; ts: string }[]).map((e) => ({ kind: e.kind, old: e.old_value, new: e.new_value, ts: e.ts }));
 }

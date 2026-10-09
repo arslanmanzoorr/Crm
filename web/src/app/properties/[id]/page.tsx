@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Calculator, ChartNoAxesCombined, Clapperboard, Pencil, Printer, Send, TrendingUp } from "lucide-react";
 import { createCmaFromListing } from "@/lib/actions";
 import Link from "next/link";
+import { daysBetween } from "@/lib/deals";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DeleteButton } from "@/components/lead-controls";
@@ -13,7 +14,7 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getLead, getLeadOptions, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
+import { dbEnabled, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { SellerUpdateCard } from "@/components/seller-update-card";
 import { sellerUpdate } from "@/lib/seller-update";
@@ -76,6 +77,11 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
       <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
         <Buyers p={p} />
       </Suspense>
+      {dbEnabled && (
+        <Suspense fallback={<Skeleton className="h-24 max-w-2xl" />}>
+          <History p={p} />
+        </Suspense>
+      )}
       {dbEnabled && p.status !== "Sold" && (
         <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
           <WeeklyUpdate p={p} />
@@ -301,6 +307,41 @@ async function WeeklyUpdate({ p }: { p: Property }) {
     <section aria-labelledby="weekly" className="flex max-w-2xl flex-col gap-3">
       <h2 id="weekly" className="text-xl">Weekly seller update</h2>
       <SellerUpdateCard draft={draft} sellerId={p.sellerId ?? null} />
+    </section>
+  );
+}
+
+const STATUS_WORD: Record<string, string> = { Active: "Active", "Coming soon": "Coming soon", "Under contract": "Under contract", Sold: "Sold" };
+
+/** Days on market, listing agreement expiry, and every status and price change. */
+async function History({ p }: { p: Property }) {
+  const events = await getPropertyHistory(p.id);
+  const now = new Date().getTime();
+  const dom = p.createdAt ? Math.max(0, Math.floor((now - Date.parse(p.createdAt)) / 86_400_000)) : null;
+  const left = p.listingExpires ? daysBetween(new Date(now).toISOString().slice(0, 10), p.listingExpires!) : null;
+  const usd = (v: string | null) => (v && !isNaN(Number(v)) ? money(Number(v)) : v ?? "");
+  const line = (e: (typeof events)[number]) =>
+    e.kind === "listed" ? `Listed: ${e.new?.replace(/ at (\d+(\.\d+)?)$/, (_, n) => ` at ${money(Number(n))}`)}`
+    : e.kind === "price" ? `Price ${Number(e.new) < Number(e.old) ? "reduced" : "raised"} from ${usd(e.old)} to ${usd(e.new)}`
+    : `${STATUS_WORD[e.old ?? ""] ?? e.old} → ${STATUS_WORD[e.new ?? ""] ?? e.new}`;
+  return (
+    <section aria-labelledby="history" className="flex max-w-2xl flex-col gap-3">
+      <h2 id="history" className="text-xl">History</h2>
+      <p className="-mt-2 text-sm text-muted">
+        {dom !== null && `${dom} day${dom === 1 ? "" : "s"} on market`}
+        {left !== null && <span className={left <= 30 ? "text-score-1" : ""}> · listing agreement {left < 0 ? `expired ${-left} days ago` : left === 0 ? "ends today" : `ends in ${left} days`}</span>}
+      </p>
+      {events.length > 0 && (
+        <ol className="flex flex-col gap-0 border-l border-white/10 pl-5">
+          {events.map((e, i) => (
+            <li key={i} className="relative pb-3 text-sm last:pb-0">
+              <span aria-hidden className={`absolute top-1.5 -left-[25px] size-2.5 rounded-full ${e.kind === "price" && Number(e.new) < Number(e.old) ? "bg-accent" : "bg-white/40"}`} />
+              <p>{line(e)}</p>
+              <p className="text-xs text-muted"><LocalTime ts={e.ts} opts={{ month: "short", day: "numeric", year: "numeric" }} /></p>
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   );
 }
