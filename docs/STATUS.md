@@ -10,7 +10,7 @@ Last updated: 2026-10-09.
 |---|---|---|---|---|---|
 | 1 | AI Command Center | | 2, 5, 8, 10 | 9 (speech) | 1, 3, 4, 6, 7, 11, 12 |
 | 2 | Lead Generation | 17, 30 | 18, 19, 21, 24 | 13, 14, 15, 16, 22, 23, 27, 29 | 20, 25, 26, 28 |
-| 3 | Lead Management | 32, 39, 40 | 33, 34, 36, 45, 47 | | 31, 35, 37, 38, 41, 42, 43, 44, 46, 48 |
+| 3 | Lead Management | 32, 39, 40, 42, 45 | 33, 34, 36, 44 (round-robin; performance-based not yet), 46 (captured per lead; reports pending), 47 | | 31, 35, 37, 38, 41, 43, 48 |
 | 4 | Communication Hub | 67 | 59, 63 | 49, 50, 51, 53, 54, 55, 56, 57, 58, 60, 61, 64, 66 | 52, 62, 65 |
 | 5 | Listings | 69, 70, 72 | | 68, 71 | 73–83 |
 | 6 | Matchmaking | | 84 | 88 (maps) | 85–87, 89–94 |
@@ -45,7 +45,7 @@ Last updated: 2026-10-09.
 
 Items that need no outside account are built first, in roadmap phase order:
 
-1. **Revenue engine:** lead ownership and round-robin routing (43–45), response-time tracking (46), tags and smart segments (42), buyer criteria and Instant Buyer Matching (84–86, 90, 91), showings and open-house check-in (111, 116–121).
+1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), buyer criteria and Instant Buyer Matching (84–86, 90, 91), showings and open-house check-in (111, 116–121).
 2. **Closing engine:** deals, offers and transaction milestones with deadlines (123–125, 128–135, 138, 139), commission splits (197–200, 206).
 3. **Growth and analytics:** source and conversion analytics (24, 25, 228–230), past-client anniversaries and retention (177–186), broker views (190–192).
 4. **Privacy rights:** data export and deletion (243), which the Terms and Privacy Policy will reference.

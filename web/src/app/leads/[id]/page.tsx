@@ -11,7 +11,9 @@ import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
 import type { Lead } from "@/lib/data";
-import { getLead, getProperties, getTasks } from "@/lib/db";
+import { getLead, getMembers, getProperties, getTasks } from "@/lib/db";
+import { fmtDuration } from "@/lib/search";
+import { OwnerSelect } from "@/components/owner-select";
 
 export const metadata: Metadata = { title: "Lead" };
 
@@ -41,7 +43,7 @@ function blockers(lead: Lead) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties] = await Promise.all([getTasks(), getProperties()]);
+  const [tasks, properties, team] = await Promise.all([getTasks(), getProperties(), getMembers()]);
   const mine = tasks.filter((t) => t.contactId === lead.id);
   // ponytail: area match only; swap for pgvector matching once budgets are numeric.
   const matches = properties.filter((p) => p.status !== "Sold" && lead.areas.includes(p.area)).slice(0, 3);
@@ -68,6 +70,11 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                 <span className="flex items-center gap-2"><ScoreDots score={lead.score} /> {scoreLabel(lead.score)} · {lead.score}</span>
                 {lead.stage && <StageSelect id={lead.id} stage={lead.stage} />}
+                {team.members.length > 0 && <OwnerSelect contactId={lead.id} ownerId={lead.ownerId ?? null} members={team.members} />}
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                <ResponseTime createdAt={lead.createdAt} firstResponseAt={lead.firstResponseAt} />
+                {lead.tags?.map((t) => <Link key={t} href={`/leads?tag=${encodeURIComponent(t)}`} className="rounded-full bg-surface-3 px-3 py-1 text-xs hover:text-accent">#{t}</Link>)}
               </div>
             </div>
           </div>
@@ -144,4 +151,12 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
       </div>
     </Reveal>
   );
+}
+
+/** Speed to lead: how long until the first call, text or email (notes don't count). */
+function ResponseTime({ createdAt, firstResponseAt }: { createdAt?: string; firstResponseAt?: string | null }) {
+  if (!createdAt) return null;
+  if (firstResponseAt)
+    return <span className="text-muted">First response in {fmtDuration(new Date(firstResponseAt).getTime() - new Date(createdAt).getTime())}</span>;
+  return <span className="rounded-full bg-score-2/15 px-3 py-1 text-xs text-score-2">Not contacted yet</span>;
 }

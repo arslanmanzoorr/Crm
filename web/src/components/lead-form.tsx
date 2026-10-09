@@ -25,6 +25,7 @@ export function LeadForm({ lead }: { lead?: Lead }) {
           <Field label="Source" name="sources" hint="comma separated" placeholder="Zillow, Instagram" defaultValue={lead?.sources.join(", ")} />
           <Field label="Areas" name="areas" hint="comma separated" placeholder="Westside, Oak Park" defaultValue={lead?.areas.join(", ")} />
           <Field label="Wants" name="preferences" hint="comma separated" placeholder="3 bed, Garage" defaultValue={lead?.preferences.join(", ")} />
+          <Field label="Tags" name="tags" hint="comma separated" placeholder="pre-approved, relocation" defaultValue={lead?.tags?.join(", ")} maxLength={400} />
           <fieldset className="flex flex-wrap gap-4 text-sm sm:col-span-2">
             <legend className="mb-2 text-muted">Consent to contact (TCPA / CAN-SPAM)</legend>
             {([["consent_call", "Calls", c?.call], ["consent_sms", "Texts", c?.sms], ["consent_email", "Email", c?.email], ["dnc", "Do not contact", c?.dnc]] as const).map(([n, l, v]) => (

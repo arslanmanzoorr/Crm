@@ -7,7 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
 import { dbEnabled, likeSafe, meterAi, supabase } from "./db";
-import { safeNext } from "./search";
+import { normTags, safeNext } from "./search";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -63,6 +63,7 @@ const leadFields = (f: FormData) => ({
     consent_call: f.get("consent_call") === "on",
     consent_email: f.get("consent_email") === "on",
     dnc: f.get("dnc") === "on",
+    tags: normTags(str(f, "tags")),
 });
 
 /** Create or (with an `id` field) update a lead. */
@@ -554,4 +555,36 @@ export async function renameOrg(_: FormState, f: FormData): Promise<FormState> {
   if (!data?.length) return { error: NOT_ALLOWED };
   revalidatePath("/", "layout");
   return { ok: "Saved" };
+}
+
+/** Assign a lead to a teammate (or unassign with null). The database rejects owners outside the team. */
+export async function setOwner(contactId: string, userId: string | null) {
+  if (!dbEnabled || !UUID.test(contactId) || (userId !== null && !UUID.test(userId))) throw new Error("Invalid owner.");
+  const { error } = await (await authed()).from("contacts").update({ owner_id: userId }).eq("id", contactId);
+  if (error) throw new Error(error.code === "23503" ? "That person isn't on this team." : error.message);
+  revalidatePath("/", "layout");
+}
+
+export async function bulkSetOwner(ids: string[], userId: string | null): Promise<{ assigned: number }> {
+  if (!dbEnabled) return { assigned: 0 };
+  if (userId !== null && !UUID.test(userId)) throw new Error("Invalid owner.");
+  const { data, error } = await (await authed()).from("contacts").update({ owner_id: userId }).in("id", idList(ids)).select("id");
+  if (error) throw new Error(error.code === "23503" ? "That person isn't on this team." : error.message);
+  revalidatePath("/", "layout");
+  return { assigned: data.length };
+}
+
+export async function setRouting(on: boolean) {
+  if (!dbEnabled) return;
+  const db = await authed();
+  const { data } = await db.from("organizations").update({ routing: on ? "round_robin" : "off" }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (!data?.length) throw new Error(NOT_ALLOWED);
+  revalidatePath("/team");
+}
+
+export async function setInRotation(userId: string, on: boolean) {
+  if (!dbEnabled || !UUID.test(userId)) return;
+  const { data } = await (await authed()).rpc("set_rotation", { p_user: userId, p_in: on });
+  if (!data) throw new Error(NOT_ALLOWED);
+  revalidatePath("/team");
 }

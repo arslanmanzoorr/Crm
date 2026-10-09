@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { TeamManager } from "@/components/team";
 import { Skeleton } from "@/components/ui";
-import { getTeam } from "@/lib/db";
+import { getMembers, getTeam } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Team" };
 
@@ -18,7 +18,7 @@ export default function TeamPage() {
 }
 
 async function TeamView() {
-  const team = await getTeam();
+  const [team, routing] = await Promise.all([getTeam(), getMembers()]);
   if (!team) return <p className="text-muted">Teams need a connected database.</p>;
-  return <TeamManager team={team} siteUrl={process.env.SITE_URL ?? ""} />;
+  return <TeamManager team={team} routing={routing} siteUrl={process.env.SITE_URL ?? ""} />;
 }

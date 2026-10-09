@@ -4,7 +4,8 @@ import { EmptyDemo } from "@/components/empty-demo";
 import { LeadViews } from "@/components/lead-views";
 import { LeadList, type Filter } from "@/components/leads";
 import { Reveal, LoadingCards } from "@/components/ui";
-import { PAGE, listLeads, type Temp } from "@/lib/db";
+import { PAGE, getMembers, listLeads, type Temp } from "@/lib/db";
+import { normTag } from "@/lib/search";
 
 export const metadata: Metadata = { title: "Leads" };
 
@@ -29,11 +30,18 @@ async function Leads({ searchParams }: { searchParams: PageProps<"/leads">["sear
   const q = one(sp.q).slice(0, 80);
   const temp = (["Hot", "Warm", "Cold"].includes(one(sp.temp)) ? one(sp.temp) : "All") as Filter;
   const limit = Math.min(500, Math.max(PAGE, Number(one(sp.show)) || PAGE));
-  const { leads, total, counts } = await listLeads({ q, temp: temp === "All" ? undefined : (temp as Temp), limit });
-  if (counts.All === 0 && !q) return <EmptyDemo what="leads" />;
+  const ownerParam = one(sp.owner);
+  const ownerFilter = ownerParam === "me" || ownerParam === "none" ? ownerParam : "";
+  const tag = normTag(one(sp.tag));
+  const team = await getMembers();
+  const { leads, total, counts } = await listLeads({
+    q, temp: temp === "All" ? undefined : (temp as Temp), limit, tag: tag || undefined,
+    owner: ownerFilter === "me" ? team.me || undefined : ownerFilter || undefined,
+  });
+  if (counts.All === 0 && !q && !tag && !ownerFilter) return <EmptyDemo what="leads" />;
   return (
     <Reveal>
-      <LeadList leads={leads} total={total} counts={counts} q={q} temp={temp} limit={limit} />
+      <LeadList leads={leads} total={total} counts={counts} q={q} temp={temp} limit={limit} owner={ownerFilter} tag={tag} members={team.members} />
     </Reveal>
   );
 }

@@ -3,8 +3,8 @@
 import { Check, Copy, LogOut, UserMinus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { inviteMember, removeMember, renameOrg, revokeInvite, setMemberRole, switchOrg } from "@/lib/actions";
-import type { Role, Team } from "@/lib/db";
+import { inviteMember, removeMember, renameOrg, revokeInvite, setInRotation, setMemberRole, setRouting, switchOrg } from "@/lib/actions";
+import type { Member, Role, Team } from "@/lib/db";
 import { ActionForm, Field, primaryBtn, inputAuto } from "./forms";
 import { LocalTime } from "./local-time";
 import { Avatar } from "./ui";
@@ -34,7 +34,7 @@ function Armed({ label, confirm, onConfirm, icon }: { label: string; confirm: st
   );
 }
 
-export function TeamManager({ team, siteUrl }: { team: Team; siteUrl: string }) {
+export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: { members: Member[]; routing: "off" | "round_robin" }; siteUrl: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
@@ -101,6 +101,36 @@ export function TeamManager({ team, siteUrl }: { team: Team; siteUrl: string }) 
           })}
         </ul>
       </section>
+
+      {isAdmin && team.members.length > 1 && (
+        <section aria-labelledby="routing" className="flex flex-col gap-3">
+          <h2 id="routing" className="text-xl">Lead routing</h2>
+          <label className="flex items-start gap-3 rounded-card bg-surface-2 p-4 text-sm">
+            <input type="checkbox" defaultChecked={routing.routing === "round_robin"} disabled={pending}
+              onChange={(e) => { const on = e.target.checked; run(() => setRouting(on)); }}
+              className="mt-0.5 size-5 shrink-0 accent-[var(--color-accent)]" />
+            <span>
+              Round-robin new web-form leads
+              <span className="block text-xs text-muted">Each new lead without an owner goes to the person in the rotation who has waited longest. Assistants are never assigned.</span>
+            </span>
+          </label>
+          {routing.routing === "round_robin" && (
+            <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+              {routing.members.filter((m) => m.role !== "assistant").map((m) => (
+                <li key={m.userId}>
+                  <label className="flex min-h-12 items-center gap-3 px-4 text-sm">
+                    <input type="checkbox" defaultChecked={m.inRotation} disabled={pending}
+                      onChange={(e) => { const on = e.target.checked; run(() => setInRotation(m.userId, on)); }}
+                      className="size-5 accent-[var(--color-accent)]" />
+                    <span className="flex-1 truncate">{m.email}</span>
+                    <span className="text-xs text-muted">{m.inRotation ? "In rotation" : "Paused"}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {isAdmin && (
         <section aria-labelledby="invite" className="flex flex-col gap-3">

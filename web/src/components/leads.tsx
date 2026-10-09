@@ -4,7 +4,8 @@ import { Check, Flame, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { bulkDelete, bulkSetStage } from "@/lib/actions";
+import { bulkDelete, bulkSetOwner, bulkSetStage } from "@/lib/actions";
+import type { Member } from "@/lib/db";
 import { STAGES, type Lead, type Stage } from "@/lib/data";
 import { Chip, LeadAvatar, NotchCard, ScoreDots, scoreLabel } from "./ui";
 
@@ -15,7 +16,7 @@ const PAGE = 30; // keep in sync with db.ts PAGE
 export const pill = (on: boolean) =>
   `flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm transition duration-150 ${on ? "bg-surface-light text-on-light" : "bg-surface-2 text-ink/80 hover:text-accent"}`;
 
-export function LeadCard({ lead, selected, onToggle }: { lead: Lead; selected?: boolean; onToggle?: () => void }) {
+export function LeadCard({ lead, selected, onToggle, owner }: { lead: Lead; selected?: boolean; onToggle?: () => void; owner?: string }) {
   return (
     <NotchCard label={`Open ${lead.name}`} href={`/leads/${lead.id}`} className={selected ? "ring-2 ring-accent" : ""}>
       {onToggle && (
@@ -34,6 +35,7 @@ export function LeadCard({ lead, selected, onToggle }: { lead: Lead; selected?: 
       )}
       <LeadAvatar id={lead.id} name={lead.name} size={52} />
       <h3 className="mt-4 truncate pr-2 text-xl font-medium">{lead.name}</h3>
+      {owner !== undefined && <p className="text-xs text-muted">{owner ? `Owner: ${owner}` : "Unassigned"}</p>}
       <p className="line-clamp-2 text-sm text-muted">{lead.headline}</p>
 
       <p className="mt-3 rounded-2xl bg-surface-1 px-3 py-2 text-xs text-ink/80">
@@ -82,7 +84,14 @@ export function TopLeads({ leads, total }: { leads: Lead[]; total: number }) {
 type Counts = Record<Filter, number>;
 
 /** Leads page. Search, filter and paging live in the URL and run in Postgres; this only drives the URL. */
-export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead[]; total: number; counts: Counts; q: string; temp: Filter; limit: number }) {
+type OwnerFilter = "" | "me" | "none";
+
+export function LeadList({ leads, total, counts, q, temp, limit, owner = "", tag = "", members = [] }: {
+  leads: Lead[]; total: number; counts: Counts; q: string; temp: Filter; limit: number;
+  owner?: OwnerFilter; tag?: string; members?: Member[];
+}) {
+  const team = members.length > 1;
+  const nameOf = (id?: string | null) => (id ? members.find((m) => m.userId === id)?.email.split("@")[0] ?? "" : "");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [text, setText] = useState(q);
@@ -122,7 +131,7 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
     if (q !== sent) setText(q);
   }
 
-  const go = useCallback((next: { q?: string; temp?: Filter; limit?: number }) => {
+  const go = useCallback((next: { q?: string; temp?: Filter; limit?: number; owner?: OwnerFilter; tag?: string }) => {
     const p = new URLSearchParams();
     const nq = next.q ?? q;
     setSent(nq);
@@ -131,8 +140,12 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
     if (nq) p.set("q", nq);
     if (nt !== "All") p.set("temp", nt);
     if (nl > PAGE) p.set("show", String(nl));
+    const no = next.owner ?? owner;
+    const ng = next.tag ?? tag;
+    if (no) p.set("owner", no);
+    if (ng) p.set("tag", ng);
     start(() => router.replace(`/leads${p.size ? `?${p}` : ""}`, { scroll: false }));
-  }, [q, temp, router]);
+  }, [q, temp, owner, tag, router]);
 
   // Debounced server search as you type.
   useEffect(() => {
@@ -156,6 +169,18 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
         <button type="button" onClick={() => (selecting ? stopSelecting() : setSelecting(true))} aria-pressed={selecting} className={`${pill(selecting)} ml-auto sm:order-last`}>
           {selecting ? "Done" : "Select"}
         </button>
+        {team && (
+          <div role="group" aria-label="Filter by owner" className="flex flex-wrap gap-2">
+            {([["", "Everyone"], ["me", "Mine"], ["none", "Unassigned"]] as const).map(([v, l]) => (
+              <button key={v} type="button" aria-pressed={owner === v} onClick={() => go({ owner: v })} className={pill(owner === v)}>{l}</button>
+            ))}
+          </div>
+        )}
+        {tag && (
+          <button type="button" onClick={() => go({ tag: "" })} className={`${pill(true)} gap-1`} aria-label={`Remove tag filter ${tag}`}>
+            #{tag} <X aria-hidden className="size-3.5" />
+          </button>
+        )}
         <div role="group" aria-label="Filter by temperature" className="flex flex-wrap gap-2">
           {filters.map((f) => (
             <button key={f} type="button" aria-pressed={temp === f} onClick={() => go({ temp: f })} className={pill(temp === f)}>
@@ -185,6 +210,24 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
               {STAGES.map((st) => <option key={st} value={st}>{st}</option>)}
             </select>
           </label>
+          {team && (
+            <label className="relative">
+              <span className="sr-only">Assign selected leads</span>
+              <select
+                value=""
+                disabled={!picked.size || pending}
+                onChange={(e) => {
+                  const v = e.target.value === "none" ? null : e.target.value;
+                  runBulk(async () => { const { assigned } = await bulkSetOwner([...picked], v); return `${v ? `Assigned ${assigned} to ${nameOf(v)}` : `Unassigned ${assigned}`} lead${assigned === 1 ? "" : "s"}.`; });
+                }}
+                className="min-h-11 rounded-full bg-on-light px-4 text-sm text-ink outline-none disabled:opacity-40"
+              >
+                <option value="" disabled>Assign to…</option>
+                {members.map((m) => <option key={m.userId} value={m.userId}>{m.email.split("@")[0]}</option>)}
+                <option value="none">Unassigned</option>
+              </select>
+            </label>
+          )}
           <button
             type="button"
             disabled={!picked.size || pending}
@@ -201,7 +244,7 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
       {leads.length ? (
         <>
           <div className={`grid gap-4 transition-opacity duration-150 sm:grid-cols-2 xl:grid-cols-3 ${pending ? "opacity-60" : ""}`}>
-            {leads.map((l) => <LeadCard key={l.id} lead={l} selected={picked.has(l.id)} onToggle={selecting ? () => toggle(l.id) : undefined} />)}
+            {leads.map((l) => <LeadCard key={l.id} lead={l} owner={team ? nameOf(l.ownerId) : undefined} selected={picked.has(l.id)} onToggle={selecting ? () => toggle(l.id) : undefined} />)}
           </div>
           {leads.length < total && (
             <button type="button" onClick={() => go({ limit: limit + PAGE })} disabled={pending} className={`${pill(false)} self-center`}>
@@ -211,8 +254,8 @@ export function LeadList({ leads, total, counts, q, temp, limit }: { leads: Lead
         </>
       ) : (
         <div className="flex flex-col items-start gap-3 rounded-card bg-surface-2 p-6 text-sm">
-          <p>No leads match{q && <> “{q}”</>}{temp !== "All" && <> in {temp}</>}.</p>
-          <button type="button" onClick={() => { setText(""); go({ q: "", temp: "All" }); }} className={pill(false)}>Clear search and filter</button>
+          <p>No leads match{q && <> “{q}”</>}{temp !== "All" && <> in {temp}</>}{tag && <> tagged #{tag}</>}{owner === "me" && <> owned by you</>}{owner === "none" && <> without an owner</>}.</p>
+          <button type="button" onClick={() => { setText(""); go({ q: "", temp: "All", owner: "", tag: "" }); }} className={pill(false)}>Clear search and filters</button>
         </div>
       )}
     </section>

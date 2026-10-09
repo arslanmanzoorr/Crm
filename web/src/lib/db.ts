@@ -31,7 +31,7 @@ export async function supabase() {
 type ActivityRow = { channel: Channel; content: string; ts: string; direction: "in" | "out" };
 type ContactRow = {
   id: string; type: string; stage: Stage; next_action: string; name: string; email: string | null; phone: string | null; sources: string[];
-  score: number; consent_sms: boolean; consent_call: boolean; consent_email: boolean; dnc: boolean; intent: string; budget: string; areas: string[]; preferences: string[]; activities: ActivityRow[];
+  score: number; owner_id: string | null; tags: string[]; created_at: string; first_response_at: string | null; consent_sms: boolean; consent_call: boolean; consent_email: boolean; dnc: boolean; intent: string; budget: string; areas: string[]; preferences: string[]; activities: ActivityRow[];
 };
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
@@ -56,6 +56,10 @@ export function toLead(r: ContactRow): Lead {
     stage: r.stage,
     nextAction: r.next_action,
     consent: { sms: r.consent_sms, call: r.consent_call, email: r.consent_email, dnc: r.dnc },
+    ownerId: r.owner_id,
+    tags: r.tags,
+    createdAt: r.created_at,
+    firstResponseAt: r.first_response_at,
   };
 }
 
@@ -65,7 +69,7 @@ const toneFor = (id: string) => TONES[[...id].reduce((a, c) => a + c.charCodeAt(
 const toProperty = (r: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string }): Property =>
   ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id) });
 
-const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,consent_sms,consent_call,consent_email,dnc,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
+const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
 const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description";
 
 function must<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
@@ -82,7 +86,7 @@ const TEMP_RANGE: Record<Temp, [number, number]> = { Hot: [80, 100], Warm: [50, 
  * One page of leads with only their latest activity. Search and filters run in Postgres
  * (trigram index on contacts.search), so this stays fast at any list size.
  */
-export async function listLeads({ q = "", temp, limit = PAGE }: { q?: string; temp?: Temp; limit?: number }) {
+export async function listLeads({ q = "", temp, limit = PAGE, owner, tag }: { q?: string; temp?: Temp; limit?: number; owner?: string; tag?: string }) {
   if (!dbEnabled) {
     const all = mock.leads.filter((l) => `${l.name} ${l.headline}`.toLowerCase().includes(q.toLowerCase()));
     return { leads: all, total: all.length, counts: { All: all.length, Hot: 0, Warm: 0, Cold: 0 } };
@@ -92,12 +96,16 @@ export async function listLeads({ q = "", temp, limit = PAGE }: { q?: string; te
   const base = () => {
     let b = db.from("contacts").select("id", { count: "exact", head: true });
     if (term) b = b.ilike("search", `%${term}%`);
+    if (owner) b = owner === "none" ? b.is("owner_id", null) : b.eq("owner_id", owner);
+    if (tag) b = b.contains("tags", [tag]);
     return b;
   };
   let query = db.from("contacts").select(CONTACT_COLS, { count: "exact" })
     .order("ts", { referencedTable: "activities", ascending: false }).limit(1, { referencedTable: "activities" });
   if (term) query = query.ilike("search", `%${term}%`);
   if (temp) query = query.gte("score", TEMP_RANGE[temp][0]).lte("score", TEMP_RANGE[temp][1]);
+  if (owner) query = owner === "none" ? query.is("owner_id", null) : query.eq("owner_id", owner);
+  if (tag) query = query.contains("tags", [tag]);
   const [res, all, ...temps] = await Promise.all([
     query.order("score", { ascending: false }).order("id").range(0, Math.min(limit, 500) - 1),
     base(),
@@ -314,5 +322,23 @@ export async function getTeam(): Promise<Team | null> {
     orgs: orgs.map(({ id, name }) => ({ id, name })),
     members: (members.data ?? []).map((m) => ({ userId: m.user_id, email: m.email ?? "", role: m.role as Role, joined: m.created_at })),
     invites: (invites.data ?? []).map((i) => ({ id: i.id, email: i.email, role: i.role as Role, expires: i.expires_at })),
+  };
+}
+
+export type Member = { userId: string; email: string; role: Role; inRotation: boolean };
+
+/** Members of the active org (for owner pickers and routing settings). */
+export async function getMembers(): Promise<{ me: string; members: Member[]; routing: "off" | "round_robin" }> {
+  if (!dbEnabled) return { me: "", members: [], routing: "off" };
+  const db = await supabase();
+  const [{ data: auth }, org] = await Promise.all([db.auth.getUser(), db.rpc("active_org")]);
+  const [members, orgRow] = await Promise.all([
+    db.from("memberships").select("user_id,email,role,in_rotation").eq("org_id", org.data).order("created_at"),
+    db.from("organizations").select("routing").eq("id", org.data).single(),
+  ]);
+  return {
+    me: auth.user?.id ?? "",
+    members: (members.data ?? []).map((m) => ({ userId: m.user_id, email: m.email ?? "", role: m.role as Role, inRotation: m.in_rotation })),
+    routing: (orgRow.data?.routing ?? "off") as "off" | "round_robin",
   };
 }

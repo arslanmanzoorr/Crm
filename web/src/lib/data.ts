@@ -20,6 +20,10 @@ export type Lead = {
   stage?: Stage;
   nextAction?: string;
   consent?: { sms: boolean; call: boolean; email: boolean; dnc: boolean };
+  ownerId?: string | null;
+  tags?: string[];
+  createdAt?: string;
+  firstResponseAt?: string | null;
 };
 
 export const STAGES = ["New", "Contacted", "Qualified", "Showing", "Offer", "Under Contract", "Closed", "Lost"] as const;
