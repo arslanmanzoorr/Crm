@@ -8,7 +8,8 @@ import { DealForm } from "@/components/deal-form";
 import { Chip, Skeleton } from "@/components/ui";
 import { cash, money } from "@/lib/data";
 import { commission, daysBetween, riskFlags } from "@/lib/deals";
-import { getDeal, getFinancing } from "@/lib/db";
+import { EXPENSE_CATEGORIES, getDeal, getExpenses, getFinancing, getMembers } from "@/lib/db";
+import { DeleteExpense, ExpenseForm, PayoutControls } from "@/components/money-controls";
 import { ReadinessList } from "@/components/readiness-card";
 import { EMPTY_FINANCING, readiness } from "@/lib/readiness";
 
@@ -30,6 +31,9 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
   const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day, as on /deals
   const flags = riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
   const c = commission(d.price, d.commissionPct, d.agentSplitPct, d.referralPct);
+  const [costs, me] = await Promise.all([getExpenses({ dealId: d.id }), getMembers()]);
+  const spent = costs.reduce((n, e) => n + e.amount, 0);
+  const isAdmin = me.members.some((m) => m.userId === me.me && (m.role === "owner" || m.role === "admin"));
   const fin = d.side === "buyer" && d.status === "active" ? readiness((await getFinancing(d.contact.id)) ?? EMPTY_FINANCING, { closeOn: d.closeOn, today }) : null;
   const done = d.milestones.filter((m) => m.doneAt).length;
 
@@ -100,6 +104,17 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
               <dt className="font-medium">You ({d.agentSplitPct}%)</dt><dd className="font-medium">{cash(c.agent)}</dd>
             </dl>
             <p className="mt-3 text-xs text-on-light/70">{d.status === "closed" ? "Earned" : "Projected, paid at closing"}</p>
+            {d.status === "closed" && <div className="mt-4 border-t border-on-light/10 pt-3"><PayoutControls dealId={d.id} status={d.payoutStatus} canApprove={isAdmin} /></div>}
+          </section>
+          <section aria-labelledby="costs" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5">
+            <h2 id="costs" className="text-lg">Costs on this deal</h2>
+            {costs.length > 0 && (
+              <ul className="flex flex-col gap-1 text-sm">
+                {costs.map((e) => <li key={e.id} className="flex items-center gap-2"><span className="flex-1">{EXPENSE_CATEGORIES[e.category]}{e.vendor && <span className="text-muted"> · {e.vendor}</span>}</span><span className="tabular-nums">{cash(e.amount)}</span><DeleteExpense id={e.id} /></li>)}
+              </ul>
+            )}
+            <p className="text-sm">Your profit: <span className="font-medium text-accent">{cash(c.agent - spent)}</span> <span className="text-muted">({cash(c.agent)} share − {cash(spent)} costs)</span></p>
+            <ExpenseForm dealId={d.id} />
           </section>
           {d.notes && <section aria-labelledby="notes" className="rounded-card bg-surface-2 p-5"><h2 id="notes" className="text-lg">Notes</h2><p className="mt-2 whitespace-pre-wrap text-sm text-ink/80">{d.notes}</p></section>}
         </aside>

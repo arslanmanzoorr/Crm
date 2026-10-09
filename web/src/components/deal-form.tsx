@@ -22,10 +22,10 @@ function Labeled({ label, hint, children }: { label: string; hint?: string; chil
 /** New deal (pick client and home) or edit terms. Shows the commission split live as numbers change. */
 export type DealPrefill = { offerId: string; side: "buyer" | "seller"; propertyId: string | null; address: string; price: number; closeOn: string | null };
 
-export function DealForm({ deal, clients, listings, contactId, prefill }: { deal?: Deal; clients?: Option[]; listings?: { id: string; address: string }[]; contactId?: string; prefill?: DealPrefill }) {
+export function DealForm({ deal, clients, listings, contactId, prefill, defaultSplit }: { deal?: Deal; clients?: Option[]; listings?: { id: string; address: string }[]; contactId?: string; prefill?: DealPrefill; defaultSplit?: number }) {
   const [price, setPrice] = useState(deal ? String(deal.price) : prefill ? String(prefill.price) : "");
   const [rate, setRate] = useState(String(deal?.commissionPct ?? 3));
-  const [split, setSplit] = useState(String(deal?.agentSplitPct ?? 70));
+  const [split, setSplit] = useState(String(deal?.agentSplitPct ?? defaultSplit ?? 70));
   const [referral, setReferral] = useState(String(deal?.referralPct ?? 0));
   const [listing, setListing] = useState(deal?.property?.id ?? prefill?.propertyId ?? "");
   const c = commission(Number(price) || 0, Number(rate) || 0, Number(split) || 0, Number(referral) || 0);

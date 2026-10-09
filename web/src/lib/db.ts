@@ -383,7 +383,7 @@ export async function getOpenHouses(propertyId: string): Promise<OpenHouse[]> {
 
 export type DealMilestone = { id: string; title: string; dueOn: string | null; doneAt: string | null };
 export type Deal = {
-  id: string; side: Side; status: "active" | "closed" | "fell_through"; price: number; address: string;
+  id: string; side: Side; status: "active" | "closed" | "fell_through"; payoutStatus: "pending" | "approved" | "paid"; payoutAt: string | null; price: number; address: string;
   acceptedOn: string; closeOn: string | null; closedAt: string | null; notes: string;
   commissionPct: number; agentSplitPct: number; referralPct: number; ownerId: string | null;
   contact: { id: string; name: string; lastActivityAt: string | null };
@@ -391,16 +391,16 @@ export type Deal = {
   milestones: DealMilestone[];
 };
 type DealRow = {
-  id: string; side: Side; status: Deal["status"]; price: number | string; address: string; accepted_on: string; close_on: string | null;
+  id: string; side: Side; status: Deal["status"]; payout_status: Deal["payoutStatus"]; payout_at: string | null; price: number | string; address: string; accepted_on: string; close_on: string | null;
   closed_at: string | null; notes: string; commission_pct: number | string; agent_split_pct: number | string; referral_pct: number | string; owner_id: string | null;
   contacts: { id: string; name: string; last_activity_at: string | null } | null;
   properties: { id: string; address: string } | null;
   deal_milestones: { id: string; title: string; due_on: string | null; done_at: string | null; position: number }[];
 };
-const DEAL_COLS = "id,side,status,price,address,accepted_on,close_on,closed_at,notes,commission_pct,agent_split_pct,referral_pct,owner_id,contacts(id,name,last_activity_at),properties(id,address),deal_milestones(id,title,due_on,done_at,position)";
+const DEAL_COLS = "id,side,status,payout_status,payout_at,price,address,accepted_on,close_on,closed_at,notes,commission_pct,agent_split_pct,referral_pct,owner_id,contacts(id,name,last_activity_at),properties(id,address),deal_milestones(id,title,due_on,done_at,position)";
 
 const toDeal = (r: DealRow): Deal => ({
-  id: r.id, side: r.side, status: r.status, price: Number(r.price), acceptedOn: r.accepted_on, closeOn: r.close_on, closedAt: r.closed_at,
+  id: r.id, side: r.side, status: r.status, payoutStatus: r.payout_status, payoutAt: r.payout_at, price: Number(r.price), acceptedOn: r.accepted_on, closeOn: r.close_on, closedAt: r.closed_at,
   address: r.properties?.address || r.address, notes: r.notes, ownerId: r.owner_id,
   commissionPct: Number(r.commission_pct), agentSplitPct: Number(r.agent_split_pct), referralPct: Number(r.referral_pct),
   contact: { id: r.contacts?.id ?? "", name: r.contacts?.name ?? "Deleted lead", lastActivityAt: r.contacts?.last_activity_at ?? null },
@@ -473,7 +473,7 @@ export async function getOffer(id: string): Promise<Offer | undefined> {
 type Money = { month: string; deals: number; gci: number; agent: number };
 export type Analytics = {
   days: number; leads: number;
-  by_source: { source: string; leads: number; reached: number; qualified: number; contracted: number; closed: number; median_response_min: number | null }[];
+  by_source: { source: string; leads: number; reached: number; qualified: number; contracted: number; closed: number; median_response_min: number | null; spend: number }[];
   response: { median_min: number | null; within_5m: number; within_1h: number; responded: number; never: number };
   cycle: { deals: number; lead_to_contract_days: number | null; contract_to_close_days: number | null };
   revenue: Money[]; forecast: Money[];
@@ -704,4 +704,27 @@ export async function getLinks(contactId: string): Promise<Linked[]> {
     const other = r.a === contactId ? r.cb : r.ca;
     return { id: other?.id ?? "", name: other?.name ?? "", kind: r.kind, note: r.note, stage: other?.stage ?? "" };
   }).filter((l) => l.id);
+}
+
+export const EXPENSE_CATEGORIES = { marketing: "Marketing", photography: "Photography", staging: "Staging", signage: "Signage", mls_fees: "MLS and dues", client_gifts: "Client gifts", travel: "Travel", other: "Other" } as const;
+export type Expense = { id: string; category: keyof typeof EXPENSE_CATEGORIES; source: string | null; amount: number; spentOn: string; vendor: string; note: string; deal: { id: string; address: string } | null };
+
+/** Expenses, newest first: a whole period, or one deal's. */
+export async function getExpenses(by: { since?: string; dealId?: string }): Promise<Expense[]> {
+  if (!dbEnabled) return [];
+  let q = (await supabase()).from("expenses").select("id,category,source,amount,spent_on,vendor,note,deals(id,address)");
+  if (by.since) q = q.gte("spent_on", by.since);
+  if (by.dealId) q = q.eq("deal_id", by.dealId);
+  const res = await q.order("spent_on", { ascending: false }).limit(2000);
+  type Row = { id: string; category: Expense["category"]; source: string | null; amount: number | string; spent_on: string; vendor: string; note: string; deals: { id: string; address: string } | null };
+  return (must(res) as unknown as Row[]).map((r) => ({ id: r.id, category: r.category, source: r.source, amount: Number(r.amount), spentOn: r.spent_on, vendor: r.vendor, note: r.note, deal: r.deals }));
+}
+
+/** Each member's default commission split. */
+export async function getSplits(): Promise<Record<string, number>> {
+  if (!dbEnabled) return {};
+  const db = await supabase();
+  const { data: org } = await db.rpc("active_org");
+  const { data } = await db.from("memberships").select("user_id,default_split_pct").eq("org_id", org);
+  return Object.fromEntries((data ?? []).map((m) => [m.user_id, Number(m.default_split_pct)]));
 }

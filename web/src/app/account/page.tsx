@@ -1,4 +1,4 @@
-import { Calculator, ChartNoAxesCombined, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
+import { Calculator, ChartNoAxesCombined, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -35,6 +35,7 @@ export default function AccountPage() {
           <Link href="/clients" className={`${row} md:hidden`}><HeartHandshake aria-hidden className="size-5 text-muted" /><span className="flex-1">Past clients</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/tools" className={`${row} md:hidden`}><Calculator aria-hidden className="size-5 text-muted" /><span className="flex-1">Calculators</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/analytics" className={`${row} md:hidden`}><ChartColumn aria-hidden className="size-5 text-muted" /><span className="flex-1">Analytics</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
+          <Link href="/expenses" className={row}><Receipt aria-hidden className="size-5 text-muted" /><span className="flex-1">Expenses</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/cma" className={row}><ChartNoAxesCombined aria-hidden className="size-5 text-muted" /><span className="flex-1">Market analyses (CMA)</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/automations" className={row}><Workflow aria-hidden className="size-5 text-muted" /><span className="flex-1">Automations <span className="block text-xs text-muted">Follow-up playbooks</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/partners" className={row}><Contact aria-hidden className="size-5 text-muted" /><span className="flex-1">Partners <span className="block text-xs text-muted">Lenders, inspectors, title</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>

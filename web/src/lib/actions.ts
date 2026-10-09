@@ -1221,3 +1221,46 @@ export async function unlinkContacts(contactId: string, other: string) {
   revalidatePath(`/leads/${contactId}`);
   revalidatePath(`/leads/${other}`);
 }
+
+const EXPENSE_KINDS = ["marketing", "photography", "staging", "signage", "mls_fees", "client_gifts", "travel", "other"];
+
+export async function addExpense(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const category = str(f, "category"), amount = Number(str(f, "amount")), spent_on = str(f, "spent_on"), deal_id = str(f, "deal_id");
+  if (!EXPENSE_KINDS.includes(category)) return { error: "Pick a category." };
+  if (!(amount > 0 && amount < 1e9)) return { error: "Enter the amount." };
+  if (spent_on && !DATE.test(spent_on)) return { error: "Pick a valid date." };
+  const { error } = await (await authed()).from("expenses").insert({
+    category, amount, spent_on: spent_on || undefined, deal_id: UUID.test(deal_id) ? deal_id : null,
+    source: str(f, "source").slice(0, 40) || null, vendor: str(f, "vendor").slice(0, 120), note: str(f, "note").slice(0, 500),
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: "Expense added" };
+}
+
+export async function deleteExpense(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("expenses").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
+/** Approve or mark paid a closed deal's commission (owners and admins; the database enforces it). */
+export async function setPayout(dealId: string, status: "pending" | "approved" | "paid"): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(dealId) || !["pending", "approved", "paid"].includes(status)) return { error: "Unknown payout step." };
+  const { error } = await (await authed()).from("deals").update({ payout_status: status }).eq("id", dealId);
+  if (error) return { error: /Only/.test(error.message) ? error.message : "Couldn't update the payout." };
+  revalidatePath("/", "layout");
+  return { ok: "Updated" };
+}
+
+export async function setSplit(userId: string, pct: number): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(userId) || !(pct >= 0 && pct <= 100)) return { error: "Split must be 0 to 100." };
+  const { error } = await (await authed()).rpc("set_default_split", { p_user: userId, p_pct: pct });
+  if (error) return { error: /Only/.test(error.message) ? error.message : "Couldn't save the split." };
+  revalidatePath("/team");
+  return { ok: "Saved" };
+}

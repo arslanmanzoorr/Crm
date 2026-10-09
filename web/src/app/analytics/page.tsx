@@ -69,16 +69,16 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
 
       <Section id="sources" title="Where leads come from, and which ones close" note="Attributed to each lead's first source." csv={{
         name: `lead-sources-${label.replace(" ", "-")}`,
-        header: ["Source", "Leads", "Contacted", "Qualified", "Under contract", "Closed", "Close rate", "Median first response (min)"],
-        rows: a.by_source.map((s) => [s.source, s.leads, s.reached, s.qualified, s.contracted, s.closed, pct(s.closed, s.leads), s.median_response_min ?? ""]),
+        header: ["Source", "Leads", "Contacted", "Qualified", "Under contract", "Closed", "Close rate", "Median first response (min)", "Spend"],
+        rows: a.by_source.map((s) => [s.source, s.leads, s.reached, s.qualified, s.contracted, s.closed, pct(s.closed, s.leads), s.median_response_min ?? "", s.spend]),
       }}>
         {a.by_source.length === 0 ? <Empty>No new leads in this period.</Empty> : (
-          <Table head={["Source", "Leads", "Contacted", "Qualified", "Contract", "Closed", "Close rate", "First response"]}>
+          <Table head={["Source", "Leads", "Contacted", "Qualified", "Contract", "Closed", "Close rate", "First response", "Spend", "Per lead", "Per closing"]}>
             {a.by_source.map((s) => (
               <tr key={s.source}>
                 <th scope="row" className="py-2.5 pr-4 text-left font-normal">{s.source}</th>
                 <Td>{s.leads}</Td><Td>{s.reached} <Dim>{pct(s.reached, s.leads)}</Dim></Td><Td>{s.qualified}</Td><Td>{s.contracted}</Td><Td>{s.closed}</Td>
-                <Td><span className={s.closed ? "text-accent" : ""}>{pct(s.closed, s.leads)}</span></Td><Td>{mins(s.median_response_min)}</Td>
+                <Td><span className={s.closed ? "text-accent" : ""}>{pct(s.closed, s.leads)}</span></Td><Td>{mins(s.median_response_min)}</Td><Td>{Number(s.spend) ? money(Number(s.spend)) : "–"}</Td><Td>{Number(s.spend) && s.leads ? money(Number(s.spend) / s.leads) : "–"}</Td><Td>{Number(s.spend) && s.closed ? money(Number(s.spend) / s.closed) : "–"}</Td>
               </tr>
             ))}
           </Table>
