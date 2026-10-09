@@ -62,7 +62,7 @@ export function DeleteButton({ id, what }: { id: string; what: "lead" | "listing
       className={`flex min-h-11 items-center gap-2 rounded-full px-4 text-sm transition duration-200 ${armed ? "bg-score-1 font-medium text-on-light" : "text-score-1 hover:bg-surface-2"}`}
     >
       <Trash2 aria-hidden className="size-4" />
-      {pending ? "Deleting…" : armed ? `Press again to delete this ${what}` : `Delete ${what}`}
+      {pending ? "Deleting…" : armed ? (what === "lead" ? "Press again to erase this lead and all history" : "Press again to delete this listing") : `Delete ${what}`}
     </button>
   );
 }

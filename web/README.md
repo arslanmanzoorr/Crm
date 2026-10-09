@@ -38,6 +38,9 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0009_teams.sql` | Active org per user, roles in policies, invites |
 | `0010_form_rpc_key.sql` | `submit_lead()` only accepts calls carrying the server key |
 | `0011_active_org_rpc.sql` | `active_org()`, idempotent `accept_invite()` |
+| `0012_routing_tags_response.sql` | Round-robin routing, tags, first-response time |
+| `0013_form_leads_unowned.sql` | Form leads start unassigned, then routing decides |
+| `0014_erase_on_delete.sql` | Deleting a lead also wipes their details from the audit log (right to delete) |
 
 After `0010`, store the hash of your form key (per environment):
 
