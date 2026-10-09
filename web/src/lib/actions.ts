@@ -7,6 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
 import { dbEnabled, likeSafe, meterAi, supabase } from "./db";
+import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
 
 export type FormState = { error?: string; ok?: string } | undefined;
@@ -17,6 +18,8 @@ const list = (f: FormData, k: string) => str(f, k).split(",").map((s) => s.trim(
 const num = (f: FormData, k: string) => Number(str(f, k) || 0);
 
 /** Every mutation re-checks the session itself; RLS is the second wall. */
+type Db = Awaited<ReturnType<typeof authed>>;
+
 async function authed() {
   const db = await supabase();
   const { data } = await db.auth.getUser();
@@ -107,14 +110,46 @@ const propertyFields = (f: FormData) => ({
     description: str(f, "description"),
 });
 
+const ALERT_MIN_FIT = 70;
+const MAX_ALERTS = 25;
+
+/**
+ * Instant Buyer Matching alerts: a follow-up task for each open buyer a new or cheaper listing fits,
+ * assigned to the buyer's owner. Tasks are the alert channel until email/SMS sending is connected.
+ */
+async function alertMatches(db: Db, p: { id: string; address: string; area: string; price: number; beds: number; status: string }, why: "New listing" | "Price drop") {
+  if (p.status === "Sold") return;
+  const { data: buyers } = await db.from("contacts").select("id,name,type,budget,areas,preferences,owner_id,score")
+    .in("type", BUYING_TYPES).not("stage", "in", "(Closed,Lost)").order("score", { ascending: false }).limit(1000);
+  const hits = (buyers ?? [])
+    .map((b) => ({ b, m: matchListing(b, p) }))
+    .filter((x) => x.m && x.m.score >= ALERT_MIN_FIT && (why === "New listing" || x.m.gaps.indexOf("No budget set") < 0)) // a price drop means nothing without a budget
+    .slice(0, MAX_ALERTS);
+  if (hits.length === 0) return;
+  const title = `${why}: ${p.address}`.slice(0, 300);
+  // Don't stack a second open alert for the same listing on the same buyer.
+  const { data: open } = await db.from("tasks").select("contact_id").eq("title", title).eq("done", false).in("contact_id", hits.map((h) => h.b.id));
+  const skip = new Set((open ?? []).map((t) => t.contact_id));
+  const rows = hits.filter((h) => !skip.has(h.b.id)).map(({ b, m }) => ({
+    contact_id: b.id, assignee_id: b.owner_id, kind: "call", created_by: "system", title,
+    note: `${m!.score}% fit for ${b.name}: ${[...m!.fits, ...m!.gaps].join(", ")}.`.slice(0, 2000),
+    due_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  }));
+  if (rows.length) await db.from("tasks").insert(rows); // best effort: a failed alert must not block saving the listing
+}
+
 /** Create or (with an `id` field) update a listing. */
 export async function saveProperty(_: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   const db = await authed();
   const id = str(f, "id");
+  const before = id ? (await db.from("properties").select("price").eq("id", id).maybeSingle()).data : null;
   const q = id ? db.from("properties").update(propertyFields(f)).eq("id", id) : db.from("properties").insert(propertyFields(f));
-  const { data, error } = await q.select("id").single();
+  const { data, error } = await q.select("id,address,area,price,beds,status").single();
   if (error) return { error: error.message };
+  const p = { ...data, price: Number(data.price) };
+  if (!id) await alertMatches(db, p, "New listing");
+  else if (before && p.price < Number(before.price)) await alertMatches(db, p, "Price drop");
   revalidatePath("/", "layout");
   redirect(`/properties/${data.id}`);
 }
