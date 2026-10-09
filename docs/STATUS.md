@@ -24,7 +24,7 @@ Last updated: 2026-10-09.
 | 14 | Brokerage & Team Ops | 188 | 187, 194 | | 189–193, 195, 196 |
 | 15 | Commissions & Finance | 198, 199, 206 | 197 (per deal; no plan templates yet), 200 (pending and 30-day view) | 205 | 201–204 |
 | 16 | Investor Toolkit | 208, 209, 210, 211, 214 | | 212 (rent comps) | 207, 213, 215, 216 |
-| 17 | Automation & Workflows | | 223, 224 | | 217–222, 225, 226 |
+| 17 | Automation & Workflows | 218, 219, 220, 222, 225, 226 | 217 (structured builder, not a canvas), 223, 224 | | 221 (needs AI key) |
 | 18 | Analytics | 227, 228, 229, 230, 231, 232, 235 | 236 (CSV per table) | | 233, 234 |
 | 19 | Security & Compliance | 237, 239, 240, 241, 244 | 242, 243 (export + erase on delete; no self-serve request form), 245, 248 | 238 (SSO) | 246, 247 |
 | 20 | Platform & Mobile | 260 (import) | 250 (responsive web) | 249, 251, 254, 255 | 252, 253, 256–259 |

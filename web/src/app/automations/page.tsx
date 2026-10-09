@@ -24,7 +24,8 @@ export default function AutomationsPage() {
   );
 }
 
-const describe = (s: Step) => (s.kind === "tag" ? `Tag “${s.tag}”` : s.title);
+// Previews read naturally ("Call them now"); the real tasks use the lead's first name.
+const describe = (s: Step) => (s.kind === "tag" ? `Tag “${s.tag}”` : s.title.replaceAll("{first_name}", "them"));
 const COND_WORDS: Record<string, string> = { buyer: "buyers", seller: "sellers", investor: "investors", renter: "renters", interested: "interested", maybe: "on the fence", offer: "wanting to offer", not_interested: "not interested", true: "with an agent", false: "without an agent" };
 
 async function Playbooks() {

@@ -50,6 +50,8 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0021_analytics_showings.sql` | Listing funnel counts showings |
 | `0022_financing_partners.sql` | Partner directory and per-buyer financing (lender, loan stage, preapproval, documents) |
 | `0023_client_portal.sql` | Client portal: hashed link tokens, `portal_view` / `portal_message` / `portal_favorite`, listing seller |
+| `0024_workflows.sql` | Automation playbooks: trigger enrollment, conditions, stop stages, pg_cron runner with retries |
+| `0025_workflow_task_window.sql` | Automated tasks are due 15 minutes after creation |
 
 After `0010`, store the hash of your form key (per environment):
 
