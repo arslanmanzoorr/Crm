@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { TeamManager } from "@/components/team";
 import { Skeleton } from "@/components/ui";
-import { getMembers, getRentalFeed, getSplits, getTeam, getTerritories } from "@/lib/db";
+import { getMembers, getOffices, getRentalFeed, getSplits, getTeam, getTerritories } from "@/lib/db";
+import { Offices } from "@/components/offices";
 import { RentalFeedSettings } from "@/components/rental-feed-settings";
 import { SplitInput } from "@/components/money-controls";
 import { Territories } from "@/components/territories";
@@ -21,12 +22,13 @@ export default function TeamPage() {
 }
 
 async function TeamView() {
-  const [team, routing, territories, splits, feed] = await Promise.all([getTeam(), getMembers(), getTerritories(), getSplits(), getRentalFeed()]);
+  const [team, routing, territories, splits, feed, offices] = await Promise.all([getTeam(), getMembers(), getTerritories(), getSplits(), getRentalFeed(), getOffices()]);
   if (!team) return <p className="text-muted">Teams need a connected database.</p>;
   const agents = team.members.filter((m) => m.role !== "assistant").map((m) => ({ id: m.userId, email: m.email }));
   return (
     <>
       <TeamManager team={team} routing={routing} siteUrl={process.env.SITE_URL ?? ""} />
+      <Offices offices={offices} members={routing.members.map((m) => ({ id: m.userId, email: m.email, officeId: m.officeId }))} canEdit={team.me.role === "owner" || team.me.role === "admin"} />
       <Territories territories={territories} agents={agents} canEdit={team.me.role === "owner" || team.me.role === "admin"} />
       <section aria-labelledby="rental-feed" className="flex flex-col gap-3">
         <h2 id="rental-feed" className="text-xl">Zillow rentals feed</h2>

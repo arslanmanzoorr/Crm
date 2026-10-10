@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { commission, daysBetween, pipelineByAgent, riskFlags } from "@/lib/deals";
-import { dbEnabled, getMembers, listDeals, type Deal } from "@/lib/db";
+import { dbEnabled, getMembers, getOffices, listDeals, type Deal } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Deals" };
 
@@ -33,11 +33,15 @@ const gci = (d: Deal) => commission(d.price, d.commissionPct, d.agentSplitPct, d
 
 /** "My deals" by default; "Whole team" is the brokerage view (everyone's pipeline, GCI, and a by-agent table). */
 async function Board({ searchParams }: { searchParams: PageProps<"/deals">["searchParams"] }) {
-  const [all, team, { who }] = await Promise.all([listDeals(), getMembers(), searchParams]);
+  const [everything, team, offices, { who, office }] = await Promise.all([listDeals(), getMembers(), getOffices(), searchParams]);
+  // Office filter (team view only): deals whose agent is in that office.
+  const officeId = who === "team" && offices.some((o) => o.id === office) ? (office as string) : null;
+  const inOffice = new Set(team.members.filter((m) => m.officeId === officeId).map((m) => m.userId));
+  const all = officeId ? everything.filter((d) => d.ownerId && inOffice.has(d.ownerId)) : everything;
   const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day; per-agent timezone if flags look a day off
-  const others = all.some((d) => d.ownerId !== team.me);
+  const others = everything.some((d) => d.ownerId !== team.me);
   const isTeam = who === "team" && others;
-  const deals = isTeam || !others ? all : all.filter((d) => d.ownerId === team.me);
+  const deals = isTeam || !others ? all : everything.filter((d) => d.ownerId === team.me);
   const active = deals.filter((d) => d.status === "active");
   const closed = deals.filter((d) => d.status === "closed");
   const soon = active.filter((d) => d.closeOn && daysBetween(today, d.closeOn) <= 30);
@@ -54,7 +58,7 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
     </nav>
   );
 
-  if (all.length === 0)
+  if (everything.length === 0)
     return (
       <div className="rounded-card bg-surface-2 p-8 text-center">
         <p className="text-lg">No deals yet</p>
@@ -65,6 +69,14 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
   return (
     <>
       {tabs}
+      {isTeam && offices.length > 0 && (
+        <nav aria-label="Office" className="flex flex-wrap gap-2">
+          {[{ id: "", name: "All offices" }, ...offices].map((o) => (
+            <Link key={o.id || "all"} href={`/deals?who=team${o.id ? `&office=${o.id}` : ""}`} aria-current={(officeId ?? "") === o.id ? "page" : undefined}
+              className={`flex min-h-10 items-center rounded-full px-4 text-sm ${(officeId ?? "") === o.id ? "bg-surface-light font-medium text-on-light" : "bg-surface-2 hover:bg-surface-3"}`}>{o.name}</Link>
+          ))}
+        </nav>
+      )}
       {isTeam && (
         <section aria-labelledby="by-agent" className="flex flex-col gap-3">
           <h2 id="by-agent" className="text-xl">By agent</h2>

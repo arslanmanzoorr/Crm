@@ -348,7 +348,15 @@ export async function getTeam(): Promise<Team | null> {
   };
 }
 
-export type Member = { userId: string; email: string; role: Role; inRotation: boolean };
+export type Office = { id: string; name: string };
+
+/** The team's offices, by name. */
+export async function getOffices(): Promise<Office[]> {
+  if (!dbEnabled) return [];
+  return must(await (await supabase()).from("offices").select("id,name").order("name")) as Office[];
+}
+
+export type Member = { userId: string; email: string; role: Role; inRotation: boolean; officeId: string | null };
 
 /** Members of the active org (for owner pickers and routing settings). */
 export async function getMembers(): Promise<{ me: string; members: Member[]; routing: "off" | "round_robin" }> {
@@ -356,12 +364,12 @@ export async function getMembers(): Promise<{ me: string; members: Member[]; rou
   const db = await supabase();
   const [{ data: auth }, org] = await Promise.all([db.auth.getUser(), db.rpc("active_org")]);
   const [members, orgRow] = await Promise.all([
-    db.from("memberships").select("user_id,email,role,in_rotation").eq("org_id", org.data).order("created_at"),
+    db.from("memberships").select("user_id,email,role,in_rotation,office_id").eq("org_id", org.data).order("created_at"),
     db.from("organizations").select("routing").eq("id", org.data).single(),
   ]);
   return {
     me: auth.user?.id ?? "",
-    members: (members.data ?? []).map((m) => ({ userId: m.user_id, email: m.email ?? "", role: m.role as Role, inRotation: m.in_rotation })),
+    members: (members.data ?? []).map((m) => ({ userId: m.user_id, email: m.email ?? "", role: m.role as Role, inRotation: m.in_rotation, officeId: m.office_id })),
     routing: (orgRow.data?.routing ?? "off") as "off" | "round_robin",
   };
 }
@@ -483,7 +491,7 @@ export type Analytics = {
   cycle: { deals: number; lead_to_contract_days: number | null; contract_to_close_days: number | null };
   revenue: Money[]; forecast: Money[];
   cohorts: { month: string; leads: number; reached: number; qualified: number; contracted: number; closed: number }[];
-  agents: { user_id: string; email: string; role: string; leads: number; reached: number; qualified: number; contracted: number; median_response_min: number | null; touches: number; active_deals: number; closed: number; closed_agent: number }[];
+  agents: { user_id: string; email: string; role: string; office_id: string | null; leads: number; reached: number; qualified: number; contracted: number; median_response_min: number | null; touches: number; active_deals: number; closed: number; closed_agent: number }[];
   listings: { id: string; address: string; status: string; price: number; days_on_market: number; visitors: number; showings: number; offers: number; best_offer: number | null }[];
 };
 

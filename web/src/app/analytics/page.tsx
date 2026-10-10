@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { CsvDownload } from "@/components/csv-download";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
-import { dbEnabled, getAnalytics, getCampaigns, type Analytics } from "@/lib/db";
+import { dbEnabled, getAnalytics, getCampaigns, getOffices, type Analytics } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Analytics" };
 
@@ -32,11 +32,12 @@ const daysOf = async (sp: PageProps<"/analytics">["searchParams"]) => {
 };
 
 async function PeriodPicker({ searchParams }: { searchParams: PageProps<"/analytics">["searchParams"] }) {
-  const days = await daysOf(searchParams);
+  const [days, { office }] = await Promise.all([daysOf(searchParams), searchParams]);
+  const keep = typeof office === "string" ? `&office=${encodeURIComponent(office)}` : "";
   return (
     <nav aria-label="Period" className="flex gap-1 rounded-full bg-surface-2 p-1">
       {PERIODS.map((p) => (
-        <Link key={p} href={`/analytics?days=${p}`} aria-current={p === days ? "page" : undefined}
+        <Link key={p} href={`/analytics?days=${p}${keep}`} aria-current={p === days ? "page" : undefined}
           className={`flex min-h-10 items-center rounded-full px-4 text-sm ${p === days ? "bg-surface-light font-medium text-on-light" : "text-muted hover:text-ink"}`}>
           {p === 365 ? "12 months" : `${p} days`}
         </Link>
@@ -51,8 +52,11 @@ const monthName = (ym: string) => (ym === "no date" ? "No date" : new Date(`${ym
 
 async function Report({ searchParams }: { searchParams: PageProps<"/analytics">["searchParams"] }) {
   const days = await daysOf(searchParams);
-  const [a0, campaigns] = await Promise.all([getAnalytics(days), getCampaigns(days)]);
+  const [a0, campaigns, offices, { office }] = await Promise.all([getAnalytics(days), getCampaigns(days), getOffices(), searchParams]);
   const a = a0!;
+  const officeId = offices.some((o) => o.id === office) ? (office as string) : null;
+  const agents = officeId ? a.agents.filter((x) => x.office_id === officeId) : a.agents;
+  const officeName = offices.find((o) => o.id === officeId)?.name;
   const earned = a.agents.reduce((n, x) => n + Number(x.closed_agent), 0);
   const pipeline = a.forecast.reduce((n, f) => n + Number(f.agent), 0);
   const label = days === 365 ? "12 months" : `${days} days`;
@@ -86,25 +90,33 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
         )}
       </Section>
 
-      <Section id="agents" title="Agents" note="Leads assigned in the period; touches are outbound calls, texts and emails logged." csv={{
+      {offices.length > 0 && (
+        <nav aria-label="Office" className="-mb-4 flex flex-wrap gap-2">
+          {[{ id: "", name: "All offices" }, ...offices].map((o) => (
+            <Link key={o.id || "all"} href={`/analytics?days=${days}${o.id ? `&office=${o.id}` : ""}`} aria-current={(officeId ?? "") === o.id ? "page" : undefined}
+              className={`flex min-h-10 items-center rounded-full px-4 text-sm ${(officeId ?? "") === o.id ? "bg-accent font-medium text-on-light" : "bg-surface-2 hover:bg-surface-3"}`}>{o.name}</Link>
+          ))}
+        </nav>
+      )}
+      <Section id="agents" title={officeName ? `Agents · ${officeName}` : "Agents"} note="Leads assigned in the period; touches are outbound calls, texts and emails logged." csv={{
         name: `agents-${label.replace(" ", "-")}`,
         header: ["Agent", "Role", "New leads", "Median first response (min)", "Touches", "Active deals", "Closed", "Earned"],
-        rows: a.agents.map((x) => [x.email, x.role, x.leads, x.median_response_min ?? "", x.touches, x.active_deals, x.closed, x.closed_agent]),
+        rows: agents.map((x) => [x.email, x.role, x.leads, x.median_response_min ?? "", x.touches, x.active_deals, x.closed, x.closed_agent]),
       }}>
         <Table head={["Agent", "New leads", "First response", "Touches", "Active deals", "Closed", "Earned"]}>
-          {a.agents.map((x) => (
+          {agents.map((x) => (
             <tr key={x.user_id}>
               <th scope="row" className="max-w-56 truncate py-2.5 pr-4 text-left font-normal">{x.email} <Dim>{x.role}</Dim></th>
               <Td>{x.leads}</Td><Td>{mins(x.median_response_min)}</Td><Td>{x.touches}</Td><Td>{x.active_deals}</Td><Td>{x.closed}</Td><Td>{money(Number(x.closed_agent))}</Td>
             </tr>
           ))}
-          {a.agents.length > 1 && (() => {
+          {agents.length > 1 && (() => {
             const med = (xs: number[]) => { const v = xs.filter((n) => Number.isFinite(n)).sort((p, q) => p - q); return v.length ? (v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2) : null; };
-            const resp = med(a.agents.map((x) => (x.median_response_min === null ? NaN : Number(x.median_response_min))));
+            const resp = med(agents.map((x) => (x.median_response_min === null ? NaN : Number(x.median_response_min))));
             return (
               <tr className="text-muted">
                 <th scope="row" className="py-2.5 pr-4 text-left font-normal italic">Team median</th>
-                <Td>{med(a.agents.map((x) => x.leads))}</Td><Td>{mins(resp)}</Td><Td>{med(a.agents.map((x) => x.touches))}</Td><Td>{med(a.agents.map((x) => x.active_deals))}</Td><Td>{med(a.agents.map((x) => x.closed))}</Td><Td>{money(med(a.agents.map((x) => Number(x.closed_agent))) ?? 0)}</Td>
+                <Td>{med(agents.map((x) => x.leads))}</Td><Td>{mins(resp)}</Td><Td>{med(agents.map((x) => x.touches))}</Td><Td>{med(agents.map((x) => x.active_deals))}</Td><Td>{med(agents.map((x) => x.closed))}</Td><Td>{money(med(agents.map((x) => Number(x.closed_agent))) ?? 0)}</Td>
               </tr>
             );
           })()}
@@ -114,11 +126,11 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
       <Section id="funnels" title="Conversion by agent" note="Of each agent's new leads in the period: how many were contacted, qualified and went under contract." csv={{
         name: `agent-funnels-${label.replace(" ", "-")}`,
         header: ["Agent", "New leads", "Contacted", "Qualified", "Under contract"],
-        rows: a.agents.map((x) => [x.email, x.leads, x.reached, x.qualified, x.contracted]),
+        rows: agents.map((x) => [x.email, x.leads, x.reached, x.qualified, x.contracted]),
       }}>
-        {a.agents.every((x) => x.leads === 0) ? <Empty>No leads were assigned to anyone in this period.</Empty> : (
+        {agents.every((x) => x.leads === 0) ? <Empty>No leads were assigned to anyone in this period.</Empty> : (
           <Table head={["Agent", "New leads", "Contacted", "Qualified", "Contract"]}>
-            {a.agents.filter((x) => x.leads > 0).map((x) => (
+            {agents.filter((x) => x.leads > 0).map((x) => (
               <tr key={x.user_id}>
                 <th scope="row" className="max-w-56 truncate py-2.5 pr-4 text-left font-normal">{x.email}</th>
                 <Td>{x.leads}</Td><Td>{x.reached} <Dim>{pct(x.reached, x.leads)}</Dim></Td><Td>{x.qualified} <Dim>{pct(x.qualified, x.leads)}</Dim></Td>

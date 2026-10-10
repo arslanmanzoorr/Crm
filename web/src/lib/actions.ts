@@ -669,6 +669,31 @@ export async function setInRotation(userId: string, on: boolean) {
   revalidatePath("/team");
 }
 
+export async function createOffice(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const name = str(f, "name").slice(0, 100);
+  if (!name) return { error: "Name the office." };
+  const { error } = await (await authed()).from("offices").insert({ name });
+  if (error) return { error: error.code === "23505" ? "There's already an office with that name." : error.code === "42501" ? NOT_ALLOWED : error.message };
+  revalidatePath("/team");
+  return { ok: "Office added" };
+}
+
+export async function deleteOffice(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("offices").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/team");
+}
+
+/** Place a member in an office (null = none). Owners and admins only, checked in the database. */
+export async function setOffice(userId: string, officeId: string | null) {
+  if (!dbEnabled || !UUID.test(userId) || (officeId !== null && !UUID.test(officeId))) return;
+  const { data } = await (await authed()).rpc("set_office", { p_user: userId, p_office: officeId });
+  if (!data) throw new Error(NOT_ALLOWED);
+  revalidatePath("/team");
+}
+
 /** Schedule an open house for a listing. Times arrive as ISO from the browser, so they keep the agent's timezone. */
 export async function scheduleOpenHouse(_: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
