@@ -16,7 +16,7 @@ export function StageSelect({ id, stage }: { id: string; stage: Stage }) {
     return () => clearTimeout(t);
   }, [saved]);
   return (
-    <label className="flex items-center gap-2 text-sm">
+    <label className="flex min-w-0 max-w-full items-center gap-2 text-sm">
       <span className="text-muted">Stage</span>
       <select
         defaultValue={stage}
@@ -33,7 +33,7 @@ export function StageSelect({ id, stage }: { id: string; stage: Stage }) {
             }
           });
         }}
-        className={inputAuto}
+        className={`${inputAuto} min-w-0 max-w-full`}
       >
         {STAGES.map((s) => <option key={s}>{s}</option>)}
       </select>

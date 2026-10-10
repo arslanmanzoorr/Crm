@@ -10,7 +10,7 @@ export function OwnerSelect({ contactId, ownerId, members }: { contactId: string
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
   return (
-    <label className="flex items-center gap-2 text-sm">
+    <label className="flex min-w-0 max-w-full items-center gap-2 text-sm">
       <span className="text-muted">Owner</span>
       <select
         defaultValue={ownerId ?? ""}
@@ -20,7 +20,7 @@ export function OwnerSelect({ contactId, ownerId, members }: { contactId: string
           setErr("");
           start(async () => { try { await setOwner(contactId, v); } catch (x) { setErr((x as Error).message); } });
         }}
-        className={inputAuto}
+        className={`${inputAuto} min-w-0 max-w-full`}
       >
         <option value="">Unassigned</option>
         {members.map((m) => <option key={m.userId} value={m.userId}>{m.email}</option>)}
