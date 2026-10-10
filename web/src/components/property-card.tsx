@@ -15,7 +15,7 @@ export function PropertyCard({ p, match }: { p: Property; match?: Match }) {
         </div>
       )}
       <div className="p-2">
-        <span className="mt-3 inline-block rounded-full bg-accent px-3 py-1 text-sm font-medium text-on-light">{money(p.price)}</span>
+        <span className="mt-3 inline-block rounded-full bg-accent px-3 py-1 text-sm font-medium text-on-light">{money(p.price)}{p.listingKind === "rent" && "/mo"}</span>
         <h3 className="mt-2 truncate text-xl font-medium">{p.address}</h3>
         <p className="text-sm text-muted">{p.area} · {p.status}</p>
         <div className="mt-3 flex flex-wrap gap-1.5">

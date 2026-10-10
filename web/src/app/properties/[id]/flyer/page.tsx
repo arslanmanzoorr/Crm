@@ -28,11 +28,11 @@ async function Sheet({ params }: { params: PageProps<"/properties/[id]/flyer">["
         : <div aria-hidden className={`aspect-[16/9] w-full rounded-2xl bg-gradient-to-br ${p.tone}`} />}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-wide text-neutral-600">{p.status === "Coming soon" ? "Coming soon" : "For sale"}{p.area && ` · ${p.area}`}</p>
+          <p className="text-sm uppercase tracking-wide text-neutral-600">{p.status === "Coming soon" ? "Coming soon" : p.listingKind === "rent" ? "For rent" : "For sale"}{p.area && ` · ${p.area}`}</p>
           <h1 className="text-4xl font-light">{p.address}</h1>
           <p className="mt-1 text-lg">{p.beds} bedrooms · {p.baths} bathrooms · {p.sqft.toLocaleString()} sqft</p>
         </div>
-        <p className="text-4xl font-light">{money(p.price)}</p>
+        <p className="text-4xl font-light">{money(p.price)}{p.listingKind === "rent" && <span className="text-xl">/month</span>}</p>
       </header>
       {p.features.length > 0 && <ul className="flex flex-wrap gap-2 text-sm">{p.features.map((f) => <li key={f} className="rounded-full bg-neutral-100 px-3 py-1">{f}</li>)}</ul>}
       {p.description && <p className="leading-relaxed">{p.description}</p>}

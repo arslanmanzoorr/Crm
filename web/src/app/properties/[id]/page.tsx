@@ -49,7 +49,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
           <h1 className="text-4xl font-light">{p.address}</h1>
           <p className="text-muted">{p.area} · {p.status}</p>
         </div>
-        <span className="text-4xl font-light text-accent sm:text-5xl">{money(p.price)}</span>
+        <span className="text-4xl font-light text-accent sm:text-5xl">{money(p.price)}{p.listingKind === "rent" && <span className="text-xl">/mo</span>}</span>
       </header>
       {!p.approved && <ApprovalBanner id={p.id} />}
       <div className="flex flex-wrap gap-2">
@@ -73,6 +73,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         <Link href={`/publish?property=${p.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-light px-5 font-medium text-on-light hover:bg-white">
           <Send aria-hidden className="size-4" /> Post to socials
         </Link>
+        {p.listingKind !== "rent" && (<>
         <form action={createCmaFromListing} className="contents">
           <input type="hidden" name="property_id" value={p.id} />
           <button className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3"><ChartNoAxesCombined aria-hidden className="size-4" /> CMA</button>
@@ -83,6 +84,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         <Link href={`/tools?tab=invest&price=${p.price}${p.estRent ? `&rent=${p.estRent}` : ""}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
           <TrendingUp aria-hidden className="size-4" /> Rental numbers
         </Link>
+        </>)}
         <a href={`/properties/${p.id}/flyer`} target="_blank" rel="noopener" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 hover:bg-surface-3">
           <FileImage aria-hidden className="size-4" /> Flyer
         </a>
@@ -94,7 +96,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
       <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
         <Buyers p={p} />
       </Suspense>
-      {dbEnabled && p.approved && p.status !== "Under contract" && (
+      {dbEnabled && p.approved && p.status !== "Under contract" && !(p.listingKind === "rent" && p.status === "Sold") && (
         <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
           <Promote p={p} />
         </Suspense>
@@ -115,7 +117,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
           <WeeklyUpdate p={p} />
         </Suspense>
       )}
-      {dbEnabled && (
+      {dbEnabled && p.listingKind !== "rent" && (
         <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
           <Offers p={p} />
         </Suspense>
