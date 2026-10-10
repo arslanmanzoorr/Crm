@@ -11,6 +11,7 @@ import type { PastClient } from "./retention";
 import type { Step, Trigger } from "./playbooks";
 import type { Comp, Home, NetInputs, Rates } from "./cma";
 import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
+import { areaKey, type FarmListing, type FarmPerson } from "./farm";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
 
@@ -626,6 +627,31 @@ export async function getHoldings(contactId: string): Promise<Holding[]> {
     id: h.id, address: h.address, purchasePrice: n(h.purchase_price), purchasedOn: h.purchased_on, valueEstimate: n(h.value_estimate),
     loanBalance: Number(h.loan_balance), monthlyRent: Number(h.monthly_rent), monthlyCosts: Number(h.monthly_costs), notes: h.notes,
   }));
+}
+
+/**
+ * Everything the farming page needs: every area the team knows (listings, leads, territories), the team's
+ * listings with their sold date, and leads who named an area.
+ * ponytail: reads up to 2,000 leads and 1,000 listings and matches areas in JS; move to SQL past that.
+ */
+export async function getFarmData() {
+  if (!dbEnabled) return { areas: [] as string[], listings: [] as FarmListing[], people: [] as (FarmPerson & { areas: string[] })[] };
+  const db = await supabase();
+  const [props, sold, leads, terr] = await Promise.all([
+    db.from("properties").select("id,area,status,price").limit(1000),
+    db.from("property_events").select("property_id,ts").eq("kind", "status").eq("new_value", "Sold").order("ts").limit(5000),
+    db.from("contacts").select("id,name,areas,last_activity_at,dnc,consent_email").neq("areas", "{}").limit(2000),
+    db.from("territories").select("area"),
+  ]);
+  const soldOn = new Map((sold.data ?? []).map((e) => [e.property_id, e.ts as string]));
+  const listings = (must(props) as { id: string; area: string; status: string; price: number }[])
+    .map((p) => ({ area: p.area, status: p.status, price: Number(p.price), soldOn: soldOn.get(p.id) ?? null }));
+  const people = (must(leads) as { id: string; name: string; areas: string[]; last_activity_at: string | null; dnc: boolean; consent_email: boolean }[])
+    .map((c) => ({ id: c.id, name: c.name, areas: c.areas, lastTouch: c.last_activity_at, dnc: c.dnc, email: c.consent_email }));
+  const seen = new Map<string, string>();
+  for (const a of [...listings.map((l) => l.area), ...people.flatMap((p) => p.areas), ...(terr.data ?? []).map((t) => t.area as string)])
+    if (a?.trim() && !seen.has(areaKey(a))) seen.set(areaKey(a), a.trim());
+  return { areas: [...seen.values()].sort((a, b) => a.localeCompare(b)), listings, people };
 }
 
 export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;

@@ -1,4 +1,4 @@
-import { Calculator, ChartNoAxesCombined, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
+import { Calculator, ChartNoAxesCombined, MapPinned, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -55,6 +55,7 @@ export default function AccountPage() {
           <Link href="/expenses" className={row}><Receipt aria-hidden className="size-5 text-muted" /><span className="flex-1">Expenses</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/cma" className={row}><ChartNoAxesCombined aria-hidden className="size-5 text-muted" /><span className="flex-1">Market analyses (CMA)</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/automations" className={row}><Workflow aria-hidden className="size-5 text-muted" /><span className="flex-1">Automations <span className="block text-xs text-muted">Follow-up playbooks</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
+          <Link href="/farm" className={row}><MapPinned aria-hidden className="size-5 text-muted" /><span className="flex-1">Farming <span className="block text-xs text-muted">Neighborhood market notes</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/partners" className={row}><Contact aria-hidden className="size-5 text-muted" /><span className="flex-1">Partners <span className="block text-xs text-muted">Lenders, inspectors, title</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/team" className={row}><Users aria-hidden className="size-5 text-muted" /><span className="flex-1">Team and invites</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/studio" className={row}><Clapperboard aria-hidden className="size-5 text-muted" /><span className="flex-1">Video Studio</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
