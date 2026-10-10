@@ -2,6 +2,7 @@
 
 import { Mail, Phone } from "lucide-react";
 import Link from "next/link";
+import { scrubbed } from "@/lib/consent";
 import type { Lead, Task } from "@/lib/data";
 import { useNow } from "./header";
 import { LocalTime } from "./local-time";
@@ -12,7 +13,7 @@ type Item =
   | { kind: "task"; task: Task; overdue: boolean }
   | { kind: "lead"; lead: Lead };
 
-const callable = (l: Lead) => !!l.phone && !!l.consent?.call && !l.consent?.dnc;
+const callable = (l: Lead, today: string) => !!l.phone && !l.consent?.dnc && (!!l.consent?.call || scrubbed(l.consent?.dncCheckedOn, today));
 
 /** "Who to call today": overdue work first, then today's tasks, then hot leads nobody has planned a step for. */
 export function Today({ leads, tasks }: { leads: Lead[]; tasks: Task[] }) {
@@ -100,7 +101,7 @@ function LeadRow({ lead }: { lead: Lead }) {
         </p>
         <p className="truncate text-sm text-muted">{lead.nextAction || `No next step yet · ${lead.intent}`}</p>
       </div>
-      {callable(lead) ? (
+      {callable(lead, new Date().toISOString().slice(0, 10)) ? (
         <a href={`tel:${lead.phone}`} aria-label={`Call ${lead.name}`} className={actionBtn}>
           <Phone aria-hidden className="size-4" /> <span className="hidden sm:inline">Call</span>
         </a>

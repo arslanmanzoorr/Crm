@@ -1042,6 +1042,23 @@ export async function saveFinancing(_: FormState, f: FormData): Promise<FormStat
   return { ok: "Saved" };
 }
 
+/**
+ * The agent confirms they checked this lead's number against the National Do Not Call Registry today.
+ * Logged on the timeline as the compliance record; unlocks hand-dialed calls for 31 days (see consent.ts).
+ */
+export async function markDncChecked(contactId: string, listed: boolean): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(contactId)) return { error: "Lead not found." };
+  const db = await authed();
+  const today = new Date().toISOString().slice(0, 10);
+  const { error } = await db.from("contacts").update(listed ? { dnc: true } : { dnc_checked_on: today }).eq("id", contactId);
+  if (error) return { error: error.message };
+  await db.from("activities").insert({ contact_id: contactId, channel: "Note", direction: "out",
+    content: listed ? "Number is on the National Do Not Call Registry: marked do not contact." : `Checked against the National Do Not Call Registry on ${today}: not listed.` });
+  revalidatePath(`/leads/${contactId}`);
+  return { ok: listed ? "Marked do not contact" : "Recorded" };
+}
+
 /** Add or update a home the client owns. Blank money fields mean unknown, not zero, for price and value. */
 export async function saveOwnedHome(_: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;

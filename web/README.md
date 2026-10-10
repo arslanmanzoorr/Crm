@@ -71,6 +71,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0042`–`0044` | Index every foreign key in its own column order, drop redundant single-column indexes, one SELECT policy per table |
 | `0045_owned_homes.sql` | Homes a client owns: value, loan, rent, for equity and portfolio tracking |
 | `0046_closing_handoff.sql` | Closing a deal creates a handoff task; buy-side closings add the home to the client's "Homes they own" |
+| `0047_dnc_registry_check.sql` | Date of the agent's Do Not Call Registry check; unlocks hand-dialed cold calls for 31 days |
 
 After `0010`, store the hash of your form key (per environment):
 

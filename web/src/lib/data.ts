@@ -19,7 +19,7 @@ export type Lead = {
   type?: string;
   stage?: Stage;
   nextAction?: string;
-  consent?: { sms: boolean; call: boolean; email: boolean; dnc: boolean };
+  consent?: { sms: boolean; call: boolean; email: boolean; dnc: boolean; dncCheckedOn?: string | null };
   ownerId?: string | null;
   tags?: string[];
   createdAt?: string;

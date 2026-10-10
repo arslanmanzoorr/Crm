@@ -12,6 +12,7 @@ import type { Step, Trigger } from "./playbooks";
 import type { Comp, Home, NetInputs, Rates } from "./cma";
 import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
 import { areaKey, type FarmListing, type FarmPerson } from "./farm";
+import { scrubbed } from "./consent";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
 
@@ -39,7 +40,7 @@ export async function supabase() {
 type ActivityRow = { channel: Channel; content: string; ts: string; direction: "in" | "out" };
 type ContactRow = {
   id: string; type: string; stage: Stage; next_action: string; name: string; email: string | null; phone: string | null; sources: string[];
-  score: number; owner_id: string | null; tags: string[]; created_at: string; first_response_at: string | null; consent_sms: boolean; consent_call: boolean; consent_email: boolean; dnc: boolean; intent: string; budget: string; areas: string[]; preferences: string[]; activities: ActivityRow[];
+  score: number; owner_id: string | null; tags: string[]; created_at: string; first_response_at: string | null; consent_sms: boolean; consent_call: boolean; consent_email: boolean; dnc: boolean; dnc_checked_on: string | null; intent: string; budget: string; areas: string[]; preferences: string[]; activities: ActivityRow[];
 };
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
@@ -63,7 +64,7 @@ export function toLead(r: ContactRow): Lead {
     type: r.type,
     stage: r.stage,
     nextAction: r.next_action,
-    consent: { sms: r.consent_sms, call: r.consent_call, email: r.consent_email, dnc: r.dnc },
+    consent: { sms: r.consent_sms, call: r.consent_call, email: r.consent_email, dnc: r.dnc, dncCheckedOn: r.dnc_checked_on },
     ownerId: r.owner_id,
     tags: r.tags,
     createdAt: r.created_at,
@@ -77,7 +78,7 @@ const toneFor = (id: string) => TONES[[...id].reduce((a, c) => a + c.charCodeAt(
 const toProperty = ({ showing_notes, seller_id, created_at, listing_expires, tour_url, floor_plan_url, approved_at, est_rent, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string; seller_id?: string | null; created_at?: string; listing_expires?: string | null; tour_url?: string | null; floor_plan_url?: string | null; approved_at?: string | null; est_rent?: number | string | null }): Property =>
   ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "", sellerId: seller_id ?? null, createdAt: created_at, listingExpires: listing_expires ?? null, tourUrl: tour_url ?? null, floorPlanUrl: floor_plan_url ?? null, approved: approved_at !== null, estRent: est_rent == null ? null : Number(est_rent) });
 
-const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
+const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,dnc_checked_on,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
 const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes,seller_id,created_at,listing_expires,tour_url,floor_plan_url,approved_at,est_rent";
 
 function must<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
@@ -212,7 +213,7 @@ export async function getMe(): Promise<{ name: string; email?: string }> {
 
 type TaskRow = {
   id: string; kind: Task["kind"]; title: string; note: string; due_at: string; done: boolean; created_by: string;
-  contacts: { id: string; name: string; type: string; phone: string | null; email: string | null; consent_call: boolean; consent_email: boolean; dnc: boolean } | null;
+  contacts: { id: string; name: string; type: string; phone: string | null; email: string | null; consent_call: boolean; consent_email: boolean; dnc: boolean; dnc_checked_on: string | null } | null;
 };
 
 /** Open tasks plus anything finished today, soonest first. */
@@ -221,14 +222,14 @@ export async function getTasks(): Promise<Task[]> {
   const db = await supabase(); // first: marks the request dynamic before Date.now()
   const since = new Date(Date.now() - 36 * 3600_000).toISOString();
   const rows = must(await db.from("tasks")
-    .select("id,kind,title,note,due_at,done,created_by,contacts(id,name,type,phone,email,consent_call,consent_email,dnc)")
+    .select("id,kind,title,note,due_at,done,created_by,contacts(id,name,type,phone,email,consent_call,consent_email,dnc,dnc_checked_on)")
     .or(`done.eq.false,due_at.gte.${since}`).order("due_at").limit(100));
   return (rows as unknown as TaskRow[]).map((t) => ({
     id: t.id, kind: t.kind, title: t.title, note: t.note, dueAt: t.due_at, done: t.done,
     contact: t.contacts?.name ?? "", contactRole: t.contacts ? cap(t.contacts.type) : "",
     contactId: t.contacts?.id,
     // Only expose contact details the lead consented to; the UI then can't offer a non-compliant Start.
-    phone: t.contacts && t.contacts.consent_call && !t.contacts.dnc ? t.contacts.phone ?? "" : "",
+    phone: t.contacts && !t.contacts.dnc && (t.contacts.consent_call || scrubbed(t.contacts.dnc_checked_on, new Date().toISOString().slice(0, 10))) ? t.contacts.phone ?? "" : "",
     email: t.contacts && t.contacts.consent_email && !t.contacts.dnc ? t.contacts.email ?? "" : "",
     when: "", dueToday: false, priority: t.created_by === "ai",
   }));

@@ -10,7 +10,8 @@ import { PropertyCard } from "@/components/property-card";
 import { TaskForm } from "@/components/task-form";
 import { TaskList } from "@/components/tasks";
 import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/components/ui";
-import type { Lead } from "@/lib/data";
+import { blockers, scrubbed } from "@/lib/consent";
+import { DncCheck } from "@/components/dnc-check";
 import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFinancing, getHoldings, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { TourPlanner } from "@/components/tour-planner";
@@ -42,17 +43,6 @@ export default function LeadPage({ params }: PageProps<"/leads/[id]">) {
 }
 
 /** Why each channel is unavailable, in words an agent can act on. */
-function blockers(lead: Lead) {
-  const c = lead.consent ?? { sms: true, call: true, email: true, dnc: false };
-  const why = (ok: boolean, has: string, what: string) =>
-    c.dnc ? "marked do not contact" : !has ? `no ${what === "email" ? "email address" : "phone number"}` : !ok ? `no ${what} consent` : null;
-  return {
-    call: why(c.call, lead.phone, "call"),
-    sms: why(c.sms, lead.phone, "SMS"),
-    email: why(c.email, lead.email, "email"),
-  };
-}
-
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
@@ -64,7 +54,9 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
     .filter((x): x is { p: (typeof properties)[number]; m: Match } => x.m !== null)
     .sort((a, b) => b.m.score - a.m.score)
     .slice(0, 3);
-  const b = blockers(lead);
+  const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day, as on /deals
+  const c = lead.consent ?? { sms: true, call: true, email: true, dnc: false };
+  const b = blockers(c, lead.phone, lead.email, today);
   const blockedReasons = [...new Set([b.call, b.sms, b.email].filter(Boolean))];
 
   const channels = [
@@ -121,6 +113,9 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 <Link href={`/leads/${lead.id}/edit`} className="text-accent underline">Update consent</Link>
               </p>
             )}
+            {!c.dnc && !c.call && lead.phone && (scrubbed(c.dncCheckedOn, today)
+              ? <p className="text-sm text-muted">Cold calls allowed: number checked against the Do Not Call Registry on {c.dncCheckedOn}. Dial by hand, 8am to 9pm their time, and stop if they ask.</p>
+              : <DncCheck contactId={lead.id} lastChecked={c.dncCheckedOn ?? null} />)}
           </div>
         </header>
 
