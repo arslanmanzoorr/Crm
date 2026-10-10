@@ -111,6 +111,24 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
         </Table>
       </Section>
 
+      <Section id="funnels" title="Conversion by agent" note="Of each agent's new leads in the period: how many were contacted, qualified and went under contract." csv={{
+        name: `agent-funnels-${label.replace(" ", "-")}`,
+        header: ["Agent", "New leads", "Contacted", "Qualified", "Under contract"],
+        rows: a.agents.map((x) => [x.email, x.leads, x.reached, x.qualified, x.contracted]),
+      }}>
+        {a.agents.every((x) => x.leads === 0) ? <Empty>No leads were assigned to anyone in this period.</Empty> : (
+          <Table head={["Agent", "New leads", "Contacted", "Qualified", "Contract"]}>
+            {a.agents.filter((x) => x.leads > 0).map((x) => (
+              <tr key={x.user_id}>
+                <th scope="row" className="max-w-56 truncate py-2.5 pr-4 text-left font-normal">{x.email}</th>
+                <Td>{x.leads}</Td><Td>{x.reached} <Dim>{pct(x.reached, x.leads)}</Dim></Td><Td>{x.qualified} <Dim>{pct(x.qualified, x.leads)}</Dim></Td>
+                <Td><span className={x.contracted ? "text-accent" : ""}>{x.contracted} <Dim>{pct(x.contracted, x.leads)}</Dim></span></Td>
+              </tr>
+            ))}
+          </Table>
+        )}
+      </Section>
+
       <Section id="listings" title="Listings" note="Active inventory, longest on market first.">
         {a.listings.length === 0 ? <Empty>No active listings.</Empty> : (
           <Table head={["Listing", "Status", "Days on market", "Open house visitors", "Showings", "Offers", "Best offer vs. price"]}>

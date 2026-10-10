@@ -483,7 +483,7 @@ export type Analytics = {
   cycle: { deals: number; lead_to_contract_days: number | null; contract_to_close_days: number | null };
   revenue: Money[]; forecast: Money[];
   cohorts: { month: string; leads: number; reached: number; qualified: number; contracted: number; closed: number }[];
-  agents: { user_id: string; email: string; role: string; leads: number; median_response_min: number | null; touches: number; active_deals: number; closed: number; closed_agent: number }[];
+  agents: { user_id: string; email: string; role: string; leads: number; reached: number; qualified: number; contracted: number; median_response_min: number | null; touches: number; active_deals: number; closed: number; closed_agent: number }[];
   listings: { id: string; address: string; status: string; price: number; days_on_market: number; visitors: number; showings: number; offers: number; best_offer: number | null }[];
 };
 

@@ -75,6 +75,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0048_rental_feed.sql` | Rentals (address parts, lease, pets, itemized fees) and the Zillow Rental Network feed at `/feeds/zillow/<token>` (token hashed; keyed RPCs; photos served only while in the feed) |
 | `0049_showing_booking.sql`, `0050_booking_public_name.sql` | Public showing booking at `/f/<form>/book`: open half hours per listing, no double-booking, creates the lead and a requested showing |
 | `0051_team_time_zone.sql` | Team time zone (Team page); online booking offers business hours in that zone |
+| `0052_agent_funnels.sql` | Analytics: per-agent conversion (contacted, qualified, under contract) |
 
 After `0010`, store the hash of your form key (per environment):
 
