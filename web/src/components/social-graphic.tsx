@@ -11,8 +11,8 @@ const KINDS = ["Just listed", "Open house", "Price improved", "Under contract", 
  * A square post for Instagram/Facebook, drawn in the browser (listing photos are WebP, which the server-side
  * image renderer can't read). Brand colors and the app font; the agent's name in the corner.
  */
-export function SocialGraphic({ photo, address, area, price, beds, baths, agent, initial }: {
-  photo?: string; address: string; area: string; price: number; beds: number; baths: number; agent: string; initial: (typeof KINDS)[number];
+export function SocialGraphic({ photo, address, area, price, beds, baths, agent, initial, rent = false }: {
+  photo?: string; address: string; area: string; price: number; beds: number; baths: number; agent: string; initial: (typeof KINDS)[number]; rent?: boolean;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [kind, setKind] = useState<(typeof KINDS)[number]>(initial);
@@ -52,14 +52,14 @@ export function SocialGraphic({ photo, address, area, price, beds, baths, agent,
       g.fillStyle = "#a3a3a3"; g.font = `400 36px ${font}`;
       g.fillText([area, `${beds} bd · ${baths} ba`].filter(Boolean).join("  ·  "), 64, 920);
       g.fillStyle = "#c5f36a"; g.font = `600 64px ${font}`; g.textAlign = "right";
-      g.fillText(kind === "Just sold" || kind === "Under contract" ? "" : money(price), SIZE - 64, 860);
+      g.fillText(kind === "Just sold" || kind === "Under contract" ? "" : `${money(price)}${rent ? "/mo" : ""}`, SIZE - 64, 860);
       g.fillStyle = "#a3a3a3"; g.font = `400 32px ${font}`; g.fillText(agent, SIZE - 64, 1020);
       g.textAlign = "left"; g.font = `400 24px ${font}`; g.fillText("Equal Housing Opportunity", 64, 1020);
       setDrawn(key);
     };
     draw();
     return () => { live = false; };
-  }, [photo, address, area, price, beds, baths, agent, kind, key]);
+  }, [photo, address, area, price, beds, baths, agent, kind, key, rent]);
 
   const save = () => canvas.current!.toBlob((b) => {
     if (!b) return;

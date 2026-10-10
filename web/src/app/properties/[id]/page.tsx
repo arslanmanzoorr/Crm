@@ -21,6 +21,7 @@ import { ListingPromo } from "@/components/listing-promo";
 import { SocialGraphic } from "@/components/social-graphic";
 import { areaKey, PROMO_LABEL, type Promo } from "@/lib/farm";
 import { checkUrl, PORTALS, syndicationSteps } from "@/lib/syndication";
+import { feedGaps } from "@/lib/rental-feed";
 import { Documents } from "@/components/documents";
 import { sellerUpdate } from "@/lib/seller-update";
 import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
@@ -142,9 +143,9 @@ async function Buyers({ p }: { p: Property }) {
     .sort((x, y) => y.m!.score - x.m!.score || y.b.score - x.b.score);
   return (
     <section aria-labelledby="buyers" className="flex max-w-2xl flex-col gap-3">
-      <h2 id="buyers" className="text-xl">Buyers who fit {ranked.length > 0 && <span className="text-muted">({ranked.length})</span>}</h2>
+      <h2 id="buyers" className="text-xl">{p.listingKind === "rent" ? "Renters" : "Buyers"} who fit {ranked.length > 0 && <span className="text-muted">({ranked.length})</span>}</h2>
       {ranked.length === 0 ? (
-        <p className="text-sm text-muted">No open buyer has this area and price in their search yet.</p>
+        <p className="text-sm text-muted">No open {p.listingKind === "rent" ? "renter" : "buyer"} has this area and price in their search yet.</p>
       ) : (
         <ol className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
           {ranked.slice(0, 8).map(({ b, m }) => (
@@ -184,15 +185,31 @@ async function Promote({ p }: { p: Property }) {
     <section aria-labelledby="promote" className="flex max-w-2xl flex-col gap-3">
       <h2 id="promote" className="text-xl">{PROMO_LABEL[kind]} note</h2>
       <p className="text-sm text-muted">{due.length ? `For ${due.length} ${kind === "just_sold" ? `lead${due.length === 1 ? "" : "s"} in ${p.area}` : due.length === 1 ? "buyer who fits" : "buyers who fit"}. Log it on each one as you send it.` : kind === "just_sold" ? "No leads in this area yet." : "No open buyer fits this listing yet."}</p>
-      <ListingPromo kind={kind} p={{ address: p.address, price: p.price, beds: p.beds, baths: p.baths, area: p.area }} agent={me.name} whenIso={next?.startsAt} due={due} />
+      <ListingPromo kind={kind} p={{ address: p.address, price: p.price, beds: p.beds, baths: p.baths, area: p.area, rent: p.listingKind === "rent" }} agent={me.name} whenIso={next?.startsAt} due={due} />
       <h3 className="mt-3 text-lg">Social post</h3>
-      <SocialGraphic photo={p.cover} address={p.address} area={p.area} price={p.price} beds={p.beds} baths={p.baths} agent={me.name} initial={PROMO_LABEL[kind]} />
+      <SocialGraphic photo={p.cover} address={p.address} area={p.area} price={p.price} beds={p.beds} baths={p.baths} agent={me.name} initial={PROMO_LABEL[kind]} rent={p.listingKind === "rent"} />
     </section>
   );
 }
 
 /** Real estate portals: they get listings from the MLS, so this shows what's left and links to confirm it's live. */
 function Marketplaces({ p }: { p: Property }) {
+  if (p.listingKind === "rent") {
+    const gaps = feedGaps({ ...p.rental, homeType: p.rental?.homeType, approved: p.approved, status: p.status });
+    return (
+      <section aria-labelledby="marketplaces" className="flex max-w-2xl flex-col gap-3">
+        <h2 id="marketplaces" className="text-xl">Marketplaces</h2>
+        <div className="flex flex-col gap-1 rounded-card bg-surface-2 p-5 text-sm">
+          <p className="font-medium">Zillow, Trulia and HotPads (Zillow rentals feed)</p>
+          <p className="text-muted">{gaps.length === 0 ? "In your team's rentals feed. Zillow picks up changes on its next read." : `Not in the feed yet. Needs: ${gaps.join(", ")}.`}</p>
+          <Link href="/team#rental-feed" className="mt-1 w-fit text-accent underline">Feed settings</Link>
+        </div>
+        {gaps.length === 0 && (
+          <a href={checkUrl("zillow.com", p.rental?.street ?? p.address, p.rental?.city ?? p.area)} target="_blank" rel="noreferrer" className="flex min-h-10 w-fit items-center rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3">Check it&apos;s live on Zillow</a>
+        )}
+      </section>
+    );
+  }
   const steps = syndicationSteps(p);
   return (
     <section aria-labelledby="marketplaces" className="flex max-w-2xl flex-col gap-3">

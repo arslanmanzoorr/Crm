@@ -13,6 +13,7 @@ import type { Comp, Home, NetInputs, Rates } from "./cma";
 import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
 import { areaKey, campaignResults, type FarmListing, type FarmPerson } from "./farm";
 import { scrubbed } from "./consent";
+import type { Fee } from "./rental-feed";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
 
@@ -75,11 +76,13 @@ export function toLead(r: ContactRow): Lead {
 const TONES = mock.properties.map((p) => p.tone);
 // Placeholder gradient keyed to the listing id, so it's the same on every page.
 const toneFor = (id: string) => TONES[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length];
-const toProperty = ({ mls_id, showing_notes, seller_id, created_at, listing_expires, tour_url, floor_plan_url, approved_at, est_rent, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string; seller_id?: string | null; created_at?: string; listing_expires?: string | null; tour_url?: string | null; floor_plan_url?: string | null; approved_at?: string | null; est_rent?: number | string | null; mls_id?: string | null }): Property =>
-  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "", sellerId: seller_id ?? null, createdAt: created_at, listingExpires: listing_expires ?? null, tourUrl: tour_url ?? null, floorPlanUrl: floor_plan_url ?? null, approved: approved_at !== null, estRent: est_rent == null ? null : Number(est_rent), mlsId: mls_id ?? null });
+type RentalRow = { listing_kind?: string; street?: string | null; unit?: string | null; city?: string | null; state?: string | null; zip?: string | null; home_type?: string | null; lease_months?: number | null; available_on?: string | null; furnished?: boolean; cats_ok?: boolean | null; dogs_ok?: boolean | null; parking?: string | null; fees?: unknown };
+const toProperty = ({ mls_id, listing_kind, street, unit, city, state, zip, home_type, lease_months, available_on, furnished, cats_ok, dogs_ok, parking, fees, showing_notes, seller_id, created_at, listing_expires, tour_url, floor_plan_url, approved_at, est_rent, ...r }: Omit<Property, "tone" | "price" | "baths"> & { price: number | string; baths: number | string; showing_notes?: string; seller_id?: string | null; created_at?: string; listing_expires?: string | null; tour_url?: string | null; floor_plan_url?: string | null; approved_at?: string | null; est_rent?: number | string | null; mls_id?: string | null } & RentalRow): Property =>
+  ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "", sellerId: seller_id ?? null, createdAt: created_at, listingExpires: listing_expires ?? null, tourUrl: tour_url ?? null, floorPlanUrl: floor_plan_url ?? null, approved: approved_at !== null, estRent: est_rent == null ? null : Number(est_rent), mlsId: mls_id ?? null, listingKind: listing_kind === "rent" ? "rent" : "sale",
+    rental: { street: street ?? null, unit: unit ?? null, city: city ?? null, state: state ?? null, zip: zip ?? null, homeType: home_type ?? null, leaseMonths: lease_months ?? null, availableOn: available_on ?? null, furnished: !!furnished, catsOk: cats_ok ?? null, dogsOk: dogs_ok ?? null, parking: parking ?? null, fees: (fees ?? []) as Fee[] } });
 
 const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,dnc_checked_on,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
-const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes,seller_id,created_at,listing_expires,tour_url,floor_plan_url,approved_at,est_rent,mls_id";
+const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes,seller_id,created_at,listing_expires,tour_url,floor_plan_url,approved_at,est_rent,mls_id,listing_kind,street,unit,city,state,zip,home_type,lease_months,available_on,furnished,cats_ok,dogs_ok,parking,fees";
 
 function must<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);
@@ -667,6 +670,20 @@ export async function getCampaigns(days: number) {
   const inbound = ids.length ? must(await db.from("activities").select("contact_id,ts").eq("direction", "in").in("contact_id", ids.slice(0, 1000))
     .gte("ts", since).limit(10000)) as { contact_id: string; ts: string }[] : [];
   return campaignResults(sends.map((s) => ({ contactId: s.contact_id, content: s.content, ts: s.ts })), inbound.map((r) => ({ contactId: r.contact_id, ts: r.ts })));
+}
+
+export type RentalFeedInfo = { contactName: string; contactEmail: string; contactPhone: string; createdAt: string; lastFetchedAt: string | null; listings: number } | null;
+
+/** The team's rental feed settings (admins only, by RLS) and how many rentals are in it right now. */
+export async function getRentalFeed(): Promise<RentalFeedInfo> {
+  if (!dbEnabled) return null;
+  const db = await supabase();
+  const [{ data }, { count }] = await Promise.all([
+    db.from("rental_feeds").select("contact_name,contact_email,contact_phone,created_at,last_fetched_at").maybeSingle(),
+    db.from("properties").select("id", { count: "exact", head: true }).eq("listing_kind", "rent").eq("status", "Active")
+      .not("approved_at", "is", null).not("street", "is", null).not("city", "is", null).not("state", "is", null).not("zip", "is", null).not("home_type", "is", null),
+  ]);
+  return data ? { contactName: data.contact_name, contactEmail: data.contact_email, contactPhone: data.contact_phone, createdAt: data.created_at, lastFetchedAt: data.last_fetched_at, listings: count ?? 0 } : null;
 }
 
 export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;

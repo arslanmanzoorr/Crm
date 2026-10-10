@@ -14,6 +14,7 @@ import { cleanSteps, TEMPLATES, TRIGGERS } from "./playbooks";
 import { cleanCma } from "./cma";
 import { checkUpload, safeFileName } from "./docs";
 import { planTour } from "./showings";
+import { feesFromForm, HOME_TYPES, PARKING } from "./rental-feed";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
 
@@ -124,7 +125,27 @@ const propertyFields = (f: FormData) => ({
     est_rent: Number(str(f, "est_rent")) > 0 ? Number(str(f, "est_rent")) : null,
     floor_plan_url: httpsOrNull(str(f, "floor_plan_url")),
     mls_id: /^[A-Za-z0-9-]{1,30}$/.test(str(f, "mls_id")) ? str(f, "mls_id") : null,
+    ...rentalFields(f),
+    updated_at: new Date().toISOString(),
 });
+
+/** Address parts (any listing) and the rental details the Zillow feed needs. Bad values become null, not errors. */
+function rentalFields(f: FormData) {
+  const pick = <T extends string>(v: string, ok: readonly T[]) => (ok.includes(v as T) ? (v as T) : null);
+  const tri = (k: string) => (str(f, k) === "yes" ? true : str(f, k) === "no" ? false : null);
+  const lease = str(f, "lease_months");
+  return {
+    listing_kind: str(f, "listing_kind") === "rent" ? "rent" : "sale",
+    street: str(f, "street").slice(0, 200) || null, unit: str(f, "unit").slice(0, 20) || null, city: str(f, "city").slice(0, 100) || null,
+    state: /^[A-Za-z]{2}$/.test(str(f, "state")) ? str(f, "state").toUpperCase() : null,
+    zip: /^\d{5}(-\d{4})?$/.test(str(f, "zip")) ? str(f, "zip") : null,
+    home_type: pick(str(f, "home_type"), Object.keys(HOME_TYPES)),
+    lease_months: /^\d{1,2}$/.test(lease) && Number(lease) <= 60 ? Number(lease) : null,
+    available_on: DATE.test(str(f, "available_on")) ? str(f, "available_on") : null,
+    furnished: f.get("furnished") === "on", cats_ok: tri("cats_ok"), dogs_ok: tri("dogs_ok"),
+    parking: pick(str(f, "parking"), Object.keys(PARKING)),
+  };
+}
 const httpsOrNull = (v: string) => (/^https:\/\/\S+$/.test(v) && v.length <= 500 ? v : null);
 
 const ALERT_MIN_FIT = 70;
@@ -134,7 +155,7 @@ const MAX_ALERTS = 25;
  * Instant Buyer Matching alerts: a follow-up task for each open buyer a new or cheaper listing fits,
  * assigned to the buyer's owner. Tasks are the alert channel until email/SMS sending is connected.
  */
-async function alertMatches(db: Db, p: { id: string; address: string; area: string; price: number; beds: number; status: string; estRent: number | null }, why: "New listing" | "Price drop") {
+async function alertMatches(db: Db, p: { id: string; address: string; area: string; price: number; beds: number; status: string; estRent: number | null; listingKind?: "sale" | "rent" }, why: "New listing" | "Price drop") {
   if (p.status === "Sold") return;
   const { data: buyers } = await db.from("contacts").select("id,name,type,budget,areas,preferences,owner_id,score")
     .in("type", BUYING_TYPES).not("stage", "in", "(Closed,Lost)").order("score", { ascending: false }).limit(1000);
@@ -160,11 +181,14 @@ export async function saveProperty(_: FormState, f: FormData): Promise<FormState
   if (!dbEnabled) return NO_DB;
   const db = await authed();
   const id = str(f, "id");
+  const fees = str(f, "listing_kind") === "rent" ? feesFromForm((k) => str(f, k)) : [];
+  if ("error" in fees) return { error: fees.error };
+  const row = { ...propertyFields(f), fees };
   const before = id ? (await db.from("properties").select("price").eq("id", id).maybeSingle()).data : null;
-  const q = id ? db.from("properties").update(propertyFields(f)).eq("id", id) : db.from("properties").insert(propertyFields(f));
-  const { data, error } = await q.select("id,address,area,price,beds,status,est_rent").single();
+  const q = id ? db.from("properties").update(row).eq("id", id) : db.from("properties").insert(row);
+  const { data, error } = await q.select("id,address,area,price,beds,status,est_rent,listing_kind").single();
   if (error) return { error: error.message };
-  const p = { ...data, price: Number(data.price), estRent: data.est_rent == null ? null : Number(data.est_rent) };
+  const p = { ...data, price: Number(data.price), estRent: data.est_rent == null ? null : Number(data.est_rent), listingKind: data.listing_kind as "sale" | "rent" };
   if (!id) await alertMatches(db, p, "New listing");
   else if (before && p.price < Number(before.price)) await alertMatches(db, p, "Price drop");
   revalidatePath("/", "layout");
@@ -1080,6 +1104,35 @@ export async function deleteOwnedHome(id: string, contactId: string) {
   const { error } = await (await authed()).from("owned_homes").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath(`/leads/${contactId}`);
+}
+
+/**
+ * Turn on (or replace) the team's Zillow Rental Network feed. The URL holds a random token shown once; only its
+ * hash is stored, so making a new one retires the old URL. Admins only (RLS).
+ */
+export async function saveRentalFeed(_: FormState, f: FormData): Promise<FormState & { url?: string }> {
+  if (!dbEnabled) return NO_DB;
+  if (!process.env.SITE_URL) return { error: "Set SITE_URL first: the feed URL is built from it." };
+  const email = str(f, "email").slice(0, 320), phone = str(f, "phone").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Add the email renters' inquiries should go to." };
+  if (!/^\d{10}$/.test(phone)) return { error: "Add a 10-digit US phone number." };
+  const db = await authed();
+  const { data: org } = await db.rpc("active_org");
+  const token = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("base64url");
+  const hash = Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token))).toString("hex");
+  const { error } = await db.from("rental_feeds").upsert({ org_id: org, token_hash: hash, contact_name: str(f, "name").slice(0, 100), contact_email: email, contact_phone: phone, last_fetched_at: null });
+  if (error) return { error: error.code === "42501" ? "Only owners and admins can manage the feed." : error.message };
+  revalidatePath("/team");
+  return { ok: "Feed ready. Copy the URL now: it won't be shown again.", url: `${process.env.SITE_URL}/feeds/zillow/${token}` };
+}
+
+export async function deleteRentalFeed() {
+  if (!dbEnabled) return;
+  const db = await authed();
+  const { data: org } = await db.rpc("active_org");
+  const { error } = await db.from("rental_feeds").delete().eq("org_id", org);
+  if (error) throw new Error(error.message);
+  revalidatePath("/team");
 }
 
 /**

@@ -56,3 +56,14 @@ test("investors: cap rate wants are read and checked against the rent estimate",
   assert.equal(matchListing(inv, { ...home, estRent: 1500 }), null);
   assert.deepEqual(matchListing(inv, home)!.gaps, ["No rent estimate to check the cap rate"]);
 });
+
+test("rentals match renters only, on a monthly budget; sales never match renters", () => {
+  const rental = { area: "Westside", price: 2400, beds: 2, status: "Active", listingKind: "rent" as const };
+  const renter = { type: "renter", budget: "up to $2,500/mo", areas: ["Westside"], preferences: [] };
+  const buyer = { type: "buyer", budget: "$600k", areas: ["Westside"], preferences: [] };
+  assert.ok(matchListing(renter, rental));
+  assert.equal(matchListing(buyer, rental), null);
+  assert.equal(matchListing(renter, { ...rental, price: 600_000, listingKind: "sale" }), null);
+  assert.ok(matchListing(renter, { ...rental, price: 2700 })!.gaps.length > 0); // a stretch over the monthly budget is flagged
+  assert.equal(matchListing(renter, { ...rental, price: 3500 }), null);        // far over: no match
+});

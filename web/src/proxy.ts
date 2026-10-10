@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-const PUBLIC = ["/login", "/auth", "/f/", "/oh/", "/p/", "/legal"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
+const PUBLIC = ["/login", "/auth", "/f/", "/oh/", "/p/", "/legal", "/feeds/"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
 
 /** Refreshes the Supabase session cookie and sends signed-out visitors to /login. */
 export async function proxy(req: NextRequest) {

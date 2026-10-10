@@ -5,7 +5,7 @@
 export const BUYING_TYPES = ["buyer", "investor", "renter"];
 
 type Buyer = { type?: string; budget: string; areas: string[]; preferences: string[] };
-type Listing = { area: string; price: number; beds: number; status: string; estRent?: number | null };
+type Listing = { area: string; price: number; beds: number; status: string; estRent?: number | null; listingKind?: "sale" | "rent" };
 export type Match = { score: number; fits: string[]; gaps: string[] };
 
 /** Minimum cap rate from wants like "Cap rate > 6%" or "6.5% cap". */
@@ -30,10 +30,10 @@ export function quickCapRate(price: number, monthlyRent: number) {
 const money = (n: number) => (n >= 1e6 ? `$${+(n / 1e6).toFixed(2)}M` : `$${Math.round(n / 1e3)}k`);
 
 /** Price range from free text. One number counts as the ceiling ("$500k" means up to $500k). */
-export function parseBudget(text: string): { min?: number; max?: number } {
+export function parseBudget(text: string, floor = 1e4): { min?: number; max?: number } {
   const nums = [...text.replace(/,/g, "").matchAll(/(\d+(?:\.\d+)?)\s*([km])?\b/gi)]
     .map(([, n, unit]) => +n * (unit?.toLowerCase() === "m" ? 1e6 : unit ? 1e3 : 1))
-    .filter((n) => n >= 1e4); // skip "3 bed", "2 units" and other small numbers
+    .filter((n) => n >= floor); // skip "3 bed", "2 units" and other small numbers (rent budgets use a lower floor)
   if (nums.length === 0) return {};
   if (nums.length === 1) return /\b(from|over|above|min|at least)\b|\+|≥|>/i.test(text) ? { min: nums[0] } : { max: nums[0] };
   return { min: Math.min(...nums), max: Math.max(...nums) };
@@ -52,11 +52,13 @@ const STRETCH = 0.1; // listings up to 10% over the ceiling still show, flagged 
 /** How well a listing fits a buyer, or null when it clearly doesn't (wrong area, sold, far over budget). */
 export function matchListing(b: Buyer, p: Listing): Match | null {
   if (p.status === "Sold" || (b.type && !BUYING_TYPES.includes(b.type))) return null;
+  // Rentals go to renters, homes for sale to buyers and investors.
+  if (b.type && (p.listingKind === "rent") !== (b.type === "renter")) return null;
   const fits: string[] = [], gaps: string[] = [];
   let score = 100;
 
   const areas = b.areas.map((a) => a.trim().toLowerCase()).filter(Boolean);
-  const { min, max } = parseBudget(b.budget);
+  const { min, max } = parseBudget(b.budget, p.listingKind === "rent" ? 300 : 1e4);
   if (areas.length === 0 && min === undefined && max === undefined) return null; // nothing to match on
   if (areas.length === 0) { score -= 20; gaps.push("No areas set"); }
   else if (areas.includes(p.area.trim().toLowerCase())) fits.push(`In ${p.area.trim()}`);

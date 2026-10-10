@@ -43,11 +43,11 @@ export type Promo = "just_listed" | "open_house" | "just_sold";
 export const PROMO_LABEL = { just_listed: "Just listed", open_house: "Open house", just_sold: "Just sold" } as const satisfies Record<Promo, string>;
 
 /** Just listed / open house / just sold note for one listing. `when` is the open house start, already formatted. */
-export function listingNote(kind: Promo, p: { address: string; price: number; beds: number; baths: number; area: string }, agent: string, when?: string) {
+export function listingNote(kind: Promo, p: { address: string; price: number; beds: number; baths: number; area: string; rent?: boolean }, agent: string, when?: string) {
   const home = `${p.address}${p.area ? ` in ${p.area}` : ""}`;
-  const facts = `${p.beds} bed, ${p.baths} bath, ${usd(p.price)}`;
+  const facts = `${p.beds} bed, ${p.baths} bath, ${usd(p.price)}${p.rent ? "/month" : ""}`;
   const body = {
-    just_listed: `Just listed: ${home}. ${facts}. Want to see it before the weekend crowd?`,
+    just_listed: `${p.rent ? "For rent" : "Just listed"}: ${home}. ${facts}. Want to see it before the weekend crowd?`,
     open_house: `Open house at ${home}${when ? ` on ${when}` : ""}. ${facts}. Stop by, or tell me and I'll set up a private showing.`,
     just_sold: `Just sold: ${home}${p.price ? ` (listed at ${usd(p.price)})` : ""}. Buyers are active nearby. Curious what yours would bring? Reply for a free estimate.`,
   }[kind];
