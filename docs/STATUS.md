@@ -33,11 +33,12 @@ Last updated: 2026-10-09.
 
 | Service | Unlocks |
 |---|---|
-| Anthropic API key | All AI features (analysis, drafts, captions, Ask Your Business, agents) |
+| OpenRouter API key (`OPENROUTER_API_KEY`) | All AI features (analysis, drafts, captions, Ask Your Business, agents) |
 | Twilio (voice, SMS, WhatsApp) + A2P 10DLC registration | 49–55, 60, 61, 66 — the AI receptionist and "Every Lead Gets an Answer" |
 | Google / Microsoft OAuth apps | 56, 112, 254, 255 (email and calendar sync) |
 | Meta, Google Ads, TikTok developer apps (with app review) | 13–15, 29, 58 |
-| MLS / IDX / RESO feed (broker approval per market) | 16, 68, 71, comps for CMA |
+| MLS / IDX / RESO feed (broker approval per market) | 16, 68, 71, comps for CMA. For-sale portals (Zillow, Realtor.com, Redfin, Homes.com) only take listings from the MLS; each listing has a Marketplaces panel to track and check it |
+| Zillow Rentals feed approval (free; rentalfeeds@zillow.com) | Rentals feed is built (`/feeds/zillow/<token>`, Team page); goes live on Zillow, Trulia, HotPads once Zillow approves the URL |
 | E-signature (DocuSign / Dropbox Sign) | 126 |
 | Social publishing (n8n webhook today; aggregator or direct APIs) | 103 at full strength |
 
@@ -49,4 +50,4 @@ Items that need no outside account are built first, in roadmap phase order:
 2. **Closing engine:** ~~deals, milestones, deadline flags, commission splits~~ (done), ~~offers, comparison and negotiation history (123–125)~~ (done), Deal Rescue drafts once AI is connected.
 3. **Growth and analytics:** ~~source, conversion, response, cycle, revenue, agent and listing analytics~~ (done; cost-per-lead 25 needs spend data), ~~past-client anniversaries and retention (177–186)~~ (done except partner directory 181 and neighborhood updates 184), broker views (190–192).
 4. **Privacy rights:** ~~export, erase on delete, do-not-contact list, public request form with 45-day tracker~~ (done).
-5. **Intelligence layer** once an Anthropic key is connected: Ask Your Business, morning briefing, explainable scoring, Deal Rescue.
+5. **Intelligence layer** once an OpenRouter key is connected: Ask Your Business, morning briefing, explainable scoring, Deal Rescue.
