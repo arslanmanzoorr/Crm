@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { conflicts, ics, openSlots, planTour } from "./showings.ts";
+import { conflicts, ics, openSlots, planTour, zonedTime } from "./showings.ts";
 
 const s = (id: string, start: string, end: string, agentId = "a", status = "confirmed") => ({ id, agentId, startsAt: `2026-10-10T${start}:00Z`, endsAt: `2026-10-10T${end}:00Z`, status });
 
@@ -38,11 +38,23 @@ test("planTour books homes back to back with travel time between", () => {
 
 test("openSlots: business hours on the half hour, an hour's notice, taken times removed", () => {
   const now = new Date(2026, 9, 10, 8, 0); // local 8:00
-  const all = openSlots(now, [], 1);
+  const all = openSlots(now, [], null, 1);
   assert.equal(all.length, 18);                                   // 9:00 … 17:30
   assert.deepEqual([all[0].getHours(), all[0].getMinutes()], [9, 0]);
   const busy: [string, string][] = [[new Date(2026, 9, 10, 10, 15).toISOString(), new Date(2026, 9, 10, 10, 45).toISOString()]];
-  const left = openSlots(now, busy, 1).map((d) => `${d.getHours()}:${d.getMinutes()}`);
+  const left = openSlots(now, busy, null, 1).map((d) => `${d.getHours()}:${d.getMinutes()}`);
   assert.ok(!left.includes("10:0") && !left.includes("10:30") && left.includes("11:0")); // both overlapping slots gone
-  assert.equal(openSlots(new Date(2026, 9, 10, 16, 20), [], 1).length, 1);             // only 17:30 is an hour out
+  assert.equal(openSlots(new Date(2026, 9, 10, 16, 20), [], null, 1).length, 1);             // only 17:30 is an hour out
+});
+
+test("zonedTime and openSlots follow the team's time zone, across DST", () => {
+  assert.equal(zonedTime(2026, 6, 1, 9, 0, "America/Chicago").toISOString(), "2026-07-01T14:00:00.000Z");   // CDT, UTC-5
+  assert.equal(zonedTime(2026, 11, 1, 9, 0, "America/Chicago").toISOString(), "2026-12-01T15:00:00.000Z");  // CST, UTC-6
+  assert.equal(zonedTime(2026, 10, 1, 9, 0, "America/New_York").toISOString(), "2026-11-01T14:00:00.000Z"); // DST ends that day
+  assert.equal(zonedTime(2026, 0, 31, 9, 0, "Pacific/Honolulu").toISOString(), "2026-01-31T19:00:00.000Z");
+  // 6am Chicago on Oct 10: first slot is 9:00 Chicago = 14:00Z, whatever the machine's zone
+  const s = openSlots(new Date("2026-10-10T11:00:00Z"), [], "America/Chicago", 1);
+  assert.equal(s.length, 18);
+  assert.equal(s[0].toISOString(), "2026-10-10T14:00:00.000Z");
+  assert.equal(s[17].toISOString(), "2026-10-10T22:30:00.000Z");
 });

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { inviteMember, removeMember, renameOrg, revokeInvite, setInRotation, setMemberRole, setRouting, switchOrg } from "@/lib/actions";
 import type { Member, Role, Team } from "@/lib/db";
-import { ActionForm, Field, primaryBtn, inputAuto } from "./forms";
+import { US_TIME_ZONES } from "@/lib/showings";
+import { ActionForm, Field, input, primaryBtn, inputAuto } from "./forms";
 import { LocalTime } from "./local-time";
 import { Avatar } from "./ui";
 
@@ -62,6 +63,12 @@ export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: {
           {(p) => (
             <>
               <div className="min-w-56 flex-1"><Field label="Team name" name="name" defaultValue={team.org.name} maxLength={200} required /></div>
+              <label className="flex min-w-48 flex-col gap-1.5 text-sm"><span className="text-muted">Time zone <span className="text-xs">· online booking hours</span></span>
+                <select name="time_zone" defaultValue={team.org.timeZone ?? ""} className={input}>
+                  <option value="">Visitor&apos;s own clock</option>
+                  {Object.entries(US_TIME_ZONES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </label>
               <button disabled={p} className={primaryBtn}>{p ? "Saving…" : "Save"}</button>
             </>
           )}

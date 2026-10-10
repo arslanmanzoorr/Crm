@@ -313,7 +313,7 @@ export async function getLeadForm(): Promise<{ id: string; public_name: string |
 export type Role = "owner" | "admin" | "agent" | "assistant";
 export type Team = {
   me: { userId: string; role: Role };
-  org: { id: string; name: string };
+  org: { id: string; name: string; timeZone: string | null };
   orgs: { id: string; name: string }[];
   members: { userId: string; email: string; role: Role; joined: string }[];
   invites: { id: string; email: string; role: Role; expires: string }[];
@@ -327,12 +327,12 @@ export async function getTeam(): Promise<Team | null> {
   if (!auth.user) return null;
   const [active, mine] = await Promise.all([
     db.rpc("active_org"),
-    db.from("memberships").select("org_id,role,organizations(name)").eq("user_id", auth.user.id),
+    db.from("memberships").select("org_id,role,organizations(name,time_zone)").eq("user_id", auth.user.id),
   ]);
   const orgId = active.data as string | null;
   if (!orgId) return null;
-  type Mine = { org_id: string; role: Role; organizations: { name: string } | null };
-  const orgs = ((mine.data ?? []) as unknown as Mine[]).map((m) => ({ id: m.org_id, name: m.organizations?.name ?? "Team", role: m.role }));
+  type Mine = { org_id: string; role: Role; organizations: { name: string; time_zone: string | null } | null };
+  const orgs = ((mine.data ?? []) as unknown as Mine[]).map((m) => ({ id: m.org_id, name: m.organizations?.name ?? "Team", timeZone: m.organizations?.time_zone ?? null, role: m.role }));
   const current = orgs.find((o) => o.id === orgId)!;
   const isAdmin = current.role === "owner" || current.role === "admin";
   const [members, invites] = await Promise.all([
@@ -341,7 +341,7 @@ export async function getTeam(): Promise<Team | null> {
   ]);
   return {
     me: { userId: auth.user.id, role: current.role },
-    org: { id: orgId, name: current.name },
+    org: { id: orgId, name: current.name, timeZone: current.timeZone },
     orgs: orgs.map(({ id, name }) => ({ id, name })),
     members: (members.data ?? []).map((m) => ({ userId: m.user_id, email: m.email ?? "", role: m.role as Role, joined: m.created_at })),
     invites: (invites.data ?? []).map((i) => ({ id: i.id, email: i.email, role: i.role as Role, expires: i.expires_at })),

@@ -22,6 +22,6 @@ async function Book({ params, searchParams }: { params: PageProps<"/f/[id]/book"
   if (!key) return <p className="rounded-card bg-surface-2 p-8 text-center">This page isn&apos;t configured yet.</p>;
   const { data } = await (await supabase()).rpc("booking_info", { p_key: key, p_form: id });
   if (!data) notFound();
-  const info = data as { team: string; listings: Bookable[] };
-  return <BookingForm formId={id} team={info.team} listings={info.listings} initial={typeof listing === "string" ? listing : ""} />;
+  const info = data as { team: string; tz: string | null; listings: Bookable[] };
+  return <BookingForm formId={id} team={info.team} tz={info.tz} listings={info.listings} initial={typeof listing === "string" ? listing : ""} />;
 }

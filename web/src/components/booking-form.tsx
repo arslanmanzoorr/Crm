@@ -4,17 +4,16 @@ import { CircleCheck } from "lucide-react";
 import { useState } from "react";
 import { bookShowing } from "@/lib/actions";
 import { money } from "@/lib/data";
-import { openSlots } from "@/lib/showings";
+import { openSlots, US_TIME_ZONES } from "@/lib/showings";
 import { ActionForm, Field, input, primaryBtn } from "./forms";
 import { useNow } from "./header";
 
 export type Bookable = { id: string; address: string; area: string; price: number; beds: number; baths: number; rent: boolean; busy: [string, string][] };
 
 const chip = "relative flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-surface-3 px-3.5 text-sm has-[:checked]:bg-accent has-[:checked]:font-medium has-[:checked]:text-on-light has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent";
-const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
 /** Pick a home, a day and a half hour; times show in the visitor's own clock. Same spam checks as the lead form. */
-export function BookingForm({ formId, team, listings, initial }: { formId: string; team: string; listings: Bookable[]; initial: string }) {
+export function BookingForm({ formId, team, listings, initial, tz }: { formId: string; team: string; listings: Bookable[]; initial: string; tz: string | null }) {
   const Team = team.charAt(0).toUpperCase() + team.slice(1);
   const now = useNow();
   const [startedAt] = useState(() => Date.now());
@@ -34,17 +33,20 @@ export function BookingForm({ formId, team, listings, initial }: { formId: strin
     );
   if (!now || !listing) return <div className="h-[720px] rounded-card bg-surface-2" />;
 
-  const slots = openSlots(now, listing.busy);
+  const zone = tz ?? undefined;
+  const dayKey = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: zone });
+  const slots = openSlots(now, listing.busy, tz);
   const days = [...new Map(slots.map((s) => [dayKey(s), s])).values()];
   const activeDay = day && days.some((d) => dayKey(d) === day) ? day : days[0] && dayKey(days[0]);
   const times = slots.filter((s) => dayKey(s) === activeDay);
-  const fmtDay = (d: Date) => d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-  const fmtTime = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const fmtDay = (d: Date) => d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: zone });
+  const fmtTime = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: zone });
+  const zoneName = tz ? `${US_TIME_ZONES[tz as keyof typeof US_TIME_ZONES] ?? tz} time` : "your time";
 
   const action = async (s: Parameters<typeof bookShowing>[1], f: FormData) => {
     const r = await bookShowing(formId, s, f);
     const at = new Date(String(f.get("starts_at")));
-    if (r?.ok) setSent({ address: listing.address, when: `${fmtDay(at)} at ${fmtTime(at)}` });
+    if (r?.ok) setSent({ address: listing.address, when: `${fmtDay(at)} at ${fmtTime(at)} ${zoneName}` });
     return r;
   };
 
@@ -79,7 +81,7 @@ export function BookingForm({ formId, team, listings, initial }: { formId: strin
                   </div>
                 </fieldset>
                 <fieldset className="flex min-w-0 flex-col gap-2">
-                  <legend className="mb-1.5 text-sm text-muted">Time <span className="text-xs">(your time)</span></legend>
+                  <legend className="mb-1.5 text-sm text-muted">Time <span className="text-xs">({zoneName})</span></legend>
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {times.map((t) => (
                       <label key={t.toISOString()} className={chip}>

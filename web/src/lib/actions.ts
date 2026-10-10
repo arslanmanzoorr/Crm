@@ -13,7 +13,7 @@ import { DOCS, LOAN_STAGES } from "./readiness";
 import { cleanSteps, TEMPLATES, TRIGGERS } from "./playbooks";
 import { cleanCma } from "./cma";
 import { checkUpload, safeFileName } from "./docs";
-import { planTour } from "./showings";
+import { planTour, US_TIME_ZONES } from "./showings";
 import { feesFromForm, HOME_TYPES, PARKING } from "./rental-feed";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
@@ -627,10 +627,11 @@ export async function switchOrg(orgId: string) {
 
 export async function renameOrg(_: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
-  const name = str(f, "name").slice(0, 200);
+  const name = str(f, "name").slice(0, 200), tz = str(f, "time_zone");
   if (!name) return { error: "Give your team a name." };
+  if (tz && !(tz in US_TIME_ZONES)) return { error: "Pick a time zone from the list." };
   const db = await authed();
-  const { data } = await db.from("organizations").update({ name }).eq("id", (await db.rpc("active_org")).data).select("id");
+  const { data } = await db.from("organizations").update({ name, time_zone: tz || null }).eq("id", (await db.rpc("active_org")).data).select("id");
   if (!data?.length) return { error: NOT_ALLOWED };
   revalidatePath("/", "layout");
   return { ok: "Saved" };
