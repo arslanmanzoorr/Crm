@@ -123,6 +123,7 @@ const propertyFields = (f: FormData) => ({
     tour_url: httpsOrNull(str(f, "tour_url")),
     est_rent: Number(str(f, "est_rent")) > 0 ? Number(str(f, "est_rent")) : null,
     floor_plan_url: httpsOrNull(str(f, "floor_plan_url")),
+    mls_id: /^[A-Za-z0-9-]{1,30}$/.test(str(f, "mls_id")) ? str(f, "mls_id") : null,
 });
 const httpsOrNull = (v: string) => (/^https:\/\/\S+$/.test(v) && v.length <= 500 ? v : null);
 

@@ -48,6 +48,7 @@ export type Property = {
   listingExpires?: string | null; // listing agreement end date
   tourUrl?: string | null;
   estRent?: number | null; // estimated monthly rent (investors)
+  mlsId?: string | null; // MLS number once it's on the MLS (how the big portals get it)
   floorPlanUrl?: string | null;
   approved?: boolean; // agents' new listings wait for an owner/admin
   tone: string; // placeholder cover gradient when a listing has no photos

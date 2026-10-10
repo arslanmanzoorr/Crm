@@ -20,6 +20,7 @@ import { SellerUpdateCard } from "@/components/seller-update-card";
 import { ListingPromo } from "@/components/listing-promo";
 import { SocialGraphic } from "@/components/social-graphic";
 import { areaKey, PROMO_LABEL, type Promo } from "@/lib/farm";
+import { checkUrl, PORTALS, syndicationSteps } from "@/lib/syndication";
 import { Documents } from "@/components/documents";
 import { sellerUpdate } from "@/lib/seller-update";
 import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
@@ -102,6 +103,7 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
           <ListingDocs id={p.id} />
         </Suspense>
       )}
+      {p.status !== "Sold" && <Marketplaces p={p} />}
       {dbEnabled && (
         <Suspense fallback={<Skeleton className="h-24 max-w-2xl" />}>
           <History p={p} />
@@ -185,6 +187,31 @@ async function Promote({ p }: { p: Property }) {
       <ListingPromo kind={kind} p={{ address: p.address, price: p.price, beds: p.beds, baths: p.baths, area: p.area }} agent={me.name} whenIso={next?.startsAt} due={due} />
       <h3 className="mt-3 text-lg">Social post</h3>
       <SocialGraphic photo={p.cover} address={p.address} area={p.area} price={p.price} beds={p.beds} baths={p.baths} agent={me.name} initial={PROMO_LABEL[kind]} />
+    </section>
+  );
+}
+
+/** Real estate portals: they get listings from the MLS, so this shows what's left and links to confirm it's live. */
+function Marketplaces({ p }: { p: Property }) {
+  const steps = syndicationSteps(p);
+  return (
+    <section aria-labelledby="marketplaces" className="flex max-w-2xl flex-col gap-3">
+      <h2 id="marketplaces" className="text-xl">Marketplaces</h2>
+      <p className="text-sm text-muted">Zillow, Realtor.com, Redfin and Homes.com take listings from your MLS, not from uploads. {p.mlsId ? `MLS #${p.mlsId}.` : ""}</p>
+      {steps.length > 0 && (
+        <ul className="flex flex-col gap-1 rounded-card bg-surface-2 p-4 text-sm">
+          {steps.map((s) => <li key={s} className="flex gap-2"><span aria-hidden className="text-score-2">•</span>{s}</li>)}
+        </ul>
+      )}
+      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        {PORTALS.map((x) => (
+          <li key={x.name} className="flex items-center justify-between gap-3 px-5 py-3">
+            <span className="min-w-0"><span className="font-medium">{x.name}</span> <span className="block text-sm text-muted">{x.note}</span></span>
+            <a href={checkUrl(x.domain, p.address, p.area)} target="_blank" rel="noreferrer" aria-label={`Check ${x.name} for this listing`} className="flex min-h-10 shrink-0 items-center rounded-full bg-surface-3 px-3.5 text-sm hover:bg-surface-1">Check</a>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted">Not showing up a few days after it&apos;s on the MLS? Ask your MLS whether your brokerage is opted in to syndication.</p>
     </section>
   );
 }
