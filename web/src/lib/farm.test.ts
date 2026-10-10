@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { campaignResults, farmNote, farmReport, listingNote } from "./farm.ts";
+import { campaignResults, farmNote, farmReport, homeUpdate, listingNote } from "./farm.ts";
 
 const L = (area: string, status: string, price: number, soldOn: string | null = null) => ({ area, status, price, soldOn });
 const P = (id: string, lastTouch: string | null, dnc = false) => ({ id, name: id, lastTouch, dnc, email: true });
@@ -42,4 +42,14 @@ test("campaignResults: replies count only after the send and within the window",
     { contactId: "c", ts: "2026-10-20T09:00:00Z" },  // 19 days later: outside the window
   ]);
   assert.deepEqual(r, [{ campaign: "Just listed", sent: 2, replied: 1 }, { campaign: "Market note", sent: 1, replied: 0 }]);
+});
+
+test("homeUpdate: equity change only when both prices are known; area lines only with numbers", () => {
+  const r = farmReport("Hyde Park", [L("Hyde Park", "Active", 500_000)], [], "2026-10-10");
+  const up = homeUpdate({ address: "9 Elm St", valueEstimate: 460_000, purchasePrice: 400_000 }, "Hyde Park", r, "Sam");
+  assert.match(up, /around \$460,000 today, up about 15% since you bought\./);
+  assert.match(up, /In Hyde Park: 1 home for sale, typically around \$500,000\./);
+  const bare = homeUpdate({ address: "9 Elm St", valueEstimate: null, purchasePrice: 400_000 }, null, null, "Sam");
+  assert.doesNotMatch(bare, /\$/);
+  assert.match(bare, /^Hi \{first_name\}, Sam here with a quick update on 9 Elm St\.\nThinking about/);
 });

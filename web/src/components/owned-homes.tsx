@@ -6,12 +6,13 @@ import { deleteOwnedHome, saveOwnedHome } from "@/lib/actions";
 import { money } from "@/lib/data";
 import type { Holding } from "@/lib/db";
 import { portfolio } from "@/lib/finance";
+import { FarmNote } from "./farm-note";
 import { ActionForm, input, primaryBtn } from "./forms";
 
 const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 
 /** Homes the client owns: equity at a glance, and rental yield when they're an investor. */
-export function OwnedHomes({ contactId, homes }: { contactId: string; homes: Holding[] }) {
+export function OwnedHomes({ contactId, homes, updates, lead }: { contactId: string; homes: Holding[]; updates?: Record<string, string>; lead?: { id: string; name: string; email: boolean } }) {
   const p = portfolio(homes);
   return (
     <div className="flex flex-col gap-4">
@@ -38,6 +39,12 @@ export function OwnedHomes({ contactId, homes }: { contactId: string; homes: Hol
                   h.monthlyRent > 0 && `rents ${money(h.monthlyRent)}/mo`].filter(Boolean).join(" · ") || "No numbers yet"}
               </p>
               {h.notes && <p className="text-sm">{h.notes}</p>}
+              {updates?.[h.id] && lead && (
+                <details>
+                  <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Send a home update</summary>
+                  <div className="mt-2"><FarmNote label="Home update" draft={updates[h.id]} due={[lead]} /></div>
+                </details>
+              )}
               <details>
                 <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Update</summary>
                 <HomeForm contactId={contactId} h={h} />

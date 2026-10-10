@@ -54,7 +54,7 @@ export function listingNote(kind: Promo, p: { address: string; price: number; be
   return `Hi {first_name}, ${agent} here. ${body}`;
 }
 
-const CAMPAIGN = /^(Market note|Just listed|Open house|Just sold) sent:/;
+const CAMPAIGN = /^(Market note|Just listed|Open house|Just sold|Home update) sent:/;
 export const campaignOf = (content: string) => CAMPAIGN.exec(content)?.[1] ?? null;
 
 /** Per note type: how many were logged as sent, and how many of those leads wrote back within `days`. */
@@ -71,4 +71,19 @@ export function campaignResults(sends: { contactId: string; content: string; ts:
     out.set(c, row);
   }
   return [...out].map(([campaign, r]) => ({ campaign, ...r })).sort((a, b) => b.sent - a.sent);
+}
+
+/** A past client's home update: their own home's estimate and change, then their neighborhood. Only real numbers. */
+export function homeUpdate(h: { address: string; valueEstimate: number | null; purchasePrice: number | null }, area: string | null, r: ReturnType<typeof farmReport> | null, agent: string) {
+  const lines = [`Hi {first_name}, ${agent} here with a quick update on ${h.address}.`];
+  if (h.valueEstimate) {
+    const change = h.purchasePrice ? Math.round(((h.valueEstimate - h.purchasePrice) / h.purchasePrice) * 100) : null;
+    lines.push(`- I'd put its value around ${usd(h.valueEstimate)} today${change !== null && change !== 0 ? `, ${change > 0 ? "up" : "down"} about ${Math.abs(change)}% since you bought` : ""}.`);
+  }
+  if (area && r) {
+    if (r.active) lines.push(`- In ${area}: ${n(r.active, "home")} for sale${r.medianActive ? `, typically around ${usd(r.medianActive)}` : ""}.`);
+    if (r.sold90) lines.push(`- ${r.sold90} sold nearby in the last 90 days${r.medianSold ? `, at a typical ${usd(r.medianSold)}` : ""}.`);
+  }
+  lines.push("Thinking about refinancing, renting it out or moving up? Happy to run the numbers.");
+  return lines.join("\n");
 }
