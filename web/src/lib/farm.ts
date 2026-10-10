@@ -54,7 +54,7 @@ export function listingNote(kind: Promo, p: { address: string; price: number; be
   return `Hi {first_name}, ${agent} here. ${body}`;
 }
 
-const CAMPAIGN = /^(Market note|Just listed|Open house|Just sold|Home update) sent:/;
+const CAMPAIGN = /^(Market note|Just listed|Open house|Just sold|Home update|Listing outreach) sent:/;
 export const campaignOf = (content: string) => CAMPAIGN.exec(content)?.[1] ?? null;
 
 /** Per note type: how many were logged as sent, and how many of those leads wrote back within `days`. */

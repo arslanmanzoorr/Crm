@@ -157,3 +157,20 @@ export function filterListings<T extends { price: number; beds: number; status: 
     && (!f.minBeds || p.beds >= f.minBeds)
     && (!f.minCap || ((p.listingKind ?? "sale") === "sale" && !!p.estRent && quickCapRate(p.price, p.estRent) >= f.minCap)));
 }
+
+/** A short note to a buyer about one listing, in their words: why it fits, and honestly where it stretches. */
+export function outreachDraft(p: { address: string; area: string; price: number; beds: number; baths: number; listingKind?: "sale" | "rent" }, m: Match, agent: string) {
+  const rent = p.listingKind === "rent";
+  const price = `$${Math.round(p.price).toLocaleString("en-US")}${rent ? "/month" : ""}`;
+  const why: string[] = [];
+  if (m.fits.some((f) => f.startsWith("In "))) why.push(`it's in ${p.area.trim()}`);
+  if (m.fits.includes("Within budget")) why.push(`it's within your budget at ${price}`);
+  if (m.fits.some((f) => /beds \(wants/.test(f))) why.push(`it has the ${p.beds} bedrooms you wanted`);
+  const cap = m.fits.find((f) => f.includes("cap rate"));
+  if (cap) why.push(`the numbers work: about ${cap.match(/≈([\d.]+)%/)?.[1]}% cap rate on estimated rent`);
+  const lines = [`Hi {first_name}, ${agent} here. ${p.address} just came up and I thought of you.`];
+  lines.push(why.length ? `It fits what you told me: ${why.join(", ")}.` : `${p.beds} bed, ${p.baths} bath at ${price}.`);
+  if (m.gaps.some((g) => g.includes("over budget"))) lines.push(`It's a bit above the budget you mentioned (${price}), but worth a look.`);
+  lines.push(rent ? "Want to see it this week?" : "Want to see it this week, before it goes?");
+  return lines.join("\n");
+}

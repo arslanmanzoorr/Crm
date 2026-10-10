@@ -26,7 +26,8 @@ import { EMPTY_FINANCING, readiness } from "@/lib/readiness";
 import { ReferredBySelect } from "@/components/client-actions";
 import { STATUS_LABEL } from "@/lib/offers";
 import { money } from "@/lib/data";
-import { learnedPreferences, matchListing, type Match } from "@/lib/match";
+import { learnedPreferences, matchListing, outreachDraft, type Match } from "@/lib/match";
+import { FarmNote } from "@/components/farm-note";
 import { fmtDuration } from "@/lib/search";
 import { OwnerSelect } from "@/components/owner-select";
 
@@ -47,7 +48,7 @@ export default function LeadPage({ params }: PageProps<"/leads/[id]">) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties, team, deals, offers, refs, people, showings, financing, partners, portal, signals, links, docs, homes] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id }), getFinancing(lead.id), getPartners(), getPortalLink(lead.id), getBuyingSignals(lead.id), getLinks(lead.id), getDocuments({ contactId: lead.id }), getHoldings(lead.id)]);
+  const [tasks, properties, team, deals, offers, refs, people, showings, financing, partners, portal, signals, links, docs, homes, me] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id }), getFinancing(lead.id), getPartners(), getPortalLink(lead.id), getBuyingSignals(lead.id), getLinks(lead.id), getDocuments({ contactId: lead.id }), getHoldings(lead.id), getMe()]);
   const updates = homes.length ? await homeUpdates(homes, lead.areas[0] ?? null) : undefined;
   if (refs.referredBy && !people.some((p) => p.id === refs.referredBy!.id)) people.unshift(refs.referredBy); // keep the current referrer selectable
   const mine = tasks.filter((t) => t.contactId === lead.id);
@@ -275,7 +276,17 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
             {matches.length > 0 && (
               <section aria-labelledby="matches" className="flex flex-col gap-3">
                 <h2 id="matches" className="text-xl">Listings that fit</h2>
-                {matches.map(({ p, m }) => <PropertyCard key={p.id} p={p} match={m} />)}
+                {matches.map(({ p, m }) => (
+                  <div key={p.id} className="flex flex-col gap-2">
+                    <PropertyCard p={p} match={m} />
+                    {!c.dnc && (
+                      <details className="rounded-card bg-surface-2 px-5 py-1">
+                        <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Draft a message about it</summary>
+                        <div className="pb-4"><FarmNote label="Listing outreach" draft={outreachDraft(p, m, me.name)} due={[{ id: lead.id, name: lead.name, email: c.email }]} /></div>
+                      </details>
+                    )}
+                  </div>
+                ))}
               </section>
             )}
             <div className="self-start"><DeleteButton id={lead.id} what="lead" /></div>

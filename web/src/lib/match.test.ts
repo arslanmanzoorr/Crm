@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { compareHomes, filterListings, learnedPreferences, matchListing, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
+import { compareHomes, filterListings, learnedPreferences, matchListing, outreachDraft, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
 
 test("parseBudget reads the ways agents write budgets", () => {
   assert.deepEqual(parseBudget("$600k–$650k"), { min: 600_000, max: 650_000 });
@@ -96,4 +96,13 @@ test("filterListings: kind, status, price, beds, and cap rate only where rent is
   assert.equal(filterListings(list, { kind: "rent" }).length, 1);
   assert.equal(filterListings(list, { status: "Active", maxPrice: 350_000, minBeds: 3 }).length, 2);
   assert.deepEqual(filterListings(list, { minCap: 6 }), [list[0]]); // 300k with 2,800 rent ≈ 7.2% cap; no-rent and low-yield homes drop out
+});
+
+test("outreachDraft speaks in the buyer's terms and is honest about a stretch", () => {
+  const p = { address: "14 Oak Ave", area: "Westside", price: 520_000, beds: 3, baths: 2 };
+  const fit = outreachDraft(p, { score: 90, fits: ["In Westside", "Within budget", "3 beds (wants 3+)"], gaps: [] }, "Sam");
+  assert.match(fit, /^Hi \{first_name\}, Sam here\. 14 Oak Ave just came up and I thought of you\.\nIt fits what you told me: it's in Westside, it's within your budget at \$520,000, it has the 3 bedrooms you wanted\./);
+  const stretch = outreachDraft(p, { score: 70, fits: ["In Westside"], gaps: ["$20k over budget"] }, "Sam");
+  assert.match(stretch, /a bit above the budget you mentioned \(\$520,000\)/);
+  assert.doesNotMatch(stretch, /within your budget/);
 });
