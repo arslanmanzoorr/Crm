@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addDays, commission, daysBetween, defaultMilestones, riskFlags } from "./deals.ts";
+import { addDays, commission, daysBetween, defaultMilestones, pipelineByAgent, riskFlags } from "./deals.ts";
 
 test("date helpers cross month ends", () => {
   assert.equal(addDays("2026-01-30", 3), "2026-02-02");
@@ -42,4 +42,15 @@ test("riskFlags explains what could slip", () => {
   assert.deepEqual(riskFlags({ status: "closed", closeOn: null, lastContactOn: null }, ms, "2026-10-10"), []);
   assert.deepEqual(riskFlags({ status: "active", closeOn: null, lastContactOn: "2026-10-09" }, [], "2026-10-10"), [{ level: "medium", text: "No closing date set" }]);
   assert.equal(riskFlags({ status: "active", closeOn: "2026-10-09", lastContactOn: null }, [], "2026-10-10")[0].level, "high");
+});
+
+test("pipelineByAgent groups active and closed per agent, ignores fallen-through deals", () => {
+  const d = (ownerId: string | null, status: string, price: number, closeOn: string | null = null) => ({ ownerId, status, price, closeOn, commissionPct: 3, agentSplitPct: 70, referralPct: 0 });
+  const rows = pipelineByAgent([
+    d("a", "active", 500_000, "2026-10-20"), d("a", "active", 300_000, "2026-12-30"), d("a", "closed", 400_000),
+    d("b", "active", 1_000_000), d(null, "fell_through", 900_000),
+  ], "2026-10-10");
+  assert.deepEqual(rows.map((r) => [r.ownerId, r.active, r.volume, r.gci, r.soon, r.closed]), [["b", 1, 1_000_000, 30_000, 0, 0], ["a", 2, 800_000, 24_000, 1, 1]]);
+  assert.equal(rows[1].closedGci, 12_000);
+  assert.equal(rows[1].brokerage, 3_600); // 30% of 12,000
 });

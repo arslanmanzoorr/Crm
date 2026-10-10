@@ -67,3 +67,22 @@ export function riskFlags(deal: { status: string; closeOn: string | null; lastCo
   if (quiet !== null && quiet >= 10) flags.push({ level: "medium", text: `No logged contact with the client in ${quiet} days` });
   return flags.sort((a, b) => (a.level === b.level ? 0 : a.level === "high" ? -1 : 1));
 }
+
+type PipeDeal = { ownerId: string | null; status: string; price: number; closeOn: string | null; commissionPct: number; agentSplitPct: number; referralPct: number };
+
+/** Brokerage view: per agent, what's under contract (volume, GCI, closing within 30 days) and what closed. */
+export function pipelineByAgent(deals: PipeDeal[], today: string) {
+  const rows = new Map<string, { ownerId: string | null; active: number; volume: number; gci: number; soon: number; closed: number; closedGci: number; brokerage: number }>();
+  for (const d of deals) {
+    if (d.status !== "active" && d.status !== "closed") continue;
+    const k = d.ownerId ?? "none";
+    const r = rows.get(k) ?? { ownerId: d.ownerId, active: 0, volume: 0, gci: 0, soon: 0, closed: 0, closedGci: 0, brokerage: 0 };
+    const c = commission(d.price, d.commissionPct, d.agentSplitPct, d.referralPct);
+    if (d.status === "active") {
+      r.active++; r.volume += d.price; r.gci += c.gci;
+      if (d.closeOn && daysBetween(today, d.closeOn) <= 30) r.soon++;
+    } else { r.closed++; r.closedGci += c.gci; r.brokerage += c.brokerage; }
+    rows.set(k, r);
+  }
+  return [...rows.values()].sort((a, b) => b.gci - a.gci || b.closedGci - a.closedGci);
+}

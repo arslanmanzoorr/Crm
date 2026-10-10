@@ -4,12 +4,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
-import { commission, daysBetween, riskFlags } from "@/lib/deals";
-import { dbEnabled, listDeals, type Deal } from "@/lib/db";
+import { commission, daysBetween, pipelineByAgent, riskFlags } from "@/lib/deals";
+import { dbEnabled, getMembers, listDeals, type Deal } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Deals" };
 
-export default function DealsPage() {
+export default function DealsPage({ searchParams }: PageProps<"/deals">) {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -20,7 +20,7 @@ export default function DealsPage() {
       </header>
       {dbEnabled ? (
         <Suspense fallback={<div className="flex flex-col gap-3"><Skeleton className="h-24" /><Skeleton className="h-40" /><Skeleton className="h-40" /></div>}>
-          <Board />
+          <Board searchParams={searchParams} />
         </Suspense>
       ) : <p className="text-muted">Connect Supabase to track deals.</p>}
     </div>
@@ -29,14 +29,32 @@ export default function DealsPage() {
 
 const take = (d: Deal) => commission(d.price, d.commissionPct, d.agentSplitPct, d.referralPct).agent;
 
-async function Board() {
-  const deals = await listDeals();
+const gci = (d: Deal) => commission(d.price, d.commissionPct, d.agentSplitPct, d.referralPct).gci;
+
+/** "My deals" by default; "Whole team" is the brokerage view (everyone's pipeline, GCI, and a by-agent table). */
+async function Board({ searchParams }: { searchParams: PageProps<"/deals">["searchParams"] }) {
+  const [all, team, { who }] = await Promise.all([listDeals(), getMembers(), searchParams]);
   const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day; per-agent timezone if flags look a day off
+  const others = all.some((d) => d.ownerId !== team.me);
+  const isTeam = who === "team" && others;
+  const deals = isTeam || !others ? all : all.filter((d) => d.ownerId === team.me);
   const active = deals.filter((d) => d.status === "active");
   const closed = deals.filter((d) => d.status === "closed");
   const soon = active.filter((d) => d.closeOn && daysBetween(today, d.closeOn) <= 30);
+  const sum = (ds: Deal[]) => ds.reduce((n, d) => n + (isTeam ? gci(d) : take(d)), 0);
+  const share = isTeam ? "team GCI" : "your share";
+  const email = new Map(team.members.map((m) => [m.userId, m.email]));
 
-  if (deals.length === 0)
+  const tabs = others && (
+    <nav aria-label="Whose deals" className="flex gap-2">
+      {[["My deals", "/deals", !isTeam], ["Whole team", "/deals?who=team", isTeam]].map(([label, href, on]) => (
+        <Link key={String(label)} href={String(href)} aria-current={on ? "page" : undefined}
+          className={`flex min-h-10 items-center rounded-full px-4 text-sm ${on ? "bg-accent font-medium text-on-light" : "bg-surface-2 hover:bg-surface-3"}`}>{label}</Link>
+      ))}
+    </nav>
+  );
+
+  if (all.length === 0)
     return (
       <div className="rounded-card bg-surface-2 p-8 text-center">
         <p className="text-lg">No deals yet</p>
@@ -46,11 +64,30 @@ async function Board() {
 
   return (
     <>
+      {tabs}
+      {isTeam && (
+        <section aria-labelledby="by-agent" className="flex flex-col gap-3">
+          <h2 id="by-agent" className="text-xl">By agent</h2>
+          <div className="overflow-x-auto rounded-card bg-surface-2 px-5" tabIndex={0} role="region" aria-label="Pipeline by agent">
+            <table className="w-full min-w-[36rem] text-sm">
+              <thead><tr className="border-b border-white/5 text-left text-muted">{["Agent", "Under contract", "Volume", "GCI", "Closing ≤30d", `Closed ${today.slice(0, 4)}`, "Brokerage share"].map((h, i) => <th key={h} scope="col" className={`py-2.5 font-normal ${i ? "px-3 text-right" : "pr-4"}`}>{h}</th>)}</tr></thead>
+              <tbody className="divide-y divide-white/5">
+                {pipelineByAgent(all, today).map((r) => (
+                  <tr key={r.ownerId ?? "none"}>
+                    <th scope="row" className="max-w-56 truncate py-2.5 pr-4 text-left font-normal">{r.ownerId ? email.get(r.ownerId) ?? "Former member" : "Unassigned"}</th>
+                    {[r.active, money(r.volume), money(r.gci), r.soon, r.closed, money(r.brokerage)].map((v, i) => <td key={i} className="px-3 py-2.5 text-right tabular-nums">{v}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Active deals" value={String(active.length)} />
-        <Stat label="Closing in 30 days" value={money(soon.reduce((n, d) => n + take(d), 0))} sub={`${soon.length} deal${soon.length === 1 ? "" : "s"}, your share`} />
-        <Stat label="Pending, your share" value={money(active.reduce((n, d) => n + take(d), 0))} />
-        <Stat label={`Earned in ${today.slice(0, 4)}`} value={money(closed.reduce((n, d) => n + take(d), 0))} sub={`${closed.length} closed`} accent />
+        <Stat label="Closing in 30 days" value={money(sum(soon))} sub={`${soon.length} deal${soon.length === 1 ? "" : "s"}, ${share}`} />
+        <Stat label={`Pending, ${share}`} value={money(sum(active))} />
+        <Stat label={`${isTeam ? "Closed" : "Earned"} in ${today.slice(0, 4)}`} value={money(sum(closed))} sub={`${closed.length} closed${isTeam ? ", team GCI" : ""}`} accent />
       </dl>
 
       <section aria-labelledby="active" className="flex flex-col gap-3">
@@ -69,7 +106,7 @@ async function Board() {
               <li key={d.id}>
                 <Link href={`/deals/${d.id}`} className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 px-5 py-3 hover:bg-surface-3">
                   <span className="min-w-0"><span className="font-medium">{d.contact.name}</span> <span className="text-muted">· {d.address}</span></span>
-                  <span className="text-sm text-muted">{money(d.price)} · you {money(take(d))}</span>
+                  <span className="text-sm text-muted">{money(d.price)} · {isTeam ? `GCI ${money(gci(d))}` : `you ${money(take(d))}`}</span>
                 </Link>
               </li>
             ))}
