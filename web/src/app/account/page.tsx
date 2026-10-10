@@ -1,7 +1,8 @@
-import { Calculator, ChartNoAxesCombined, MapPinned, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
+import { Calculator, CircleCheck, CircleDashed, ChartNoAxesCombined, MapPinned, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { integrationStatus } from "@/lib/integrations";
 import { Avatar, Reveal } from "@/components/ui";
 import { signOut } from "@/lib/actions";
 import { LeadFormSettings } from "@/components/lead-form-settings";
@@ -33,6 +34,12 @@ export default function AccountPage() {
       {dbEnabled && (
         <Suspense fallback={null}>
           <Privacy />
+        </Suspense>
+      )}
+
+      {dbEnabled && (
+        <Suspense fallback={null}>
+          <Integrations />
         </Suspense>
       )}
 
@@ -113,6 +120,28 @@ async function Privacy() {
       <h2 id="privacy" className="text-sm text-muted">Privacy requests</h2>
       <PrivacyRequests items={items} />
       {form && <p className="text-xs text-muted">Public request page: <a href={`/f/${form.id}/privacy`} className="text-accent underline">/f/{form.id.slice(0, 8)}…/privacy</a>. It&apos;s linked from your lead form; link it from your website&apos;s privacy policy too.</p>}
+    </section>
+  );
+}
+
+/** Owners and admins: what's connected. Values never leave the server; only set / not set. */
+async function Integrations() {
+  if (!(await isOwnerOrAdmin())) return null;
+  return (
+    <section aria-labelledby="integrations" className="flex flex-col gap-2">
+      <h2 id="integrations" className="text-sm text-muted">Integrations</h2>
+      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        {integrationStatus(process.env).map((i) => (
+          <li key={i.name} className="flex items-start gap-3 px-5 py-3">
+            {i.connected ? <CircleCheck aria-hidden className="mt-0.5 size-5 shrink-0 text-accent" /> : <CircleDashed aria-hidden className="mt-0.5 size-5 shrink-0 text-muted" />}
+            <span className="min-w-0 text-sm">
+              <span className="font-medium">{i.name}</span> <span className="text-muted">· {i.connected ? "Connected" : "Not connected"}</span>
+              <span className="block text-muted">{i.unlocks}</span>
+              {!i.connected && <span className="block break-words text-xs text-muted">Set in your host&apos;s environment variables: {i.missing.join(", ")}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
