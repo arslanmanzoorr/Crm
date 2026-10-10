@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { compareHomes, learnedPreferences, matchListing, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
+import { compareHomes, filterListings, learnedPreferences, matchListing, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
 
 test("parseBudget reads the ways agents write budgets", () => {
   assert.deepEqual(parseBudget("$600k–$650k"), { min: 600_000, max: 650_000 });
@@ -88,4 +88,12 @@ test("learnedPreferences: liked range, budget gap, bedrooms, repeated areas and 
     "Every home they liked had 3+ bedrooms.", "Keeps liking Westside.", "Common thread: backyard.", "Passed on everything in Downtown.",
   ]);
   assert.equal(learnedPreferences([r("interested", 1, 1, "A"), r("maybe", 1, 1, "A")], ""), null);
+});
+
+test("filterListings: kind, status, price, beds, and cap rate only where rent is known", () => {
+  const l = (price: number, beds: number, status: string, listingKind: "sale" | "rent", estRent: number | null = null) => ({ price, beds, status, listingKind, estRent });
+  const list = [l(300_000, 3, "Active", "sale", 2800), l(300_000, 3, "Active", "sale"), l(2_000, 2, "Active", "rent"), l(600_000, 4, "Sold", "sale", 3000)];
+  assert.equal(filterListings(list, { kind: "rent" }).length, 1);
+  assert.equal(filterListings(list, { status: "Active", maxPrice: 350_000, minBeds: 3 }).length, 2);
+  assert.deepEqual(filterListings(list, { minCap: 6 }), [list[0]]); // 300k with 2,800 rent ≈ 7.2% cap; no-rent and low-yield homes drop out
 });

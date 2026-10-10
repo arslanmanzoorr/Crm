@@ -145,3 +145,15 @@ export function learnedPreferences(rated: Rated[], budget: string) {
   }
   return { liked: liked.length, passed: passed.length, notes };
 }
+
+export type ListingFilter = { kind?: string; status?: string; maxPrice?: number; minBeds?: number; minCap?: number };
+
+/** Listings page filters. Cap rate needs an estimated rent, so `minCap` keeps only for-sale homes that have one. */
+export function filterListings<T extends { price: number; beds: number; status: string; listingKind?: "sale" | "rent"; estRent?: number | null }>(list: T[], f: ListingFilter) {
+  return list.filter((p) =>
+    (!f.kind || (p.listingKind ?? "sale") === f.kind)
+    && (!f.status || p.status === f.status)
+    && (!f.maxPrice || p.price <= f.maxPrice)
+    && (!f.minBeds || p.beds >= f.minBeds)
+    && (!f.minCap || ((p.listingKind ?? "sale") === "sale" && !!p.estRent && quickCapRate(p.price, p.estRent) >= f.minCap)));
+}
