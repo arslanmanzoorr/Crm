@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { farmNote, farmReport } from "./farm.ts";
+import { farmNote, farmReport, listingNote } from "./farm.ts";
 
 const L = (area: string, status: string, price: number, soldOn: string | null = null) => ({ area, status, price, soldOn });
 const P = (id: string, lastTouch: string | null, dnc = false) => ({ id, name: id, lastTouch, dnc, email: true });
@@ -21,4 +21,11 @@ test("farmNote only states numbers it has, and keeps the placeholder for persona
   assert.doesNotMatch(quiet, /\$/);
   const busy = farmNote("Hyde Park", farmReport("Hyde Park", [L("Hyde Park", "Active", 500_000)], [], "2026-10-10"), "Sam");
   assert.match(busy, /1 home for sale, typically around \$500,000\./);
+});
+
+test("listingNote: each kind says what it is, open house carries the time", () => {
+  const p = { address: "14 Oak Ave", price: 525_000, beds: 3, baths: 2, area: "Hyde Park" };
+  assert.match(listingNote("just_listed", p, "Sam"), /^Hi \{first_name\}, Sam here\. Just listed: 14 Oak Ave in Hyde Park\. 3 bed, 2 bath, \$525,000\./);
+  assert.match(listingNote("open_house", p, "Sam", "Sat, Oct 12, 1:00 PM"), /Open house at 14 Oak Ave in Hyde Park on Sat, Oct 12, 1:00 PM\./);
+  assert.match(listingNote("just_sold", { ...p, area: "" }, "Sam"), /Just sold: 14 Oak Ave \(listed at \$525,000\)\./);
 });

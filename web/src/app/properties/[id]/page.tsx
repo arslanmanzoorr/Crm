@@ -14,9 +14,11 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getShowings, type OpenHouse } from "@/lib/db";
+import { dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getFarmData, getMe, getShowings, type OpenHouse } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { SellerUpdateCard } from "@/components/seller-update-card";
+import { ListingPromo } from "@/components/listing-promo";
+import { areaKey, PROMO_LABEL, type Promo } from "@/lib/farm";
 import { Documents } from "@/components/documents";
 import { sellerUpdate } from "@/lib/seller-update";
 import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
@@ -89,6 +91,11 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
       <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
         <Buyers p={p} />
       </Suspense>
+      {dbEnabled && p.approved && p.status !== "Under contract" && (
+        <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
+          <Promote p={p} />
+        </Suspense>
+      )}
       {dbEnabled && (
         <Suspense fallback={<Skeleton className="h-24 max-w-2xl" />}>
           <ListingDocs id={p.id} />
@@ -151,6 +158,30 @@ async function Buyers({ p }: { p: Property }) {
         </ol>
       )}
       {ranked.length > 8 && <p className="text-sm text-muted">Showing the 8 best of {ranked.length}.</p>}
+    </section>
+  );
+}
+
+/**
+ * Just listed / open house / just sold: one note, sent to the buyers who fit (or, once sold, the leads in
+ * the area), each logged on their timeline. Do-not-contact leads are never listed.
+ */
+async function Promote({ p }: { p: Property }) {
+  const [openHouses, me] = await Promise.all([getOpenHouses(p.id), getMe()]);
+  const next = openHouses.filter((o) => o.startsAt > new Date().toISOString()).sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0];
+  const kind: Promo = p.status === "Sold" ? "just_sold" : next ? "open_house" : "just_listed";
+  let due: { id: string; name: string; email: boolean }[];
+  if (kind === "just_sold") {
+    const { people } = await getFarmData();
+    due = people.filter((x) => !x.dnc && x.areas.some((a) => areaKey(a) === areaKey(p.area))).map((x) => ({ id: x.id, name: x.name, email: x.email }));
+  } else {
+    due = (await getOpenBuyers()).filter((b) => !b.dnc && matchListing(b, p)).slice(0, 25).map((b) => ({ id: b.id, name: b.name, email: !!b.consent_email }));
+  }
+  return (
+    <section aria-labelledby="promote" className="flex max-w-2xl flex-col gap-3">
+      <h2 id="promote" className="text-xl">{PROMO_LABEL[kind]} note</h2>
+      <p className="text-sm text-muted">{due.length ? `For ${due.length} ${kind === "just_sold" ? `lead${due.length === 1 ? "" : "s"} in ${p.area}` : due.length === 1 ? "buyer who fits" : "buyers who fit"}. Log it on each one as you send it.` : kind === "just_sold" ? "No leads in this area yet." : "No open buyer fits this listing yet."}</p>
+      <ListingPromo kind={kind} p={{ address: p.address, price: p.price, beds: p.beds, baths: p.baths, area: p.area }} agent={me.name} whenIso={next?.startsAt} due={due} />
     </section>
   );
 }

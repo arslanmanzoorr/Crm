@@ -8,7 +8,7 @@ import { input } from "./forms";
 const pill = "flex min-h-10 items-center gap-1.5 rounded-full bg-surface-3 px-3.5 text-sm hover:bg-surface-1 disabled:opacity-60";
 
 /** The market note: edit, copy, and log it on each neighbor's timeline as you send it. */
-export function FarmNote({ draft, due }: { draft: string; due: { id: string; name: string; email: boolean }[] }) {
+export function FarmNote({ draft, due, label = "Market note" }: { draft: string; due: { id: string; name: string; email: boolean }[]; label?: string }) {
   const [text, setText] = useState(draft);
   const [copied, setCopied] = useState(false);
   const [logged, setLogged] = useState<Set<string>>(new Set());
@@ -17,7 +17,7 @@ export function FarmNote({ draft, due }: { draft: string; due: { id: string; nam
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={7} aria-label="Market note" className={`${input} resize-y`} />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={7} aria-label={label} className={`${input} resize-y`} />
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" className={pill} onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
             {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
@@ -34,7 +34,7 @@ export function FarmNote({ draft, due }: { draft: string; due: { id: string; nam
                 ? <span className="flex min-h-10 items-center gap-1.5 text-sm text-accent"><Check aria-hidden className="size-4" />Logged</span>
                 : <button type="button" disabled={pending} className={pill}
                     onClick={() => start(async () => {
-                      const r = await saveNoteToLead(p.id, `Market note sent:\n${text.replaceAll("{first_name}", first(p.name))}`);
+                      const r = await saveNoteToLead(p.id, `${label} sent:\n${text.replaceAll("{first_name}", first(p.name))}`);
                       if (r?.ok) setLogged((s) => new Set(s).add(p.id));
                     })}>Log as sent</button>}
             </li>

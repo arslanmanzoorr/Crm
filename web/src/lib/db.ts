@@ -155,13 +155,13 @@ export async function getLead(id: string): Promise<Lead | undefined> {
   return data ? toLead(data as ContactRow) : undefined;
 }
 
-export type Buyer = { id: string; name: string; type: string; budget: string; areas: string[]; preferences: string[]; score: number };
+export type Buyer = { id: string; name: string; type: string; budget: string; areas: string[]; preferences: string[]; score: number; dnc?: boolean; consent_email?: boolean };
 
 /** Open buyers, investors and renters, for ranking against a listing (src/lib/match.ts). */
 export async function getOpenBuyers(): Promise<Buyer[]> {
   if (!dbEnabled) return mock.leads.map((l) => ({ id: l.id, name: l.name, type: l.type ?? "buyer", budget: l.budget, areas: l.areas, preferences: l.preferences, score: l.score }));
   // ponytail: ranks up to 1000 open buyers in JS; move matching into SQL when a team has more
-  const res = await (await supabase()).from("contacts").select("id,name,type,budget,areas,preferences,score")
+  const res = await (await supabase()).from("contacts").select("id,name,type,budget,areas,preferences,score,dnc,consent_email")
     .in("type", BUYING_TYPES).not("stage", "in", "(Closed,Lost)").order("score", { ascending: false }).limit(1000);
   return must(res) as Buyer[];
 }
