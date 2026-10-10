@@ -73,6 +73,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0046_closing_handoff.sql` | Closing a deal creates a handoff task; buy-side closings add the home to the client's "Homes they own" |
 | `0047_dnc_registry_check.sql` | Date of the agent's Do Not Call Registry check; unlocks hand-dialed cold calls for 31 days |
 | `0048_rental_feed.sql` | Rentals (address parts, lease, pets, itemized fees) and the Zillow Rental Network feed at `/feeds/zillow/<token>` (token hashed; keyed RPCs; photos served only while in the feed) |
+| `0049_showing_booking.sql`, `0050_booking_public_name.sql` | Public showing booking at `/f/<form>/book`: open half hours per listing, no double-booking, creates the lead and a requested showing |
 
 After `0010`, store the hash of your form key (per environment):
 

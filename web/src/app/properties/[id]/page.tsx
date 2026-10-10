@@ -14,7 +14,7 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getFarmData, getMe, getShowings, type OpenHouse } from "@/lib/db";
+import { dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getFarmData, getMe, getLeadForm, getShowings, type OpenHouse } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { SellerUpdateCard } from "@/components/seller-update-card";
 import { ListingPromo } from "@/components/listing-promo";
@@ -348,7 +348,7 @@ const INTEREST_WORD = { not_interested: "Not for them", maybe: "Maybe", interest
 
 /** Showings on this listing: what's booked, and what buyers thought (part of the seller report). */
 async function Showings({ p }: { p: Property }) {
-  const [list, buyers] = await Promise.all([getShowings({ propertyId: p.id }), getLeadOptions()]);
+  const [list, buyers, form] = await Promise.all([getShowings({ propertyId: p.id }), getLeadOptions(), getLeadForm()]);
   const now = new Date().getTime();
   const upcoming = list.filter((s) => Date.parse(s.endsAt) >= now && (s.status === "requested" || s.status === "confirmed"));
   const heard = list.filter((s) => s.interest).reverse();
@@ -357,6 +357,12 @@ async function Showings({ p }: { p: Property }) {
     <section aria-labelledby="showings" className="flex max-w-2xl flex-col gap-3">
       <h2 id="showings" className="text-xl">Showings {list.length > 0 && <span className="text-muted">({list.filter((s) => s.status !== "cancelled").length})</span>}</h2>
       {p.showingNotes && <p className="text-sm text-ink/80">Instructions: {p.showingNotes}</p>}
+      {form && p.approved && p.status !== "Under contract" && p.status !== "Sold" && (
+        <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
+          <CopyLink url={`${process.env.SITE_URL ?? ""}/f/${form.id}/book?listing=${p.id}`} label="Copy booking link" />
+          Buyers pick a time online; it lands here as a request.
+        </div>
+      )}
       {upcoming.length > 0 && (
         <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
           {upcoming.map((s) => <ShowingItem key={s.id} s={s} />)}

@@ -40,13 +40,13 @@ function plusHours(local: string, h: number) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function CopyLink({ url }: { url: string }) {
+export function CopyLink({ url, label = "Copy sign-in link" }: { url: string; label?: string }) {
   const [done, setDone] = useState(false);
   return (
     <button type="button" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:bg-surface-1"
       onClick={() => navigator.clipboard.writeText(url).then(() => { setDone(true); setTimeout(() => setDone(false), 2000); })}>
       {done ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}
-      {done ? "Copied" : "Copy sign-in link"}
+      {done ? "Copied" : label}
     </button>
   );
 }

@@ -11,7 +11,7 @@ Last updated: 2026-10-09.
 | 1 | AI Command Center | | 2, 5, 8, 10 | 9 (speech) | 1, 3, 4, 6, 7, 11, 12 |
 | 2 | Lead Generation | 17, 20, 24, 25, 26 (Farming page: area market numbers, due-for-a-touch, market note), 28 (cold calls gated on a recorded Do Not Call Registry check, 31-day scrub window; texts stay consent-only), 30 | 18, 19, 21 | 13, 14, 15, 16, 22, 23, 27, 29 | |
 | 3 | Lead Management | 31, 32, 35, 37, 39, 40, 41, 42, 43, 45, 46, 48 | 33, 34, 36, 38, 44 (territory then round-robin; performance-based not yet), 47 | | |
-| 4 | Communication Hub | 67 | 59, 63 | 49, 50, 51, 53, 54, 55, 56, 57, 58, 60, 61, 64, 66 | 52, 62, 65 |
+| 4 | Communication Hub | 52 (online showing booking per listing), 67 | 59, 63 | 49, 50, 51, 53, 54, 55, 56, 57, 58, 60, 61, 64, 66 | 62, 65 |
 | 5 | Listings | 69, 70, 72, 73 (links), 74, 75, 76, 77, 78, 79, 80, 81, 82, 83 | | 68, 71 | |
 | 6 | Matchmaking | 84, 85, 86, 91 (as tasks) | 90 (lead criteria act as the saved search) | 88 (maps) | 87, 89, 92–94 |
 | 7 | Marketing Studio | 96, 99 (1080px social post per listing: just listed, open house, price improved, under contract, just sold), 105 + 106 (just listed / open house / just sold note per listing, sent to fitting buyers or area leads, logged per lead), 107, 108 (Farming market note) , 110 (Analytics: notes sent and reply rate per campaign) | 95, 97, 98, 103, 104 | 100, 101, 102 | 109 |

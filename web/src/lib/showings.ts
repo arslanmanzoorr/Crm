@@ -64,3 +64,21 @@ export function planTour(startIso: string, count: number, minutes: number, trave
     return { startsAt: new Date(s).toISOString(), endsAt: new Date(s + minutes * 60_000).toISOString() };
   });
 }
+
+/**
+ * Open half-hour showing slots for the next `days` days, between `fromHour` and `toHour` local time (the visitor's
+ * browser clock), at least an hour out, minus anything overlapping a taken showing.
+ * ponytail: uses the visitor's time zone, fine for local buyers; add a team time zone setting if teams sell out of state.
+ */
+export function openSlots(now: Date, busy: [string, string][], days = 7, fromHour = 9, toHour = 18): Date[] {
+  const taken = busy.map(([s, e]) => [Date.parse(s), Date.parse(e)] as const);
+  const earliest = now.getTime() + 3600_000, out: Date[] = [];
+  for (let d = 0; d < days; d++) {
+    for (let m = fromHour * 60; m < toHour * 60; m += 30) {
+      const t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, 0, m);
+      const s = t.getTime(), e = s + 30 * 60_000;
+      if (s >= earliest && !taken.some(([bs, be]) => s < be && bs < e)) out.push(t);
+    }
+  }
+  return out;
+}

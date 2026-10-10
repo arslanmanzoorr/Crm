@@ -1488,6 +1488,32 @@ export async function submitPrivacyRequest(formId: string, _: FormState, f: Form
   } as Record<string, FormState>)[data as string] ?? { error: "Something went wrong. Please try again." };
 }
 
+/** Public showing booking: same spam checks and lead pipeline as the contact form, plus a requested showing. */
+export async function bookShowing(formId: string, _: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(formId)) return { error: "This page is no longer available." };
+  const started = Number(str(f, "t"));
+  if (str(f, "website") || !started || Date.now() - started < FORM_MIN_MS) return { ok: "Requested." };
+  const property = str(f, "property"), starts = str(f, "starts_at");
+  if (!UUID.test(property) || Number.isNaN(Date.parse(starts))) return { error: "Pick a home and a time." };
+  const v = await visitor();
+  if (!v) return { error: "This page isn't configured yet." };
+  const { data, error } = await (await supabase()).rpc("book_showing", {
+    p_key: v.key, p_form: formId, p_ip_hash: v.ipHash, p_name: str(f, "name"), p_email: str(f, "email"), p_phone: str(f, "phone"),
+    p_property: property, p_starts: new Date(starts).toISOString(),
+    p_consent_call_sms: f.get("consent_call_sms") === "on", p_consent_email: f.get("consent_email") === "on",
+  });
+  if (error) return { error: "Something went wrong on our side. Please try again." };
+  return ({
+    ok: { ok: "Requested." },
+    taken: { error: "Someone just took that time. Please pick another." },
+    invalid: { error: "Please add your name and an email or phone, and pick a time at least an hour from now." },
+    limited: { error: "Too many requests from this connection. Please try again later." },
+    closed: { error: "This page is no longer available." },
+    forbidden: { error: "This page isn't configured yet." },
+  } as Record<string, FormState>)[data as string] ?? { error: "Something went wrong. Please try again." };
+}
+
 export async function updatePrivacyRequest(id: string, status: "open" | "verifying" | "done" | "denied", resolution: string): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   if (!UUID.test(id) || !["open", "verifying", "done", "denied"].includes(status)) return { error: "Unknown request." };
