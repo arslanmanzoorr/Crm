@@ -4,7 +4,7 @@ import { FarmNote } from "@/components/farm-note";
 import { input, primaryBtn } from "@/components/forms";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
-import { dbEnabled, getFarmData, getMe } from "@/lib/db";
+import { dbEnabled, getFarmData, getMe, teamToday } from "@/lib/db";
 import { areaKey, farmNote, farmReport } from "@/lib/farm";
 
 export const metadata: Metadata = { title: "Farming" };
@@ -32,7 +32,7 @@ async function Farm({ searchParams }: { searchParams: PageProps<"/farm">["search
     return <p className="rounded-card bg-surface-2 p-8 text-center text-muted">No neighborhoods yet. Add an area to a listing or a lead, or set up territories on the Team page.</p>;
   const area = areas.find((a) => areaKey(a) === areaKey(typeof raw === "string" ? raw : "")) ?? areas[0];
   const here = people.filter((p) => p.areas.some((a) => areaKey(a) === areaKey(area)));
-  const r = farmReport(area, listings, here, new Date().toISOString().slice(0, 10)); // ponytail: UTC day, as on /deals
+  const r = farmReport(area, listings, here, await teamToday());
   const stats: [string, number, number | null][] = [
     ["For sale", r.active, r.medianActive], ["Under contract", r.pending, null],
     ["Sold, last 90 days", r.sold90, r.medianSold], ["Leads here", here.length, null],

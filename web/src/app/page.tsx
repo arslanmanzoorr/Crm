@@ -6,7 +6,7 @@ import { CircleAlert, Flame } from "lucide-react";
 import Link from "next/link";
 import { daysBetween } from "@/lib/deals";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getBuyingSignals, getLeadOptions, getProperties, getMe, getPastClients, getShowings, getTasks, getTopLeads, listDeals } from "@/lib/db";
+import { dbEnabled, getBuyingSignals, getLeadOptions, getProperties, getMe, getPastClients, getShowings, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
 import { ShowingItem } from "@/components/showing-controls";
 import { agenda } from "@/lib/retention";
 
@@ -41,7 +41,7 @@ async function Home_() {
 /** Active deals with something overdue or about to slip, most urgent first. Quiet when everything is on track. */
 async function DealsAtRisk() {
   const deals = await listDeals();
-  const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day, as on /deals
+  const today = await teamToday();
   const atRisk = deals
     .filter((d) => d.status === "active")
     .map((d) => ({ d, flags: riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today) }))
@@ -74,7 +74,7 @@ async function DealsAtRisk() {
 /** Past clients due a touch today (anniversaries, check-ins, review asks). Quiet when nothing is due. */
 async function KeepInTouch() {
   const { clients } = await getPastClients();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await teamToday();
   const due = agenda(clients, today, 0);
   if (due.length === 0) return null;
   return (

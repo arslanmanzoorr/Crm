@@ -2,6 +2,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
+import { cache } from "react";
 import * as mock from "./data";
 import { likeSafe } from "./search";
 import type { Side } from "./deals";
@@ -347,6 +348,19 @@ export async function getTeam(): Promise<Team | null> {
     invites: (invites.data ?? []).map((i) => ({ id: i.id, email: i.email, role: i.role as Role, expires: i.expires_at })),
   };
 }
+
+/**
+ * Today's date (YYYY-MM-DD) in the team's time zone, once per request. Deadlines, expiries and "due today" use it.
+ * Falls back to UTC until the team sets a time zone on the Team page.
+ */
+export const teamToday = cache(async (): Promise<string> => {
+  const utc = () => new Date().toISOString().slice(0, 10);
+  if (!dbEnabled) return utc();
+  const db = await supabase();
+  const { data: org } = await db.rpc("active_org");
+  const { data } = await db.from("organizations").select("time_zone").eq("id", org).maybeSingle();
+  return data?.time_zone ? new Date().toLocaleDateString("en-CA", { timeZone: data.time_zone }) : utc();
+});
 
 export type Office = { id: string; name: string };
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CheckinButton, ReviewRequest, ReviewUrlForm, TestimonialForm } from "@/components/client-actions";
 import { Chip, Skeleton } from "@/components/ui";
-import { dbEnabled, getPastClients } from "@/lib/db";
+import { dbEnabled, getPastClients, teamToday } from "@/lib/db";
 import { agenda, health, type Reminder } from "@/lib/retention";
 
 export const metadata: Metadata = { title: "Past clients" };
@@ -31,7 +31,7 @@ const fmt = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US"
 
 async function Clients() {
   const { clients, referrals, testimonials, reviewUrl, isAdmin } = await getPastClients();
-  const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day, as on /deals
+  const today = await teamToday();
   const todo = agenda(clients, today);
   const byId = new Map(clients.map((c) => [c.contactId, c]));
 

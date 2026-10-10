@@ -8,7 +8,7 @@ import { DealForm } from "@/components/deal-form";
 import { Chip, Skeleton } from "@/components/ui";
 import { cash, money } from "@/lib/data";
 import { commission, daysBetween, riskFlags } from "@/lib/deals";
-import { EXPENSE_CATEGORIES, getDeal, getDocuments, getExpenses, getFinancing, getMembers } from "@/lib/db";
+import { EXPENSE_CATEGORIES, getDeal, getDocuments, getExpenses, getFinancing, getMembers, teamToday } from "@/lib/db";
 import { Documents } from "@/components/documents";
 import { DeleteExpense, ExpenseForm, PayoutControls } from "@/components/money-controls";
 import { ReadinessList } from "@/components/readiness-card";
@@ -29,7 +29,7 @@ const STATUS = { active: "Under contract", closed: "Closed", fell_through: "Fell
 async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"] }) {
   const d = await getDeal((await params).id);
   if (!d) notFound();
-  const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day, as on /deals
+  const today = await teamToday();
   const flags = riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
   const c = commission(d.price, d.commissionPct, d.agentSplitPct, d.referralPct);
   const [costs, me, docs] = await Promise.all([getExpenses({ dealId: d.id }), getMembers(), getDocuments({ dealId: d.id })]);

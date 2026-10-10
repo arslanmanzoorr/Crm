@@ -63,7 +63,7 @@ export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: {
           {(p) => (
             <>
               <div className="min-w-56 flex-1"><Field label="Team name" name="name" defaultValue={team.org.name} maxLength={200} required /></div>
-              <label className="flex min-w-48 flex-col gap-1.5 text-sm"><span className="text-muted">Time zone <span className="text-xs">· online booking hours</span></span>
+              <label className="flex min-w-48 flex-col gap-1.5 text-sm"><span className="text-muted">Time zone <span className="text-xs">· deadlines and booking hours</span></span>
                 <select name="time_zone" defaultValue={team.org.timeZone ?? ""} className={input}>
                   <option value="">Visitor&apos;s own clock</option>
                   {Object.entries(US_TIME_ZONES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}

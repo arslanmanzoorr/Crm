@@ -7,7 +7,7 @@ import { LocalTime } from "@/components/local-time";
 import { OfferMoves, OfferNote } from "@/components/offer-moves";
 import { Chip, Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
-import { getFinancing, getOffer } from "@/lib/db";
+import { getFinancing, getOffer, teamToday } from "@/lib/db";
 import { ReadinessList } from "@/components/readiness-card";
 import { EMPTY_FINANCING, readiness } from "@/lib/readiness";
 import { CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
@@ -37,7 +37,7 @@ const EVENT: Record<string, (side: string) => string> = {
 async function OfferView({ params }: { params: PageProps<"/offers/[id]">["params"] }) {
   const o = await getOffer((await params).id);
   if (!o) notFound();
-  const fin = o.side === "buyer" && o.contact ? readiness((await getFinancing(o.contact.id)) ?? EMPTY_FINANCING, { offerAmount: o.amount, closeOn: o.closeOn, today: new Date().toISOString().slice(0, 10) }) : null;
+  const fin = o.side === "buyer" && o.contact ? readiness((await getFinancing(o.contact.id)) ?? EMPTY_FINANCING, { offerAmount: o.amount, closeOn: o.closeOn, today: await teamToday() }) : null;
   const live = !["accepted", "rejected", "withdrawn"].includes(o.status);
   const back = o.side === "seller" && o.property ? { href: `/properties/${o.property.id}`, label: "← Listing" } : o.contact ? { href: `/leads/${o.contact.id}`, label: `← ${o.contact.name}` } : { href: "/deals", label: "← Deals" };
   const dealHref = `/deals/new?offer=${o.id}${o.contact ? `&contact=${o.contact.id}` : ""}`;

@@ -6,7 +6,7 @@ import { LocalTime } from "@/components/local-time";
 import { Skeleton } from "@/components/ui";
 import { opinion } from "@/lib/cma";
 import { money } from "@/lib/data";
-import { dbEnabled, getProperties, listCmas } from "@/lib/db";
+import { dbEnabled, getProperties, listCmas, teamToday } from "@/lib/db";
 
 export const metadata: Metadata = { title: "CMAs" };
 
@@ -24,7 +24,7 @@ export default function CmaListPage() {
 
 async function List() {
   const [cmas, listings] = await Promise.all([listCmas(), getProperties()]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await teamToday();
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_24rem]">
       <section aria-labelledby="saved" className="flex flex-col gap-3">

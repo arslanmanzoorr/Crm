@@ -13,7 +13,7 @@ import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/com
 import { blockers, scrubbed } from "@/lib/consent";
 import { farmReport, homeUpdate } from "@/lib/farm";
 import { DncCheck } from "@/components/dnc-check";
-import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks } from "@/lib/db";
+import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks, teamToday } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { TourPlanner } from "@/components/tour-planner";
 import { FinancingForm } from "@/components/financing-controls";
@@ -56,7 +56,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
     .filter((x): x is { p: (typeof properties)[number]; m: Match } => x.m !== null)
     .sort((a, b) => b.m.score - a.m.score)
     .slice(0, 3);
-  const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day, as on /deals
+  const today = await teamToday();
   const c = lead.consent ?? { sms: true, call: true, email: true, dnc: false };
   const b = blockers(c, lead.phone, lead.email, today);
   const blockedReasons = [...new Set([b.call, b.sms, b.email].filter(Boolean))];
@@ -127,7 +127,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               const liveOffer = offers.find((o) => ["draft", "submitted", "countered"].includes(o.status));
               const activeDeal = deals.find((d) => d.status === "active" && d.side === "buyer");
               const r = readiness(financing ?? EMPTY_FINANCING,
-                { offerAmount: liveOffer?.amount ?? null, closeOn: activeDeal?.closeOn ?? null, today: new Date().toISOString().slice(0, 10) });
+                { offerAmount: liveOffer?.amount ?? null, closeOn: activeDeal?.closeOn ?? null, today });
               return (
                 <section aria-labelledby="financing" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 sm:p-6">
                   <h2 id="financing" className="text-xl">Financing</h2>
@@ -283,6 +283,6 @@ function ResponseTime({ createdAt, firstResponseAt }: { createdAt?: string; firs
 /** Draft home updates for a past client's homes: value change plus their area's numbers (if they named one). */
 async function homeUpdates(homes: Holding[], area: string | null) {
   const [{ listings }, me] = await Promise.all([getFarmData(), getMe()]);
-  const r = area ? farmReport(area, listings, [], new Date().toISOString().slice(0, 10)) : null;
+  const r = area ? farmReport(area, listings, [], await teamToday()) : null;
   return Object.fromEntries(homes.map((h) => [h.id, homeUpdate(h, area, r, me.name)]));
 }

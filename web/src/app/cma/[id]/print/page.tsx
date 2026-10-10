@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PrintButton } from "@/components/print-button";
 import { adjust, opinion, sellerNet } from "@/lib/cma";
-import { getCma, getMe } from "@/lib/db";
+import { getCma, getMe, teamToday } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Pricing presentation", robots: { index: false } };
 
@@ -19,7 +19,7 @@ export default function CmaPrint({ params }: PageProps<"/cma/[id]/print">) {
 async function Sheet({ params }: { params: PageProps<"/cma/[id]/print">["params"] }) {
   const [cma, me] = await Promise.all([params.then(({ id }) => getCma(id)), getMe()]);
   if (!cma) notFound();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await teamToday();
   const o = opinion(cma.subject, cma.comps, cma.rates, today);
   const rows = cma.comps.filter((c) => c.price > 0).map((c) => adjust(cma.subject, c, cma.rates, today));
   const prices = [...new Set([...(o ? [o.low, o.mid, o.high] : []), ...(cma.listPrice ? [cma.listPrice] : [])])].sort((a, b) => a - b);

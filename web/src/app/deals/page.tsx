@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { commission, daysBetween, pipelineByAgent, riskFlags } from "@/lib/deals";
-import { dbEnabled, getMembers, getOffices, listDeals, type Deal } from "@/lib/db";
+import { dbEnabled, getMembers, getOffices, listDeals, type Deal, teamToday } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Deals" };
 
@@ -38,7 +38,7 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
   const officeId = who === "team" && offices.some((o) => o.id === office) ? (office as string) : null;
   const inOffice = new Set(team.members.filter((m) => m.officeId === officeId).map((m) => m.userId));
   const all = officeId ? everything.filter((d) => d.ownerId && inOffice.has(d.ownerId)) : everything;
-  const today = new Date().toISOString().slice(0, 10); // ponytail: UTC day; per-agent timezone if flags look a day off
+  const today = await teamToday();
   const others = everything.some((d) => d.ownerId !== team.me);
   const isTeam = who === "team" && others;
   const deals = isTeam || !others ? all : everything.filter((d) => d.ownerId === team.me);
