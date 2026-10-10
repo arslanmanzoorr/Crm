@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { farmNote, farmReport, listingNote } from "./farm.ts";
+import { campaignResults, farmNote, farmReport, listingNote } from "./farm.ts";
 
 const L = (area: string, status: string, price: number, soldOn: string | null = null) => ({ area, status, price, soldOn });
 const P = (id: string, lastTouch: string | null, dnc = false) => ({ id, name: id, lastTouch, dnc, email: true });
@@ -28,4 +28,18 @@ test("listingNote: each kind says what it is, open house carries the time", () =
   assert.match(listingNote("just_listed", p, "Sam"), /^Hi \{first_name\}, Sam here\. Just listed: 14 Oak Ave in Hyde Park\. 3 bed, 2 bath, \$525,000\./);
   assert.match(listingNote("open_house", p, "Sam", "Sat, Oct 12, 1:00 PM"), /Open house at 14 Oak Ave in Hyde Park on Sat, Oct 12, 1:00 PM\./);
   assert.match(listingNote("just_sold", { ...p, area: "" }, "Sam"), /Just sold: 14 Oak Ave \(listed at \$525,000\)\./);
+});
+
+test("campaignResults: replies count only after the send and within the window", () => {
+  const r = campaignResults([
+    { contactId: "a", content: "Just listed sent:\nHi Ann", ts: "2026-10-01T10:00:00Z" },
+    { contactId: "b", content: "Just listed sent:\nHi Bo", ts: "2026-10-01T10:00:00Z" },
+    { contactId: "c", content: "Market note sent:\nHi Cy", ts: "2026-10-01T10:00:00Z" },
+    { contactId: "c", content: "Called, left voicemail", ts: "2026-10-01T10:00:00Z" },
+  ], [
+    { contactId: "a", ts: "2026-10-02T09:00:00Z" },  // replied next day
+    { contactId: "b", ts: "2026-09-30T09:00:00Z" },  // before the send: not a reply
+    { contactId: "c", ts: "2026-10-20T09:00:00Z" },  // 19 days later: outside the window
+  ]);
+  assert.deepEqual(r, [{ campaign: "Just listed", sent: 2, replied: 1 }, { campaign: "Market note", sent: 1, replied: 0 }]);
 });

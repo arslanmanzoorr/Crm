@@ -11,7 +11,7 @@ import type { PastClient } from "./retention";
 import type { Step, Trigger } from "./playbooks";
 import type { Comp, Home, NetInputs, Rates } from "./cma";
 import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
-import { areaKey, type FarmListing, type FarmPerson } from "./farm";
+import { areaKey, campaignResults, type FarmListing, type FarmPerson } from "./farm";
 import { scrubbed } from "./consent";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
@@ -653,6 +653,20 @@ export async function getFarmData() {
   for (const a of [...listings.map((l) => l.area), ...people.flatMap((p) => p.areas), ...(terr.data ?? []).map((t) => t.area as string)])
     if (a?.trim() && !seen.has(areaKey(a))) seen.set(areaKey(a), a.trim());
   return { areas: [...seen.values()].sort((a, b) => a.localeCompare(b)), listings, people };
+}
+
+/** Notes logged as sent in the last `days`, and how many leads wrote back within 14 days (see campaignResults). */
+export async function getCampaigns(days: number) {
+  if (!dbEnabled) return [];
+  const db = await supabase();
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  // ponytail: up to 5,000 sends per period; aggregate in SQL past that
+  const sends = must(await db.from("activities").select("contact_id,content,ts").eq("direction", "out").like("content", "% sent:%")
+    .gte("ts", since).limit(5000)) as { contact_id: string; content: string; ts: string }[];
+  const ids = [...new Set(sends.map((s) => s.contact_id))];
+  const inbound = ids.length ? must(await db.from("activities").select("contact_id,ts").eq("direction", "in").in("contact_id", ids.slice(0, 1000))
+    .gte("ts", since).limit(10000)) as { contact_id: string; ts: string }[] : [];
+  return campaignResults(sends.map((s) => ({ contactId: s.contact_id, content: s.content, ts: s.ts })), inbound.map((r) => ({ contactId: r.contact_id, ts: r.ts })));
 }
 
 export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;

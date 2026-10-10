@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { CsvDownload } from "@/components/csv-download";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
-import { dbEnabled, getAnalytics, type Analytics } from "@/lib/db";
+import { dbEnabled, getAnalytics, getCampaigns, type Analytics } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Analytics" };
 
@@ -51,7 +51,8 @@ const monthName = (ym: string) => (ym === "no date" ? "No date" : new Date(`${ym
 
 async function Report({ searchParams }: { searchParams: PageProps<"/analytics">["searchParams"] }) {
   const days = await daysOf(searchParams);
-  const a = (await getAnalytics(days))!;
+  const [a0, campaigns] = await Promise.all([getAnalytics(days), getCampaigns(days)]);
+  const a = a0!;
   const earned = a.agents.reduce((n, x) => n + Number(x.closed_agent), 0);
   const pipeline = a.forecast.reduce((n, f) => n + Number(f.agent), 0);
   const label = days === 365 ? "12 months" : `${days} days`;
@@ -132,6 +133,19 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
                 <th scope="row" className="py-2.5 pr-4 text-left font-normal">{monthName(k.month)}</th>
                 <Td>{k.leads}</Td><Td>{k.reached} <Dim>{pct(k.reached, k.leads)}</Dim></Td><Td>{k.qualified} <Dim>{pct(k.qualified, k.leads)}</Dim></Td>
                 <Td>{k.contracted} <Dim>{pct(k.contracted, k.leads)}</Dim></Td><Td><span className={k.closed ? "text-accent" : ""}>{k.closed} <Dim>{pct(k.closed, k.leads)}</Dim></span></Td>
+              </tr>
+            ))}
+          </Table>
+        )}
+      </Section>
+
+      <Section id="campaigns" title="Campaigns" note="Market and listing notes logged as sent, and how many of those leads wrote back within 14 days.">
+        {campaigns.length === 0 ? <Empty>No notes logged as sent in this period. Send one from Farming or a listing page.</Empty> : (
+          <Table head={["Note", "Sent", "Replied", "Reply rate"]}>
+            {campaigns.map((c) => (
+              <tr key={c.campaign}>
+                <th scope="row" className="py-2.5 pr-4 text-left font-normal">{c.campaign}</th>
+                <Td>{c.sent}</Td><Td>{c.replied}</Td><Td>{pct(c.replied, c.sent)}</Td>
               </tr>
             ))}
           </Table>

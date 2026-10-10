@@ -53,3 +53,22 @@ export function listingNote(kind: Promo, p: { address: string; price: number; be
   }[kind];
   return `Hi {first_name}, ${agent} here. ${body}`;
 }
+
+const CAMPAIGN = /^(Market note|Just listed|Open house|Just sold) sent:/;
+export const campaignOf = (content: string) => CAMPAIGN.exec(content)?.[1] ?? null;
+
+/** Per note type: how many were logged as sent, and how many of those leads wrote back within `days`. */
+export function campaignResults(sends: { contactId: string; content: string; ts: string }[], inbound: { contactId: string; ts: string }[], days = 14) {
+  const byLead = new Map<string, number[]>();
+  for (const r of inbound) byLead.set(r.contactId, [...(byLead.get(r.contactId) ?? []), Date.parse(r.ts)]);
+  const out = new Map<string, { sent: number; replied: number }>();
+  for (const s of sends) {
+    const c = campaignOf(s.content);
+    if (!c) continue;
+    const t = Date.parse(s.ts), row = out.get(c) ?? { sent: 0, replied: 0 };
+    row.sent++;
+    if ((byLead.get(s.contactId) ?? []).some((x) => x > t && x - t <= days * 86_400_000)) row.replied++;
+    out.set(c, row);
+  }
+  return [...out].map(([campaign, r]) => ({ campaign, ...r })).sort((a, b) => b.sent - a.sent);
+}
