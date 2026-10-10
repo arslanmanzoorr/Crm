@@ -90,3 +90,23 @@ export function matchListing(b: Buyer, p: Listing): Match | null {
 
   return score > 0 ? { score, fits, gaps } : null;
 }
+
+type Comparable = { price: number; beds: number; baths: number; sqft: number; est_rent?: number | null };
+
+/** Side-by-side rows for saved homes, with the best value in each row flagged (lowest price, most space). */
+export function compareHomes(homes: Comparable[]) {
+  const row = (label: string, vals: (number | null)[], best: "min" | "max", fmt: (n: number) => string) => {
+    const real = vals.filter((v): v is number => v !== null && v > 0);
+    const target = real.length > 1 ? (best === "min" ? Math.min(...real) : Math.max(...real)) : null;
+    return { label, cells: vals.map((v) => ({ text: v && v > 0 ? fmt(v) : "–", best: target !== null && v === target })) };
+  };
+  const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+  return [
+    row("Price", homes.map((h) => h.price), "min", usd),
+    row("Price per sqft", homes.map((h) => (h.sqft ? h.price / h.sqft : null)), "min", usd),
+    row("Bedrooms", homes.map((h) => h.beds), "max", String),
+    row("Bathrooms", homes.map((h) => h.baths), "max", String),
+    row("Square feet", homes.map((h) => h.sqft), "max", (n) => n.toLocaleString("en-US")),
+    ...(homes.some((h) => h.est_rent) ? [row("Estimated rent", homes.map((h) => h.est_rent ?? null), "max", (n) => `${usd(n)}/mo`)] : []),
+  ];
+}

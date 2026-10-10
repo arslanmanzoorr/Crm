@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { supabase } from "@/lib/db";
 import { daysBetween } from "@/lib/deals";
-import { matchListing } from "@/lib/match";
+import { compareHomes, matchListing } from "@/lib/match";
 import { FINANCING, type Financing as Fin } from "@/lib/offers";
 import { DOC_SHORT, DOCS, LOAN_STAGES, type Doc, type LoanStage } from "@/lib/readiness";
 
@@ -70,6 +70,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
   const ranked = p.listings
     .map((l) => ({ l, m: matchListing({ type: p.type, ...p.criteria }, { ...l, price: Number(l.price), estRent: l.est_rent == null ? null : Number(l.est_rent) }), saved: p.favorites.includes(l.id) }))
     .sort((a, b) => Number(b.saved) - Number(a.saved) || (b.m?.score ?? -1) - (a.m?.score ?? -1));
+  const saved = p.listings.filter((l) => p.favorites.includes(l.id)).slice(0, 4);
   const fitting = ranked.filter((h) => h.saved || h.m);
   const homes = (fitting.length ? fitting : ranked).slice(0, 12);
 
@@ -164,6 +165,35 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
           )}
         </section>
       ))}
+
+      {saved.length >= 2 && (
+        <section aria-labelledby="compare" className="flex flex-col gap-3">
+          <h2 id="compare" className="text-xl">Compare your saved homes</h2>
+          <div className="overflow-x-auto rounded-card bg-surface-2 px-5" tabIndex={0} role="region" aria-label="Saved homes side by side">
+            <table className="w-full text-sm" style={{ minWidth: `${8 + saved.length * 9}rem` }}>
+              <thead>
+                <tr className="border-b border-white/5 text-left align-bottom">
+                  <td className="py-3 pr-4" />
+                  {saved.map((l) => <th key={l.id} scope="col" className="px-3 py-3 font-medium">{l.address}{l.area && <span className="block text-xs font-normal text-muted">{l.area}</span>}</th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {compareHomes(saved.map((l) => ({ price: Number(l.price), beds: l.beds, baths: Number(l.baths), sqft: l.sqft, est_rent: l.est_rent }))).map((r) => (
+                  <tr key={r.label}>
+                    <th scope="row" className="py-2.5 pr-4 text-left font-normal text-muted">{r.label}</th>
+                    {r.cells.map((c, i) => <td key={i} className={`relative px-3 py-2.5 tabular-nums ${c.best ? "font-medium text-accent" : ""}`}>{c.text}{c.best && <span className="sr-only"> (best)</span>}</td>)}
+                  </tr>
+                ))}
+                <tr>
+                  <th scope="row" className="py-2.5 pr-4 text-left align-top font-normal text-muted">Features</th>
+                  {saved.map((l) => <td key={l.id} className="px-3 py-2.5 align-top">{l.features.length ? l.features.join(", ") : "–"}</td>)}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="-mt-1 text-xs text-muted">Highlighted: the best value in each row. Ask your agent about anything the numbers don&apos;t show.</p>
+        </section>
+      )}
 
       {homes.length > 0 && (
         <section aria-labelledby="homes" className="flex flex-col gap-3">

@@ -19,7 +19,7 @@ Last updated: 2026-10-09.
 | 9 | Deals & Transactions | 136 (team-private document room), 123, 124, 125, 128, 129, 130, 131, 132, 133, 134, 135 (in-app flags), 138, 139, 140 (handoff task + home added on close) | | 126 | 127, 137 |
 | 10 | Seller Intelligence & CMA | 141, 142, 145, 146, 150, 151 | 152 (drafted on the listing page; agent sends) | 144, 149 (valuation and public-records feeds) | 143, 147, 148 (need market data) |
 | 11 | Mortgage & Financing | 153, 154, 155, 156, 157, 158, 159, 161 | 162 (in-app warnings) | 160 | |
-| 12 | Client Portal | 163, 164, 166, 167, 168, 170, 171, 172, 173, 174, 176 | 175 (agent sees portal activity; no client notifications yet) | 175 (email/SMS) | 165, 169 |
+| 12 | Client Portal | 163, 164, 165 (compare saved homes side by side), 166, 167, 168, 170, 171, 172, 173, 174, 176 | 175 (agent sees portal activity; no client notifications yet) | 175 (email/SMS) | 169 |
 | 13 | Referral & Retention | 177, 178, 179, 180, 181, 182, 183, 184 (home update per owned home: value change + their area), 185, 186 | | | |
 | 14 | Brokerage & Team Ops | 188, 189, 190, 191 (conversion by agent), 192 (Deals: whole-team view, pipeline by agent), 193, 195 | 187, 194, 196 (offices + territories; analytics and team pipeline per office) | | |
 | 15 | Commissions & Finance | 198, 199, 201, 202, 203, 204, 206 | 197 (default split per agent; no caps or tiers), 200 (pending and 30-day view) | 205 | |

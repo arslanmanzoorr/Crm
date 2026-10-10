@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { matchListing, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
+import { compareHomes, matchListing, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
 
 test("parseBudget reads the ways agents write budgets", () => {
   assert.deepEqual(parseBudget("$600k–$650k"), { min: 600_000, max: 650_000 });
@@ -66,4 +66,13 @@ test("rentals match renters only, on a monthly budget; sales never match renters
   assert.equal(matchListing(renter, { ...rental, price: 600_000, listingKind: "sale" }), null);
   assert.ok(matchListing(renter, { ...rental, price: 2700 })!.gaps.length > 0); // a stretch over the monthly budget is flagged
   assert.equal(matchListing(renter, { ...rental, price: 3500 }), null);        // far over: no match
+});
+
+test("compareHomes flags the best value per row, skips missing numbers and single values", () => {
+  const rows = compareHomes([{ price: 500_000, beds: 3, baths: 2, sqft: 2000 }, { price: 450_000, beds: 3, baths: 2.5, sqft: 0 }]);
+  const by = Object.fromEntries(rows.map((r) => [r.label, r.cells]));
+  assert.deepEqual(by["Price"].map((c) => c.best), [false, true]);
+  assert.deepEqual(by["Price per sqft"].map((c) => [c.text, c.best]), [["$250", false], ["–", false]]); // only one real value: no "best"
+  assert.deepEqual(by["Bedrooms"].map((c) => c.best), [true, true]);                                     // a tie: both flagged
+  assert.equal(rows.some((r) => r.label === "Estimated rent"), false);
 });

@@ -141,3 +141,6 @@ dialog.palette::backdrop {
   body { background: #fff; }
   nav[aria-label="Main"] { display: none !important; }
 }
+
+/* Scroll strips (tables, chip rows) contain their visually hidden labels, so sr-only text can't widen the page. */
+@layer base { .overflow-x-auto { position: relative; } }
