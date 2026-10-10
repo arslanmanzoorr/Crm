@@ -40,7 +40,7 @@ export function farmNote(area: string, r: ReturnType<typeof farmReport>, agent: 
 }
 
 export type Promo = "just_listed" | "open_house" | "just_sold";
-export const PROMO_LABEL: Record<Promo, string> = { just_listed: "Just listed", open_house: "Open house", just_sold: "Just sold" };
+export const PROMO_LABEL = { just_listed: "Just listed", open_house: "Open house", just_sold: "Just sold" } as const satisfies Record<Promo, string>;
 
 /** Just listed / open house / just sold note for one listing. `when` is the open house start, already formatted. */
 export function listingNote(kind: Promo, p: { address: string; price: number; beds: number; baths: number; area: string }, agent: string, when?: string) {

@@ -18,6 +18,7 @@ import { dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPr
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { SellerUpdateCard } from "@/components/seller-update-card";
 import { ListingPromo } from "@/components/listing-promo";
+import { SocialGraphic } from "@/components/social-graphic";
 import { areaKey, PROMO_LABEL, type Promo } from "@/lib/farm";
 import { Documents } from "@/components/documents";
 import { sellerUpdate } from "@/lib/seller-update";
@@ -182,6 +183,8 @@ async function Promote({ p }: { p: Property }) {
       <h2 id="promote" className="text-xl">{PROMO_LABEL[kind]} note</h2>
       <p className="text-sm text-muted">{due.length ? `For ${due.length} ${kind === "just_sold" ? `lead${due.length === 1 ? "" : "s"} in ${p.area}` : due.length === 1 ? "buyer who fits" : "buyers who fit"}. Log it on each one as you send it.` : kind === "just_sold" ? "No leads in this area yet." : "No open buyer fits this listing yet."}</p>
       <ListingPromo kind={kind} p={{ address: p.address, price: p.price, beds: p.beds, baths: p.baths, area: p.area }} agent={me.name} whenIso={next?.startsAt} due={due} />
+      <h3 className="mt-3 text-lg">Social post</h3>
+      <SocialGraphic photo={p.cover} address={p.address} area={p.area} price={p.price} beds={p.beds} baths={p.baths} agent={me.name} initial={PROMO_LABEL[kind]} />
     </section>
   );
 }
