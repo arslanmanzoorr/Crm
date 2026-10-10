@@ -110,3 +110,38 @@ export function compareHomes(homes: Comparable[]) {
     ...(homes.some((h) => h.est_rent) ? [row("Estimated rent", homes.map((h) => h.est_rent ?? null), "max", (n) => `${usd(n)}/mo`)] : []),
   ];
 }
+
+type Rated = { interest: "not_interested" | "maybe" | "interested" | "offer" | null; price: number; beds: number; area: string; features: string[] };
+
+/**
+ * What a buyer's showing reactions say, next to what their search says. Plain observations for the agent to
+ * confirm with the buyer, never applied automatically. Fair Housing: property facts only.
+ */
+export function learnedPreferences(rated: Rated[], budget: string) {
+  const liked = rated.filter((r) => r.interest === "interested" || r.interest === "offer");
+  const passed = rated.filter((r) => r.interest === "not_interested");
+  if (liked.length + passed.length < 2) return null;
+  const notes: string[] = [];
+  const money = (n: number) => (n >= 1e6 ? `$${+(n / 1e6).toFixed(2)}M` : `$${Math.round(n / 1e3)}k`);
+  if (liked.length) {
+    const prices = liked.map((r) => r.price), lo = Math.min(...prices), hi = Math.max(...prices);
+    notes.push(`Liked ${liked.length} ${liked.length === 1 ? "home" : "homes"} at ${lo === hi ? money(lo) : `${money(lo)}–${money(hi)}`}.`);
+    const { max } = parseBudget(budget);
+    if (max && hi > max) notes.push(`That's above their stated budget (${money(max)}). Worth confirming financing.`);
+    const beds = Math.min(...liked.map((r) => r.beds));
+    if (beds > 0 && liked.length >= 2) notes.push(`Every home they liked had ${beds}+ bedrooms.`);
+    const count = (xs: string[]) => [...xs.reduce((m, x) => m.set(x, (m.get(x) ?? 0) + 1), new Map<string, number>())];
+    const areas = count(liked.map((r) => r.area.trim()).filter(Boolean)).filter(([, n]) => n >= 2).map(([a]) => a);
+    if (areas.length) notes.push(`Keeps liking ${areas.join(" and ")}.`);
+    const feats = count(liked.flatMap((r) => r.features.map((f) => f.trim().toLowerCase()))).filter(([, n]) => n >= 2).map(([f]) => f);
+    if (feats.length) notes.push(`Common thread: ${feats.slice(0, 3).join(", ")}.`);
+  }
+  if (passed.length) {
+    const shared = passed.filter((p) => !liked.some((l) => l.area.trim().toLowerCase() === p.area.trim().toLowerCase()));
+    if (passed.length >= 2 && shared.length === passed.length) {
+      const areas = [...new Set(passed.map((p) => p.area.trim()).filter(Boolean))];
+      if (areas.length) notes.push(`Passed on everything in ${areas.join(" and ")}.`);
+    }
+  }
+  return { liked: liked.length, passed: passed.length, notes };
+}

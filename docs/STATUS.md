@@ -13,7 +13,7 @@ Last updated: 2026-10-09.
 | 3 | Lead Management | 31, 32, 35, 37, 39, 40, 41, 42, 43, 45, 46, 48 | 33, 34, 36, 38, 44 (territory then round-robin; performance-based not yet), 47 | | |
 | 4 | Communication Hub | 52 (online showing booking per listing), 67 | 59, 63 | 49, 50, 51, 53, 54, 55, 56, 57, 58, 60, 61, 64, 66 | 62, 65 |
 | 5 | Listings | 69, 70, 72, 73 (links), 74, 75, 76, 77, 78, 79, 80, 81, 82, 83 | | 68, 71 | |
-| 6 | Matchmaking | 84, 85, 86, 91 (as tasks) | 90 (lead criteria act as the saved search) | 88 (maps) | 87, 89, 92–94 |
+| 6 | Matchmaking | 84, 85, 86, 91 (as tasks), 93 (lead page: what their showing feedback says vs their search) | 90 (lead criteria act as the saved search) | 88 (maps) | 87, 89, 92, 94 |
 | 7 | Marketing Studio | 96, 99 (1080px social post per listing: just listed, open house, price improved, under contract, just sold), 105 + 106 (just listed / open house / just sold note per listing, sent to fitting buyers or area leads, logged per lead), 107, 108 (Farming market note) , 110 (Analytics: notes sent and reply rate per campaign) | 95, 97, 98, 103, 104 | 100, 101, 102 | 109 |
 | 8 | Showings & Open Houses | 111, 113, 115, 116, 117, 118, 120, 121, 122 | 112 (.ics files, no two-way sync), 119 (follow-up task, not a draft yet) | 112 (two-way sync), 114 (route optimization needs maps) | |
 | 9 | Deals & Transactions | 136 (team-private document room), 123, 124, 125, 128, 129, 130, 131, 132, 133, 134, 135 (in-app flags), 138, 139, 140 (handoff task + home added on close) | | 126 | 127, 137 |

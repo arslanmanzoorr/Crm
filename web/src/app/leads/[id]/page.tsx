@@ -26,7 +26,7 @@ import { EMPTY_FINANCING, readiness } from "@/lib/readiness";
 import { ReferredBySelect } from "@/components/client-actions";
 import { STATUS_LABEL } from "@/lib/offers";
 import { money } from "@/lib/data";
-import { matchListing, type Match } from "@/lib/match";
+import { learnedPreferences, matchListing, type Match } from "@/lib/match";
 import { fmtDuration } from "@/lib/search";
 import { OwnerSelect } from "@/components/owner-select";
 
@@ -143,6 +143,20 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
             {["buyer", "investor", "renter"].includes(lead.type ?? "") && (
               <section aria-labelledby="showings" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 sm:p-6">
                 <h2 id="showings" className="text-xl">Showings</h2>
+                {(() => {
+                  const byId = new Map(properties.map((p) => [p.id, p]));
+                  const learned = learnedPreferences(showings.filter((s) => s.interest && s.property && byId.has(s.property.id)).map((s) => {
+                    const p = byId.get(s.property!.id)!;
+                    return { interest: s.interest, price: p.price, beds: p.beds, area: p.area, features: p.features };
+                  }), lead.budget);
+                  return learned && learned.notes.length > 0 && (
+                    <div className="flex flex-col gap-1 rounded-2xl bg-surface-3/60 p-4 text-sm">
+                      <p className="font-medium">What their showings say <span className="font-normal text-muted">· {learned.liked} liked, {learned.passed} passed</span></p>
+                      <ul className="flex flex-col gap-0.5">{learned.notes.map((n) => <li key={n}>{n}</li>)}</ul>
+                      <p className="text-xs text-muted">From showing feedback. Confirm with them before changing their search.</p>
+                    </div>
+                  );
+                })()}
                 {showings.length > 0 && (
                   <ul className="-mx-5 flex flex-col divide-y divide-white/5 sm:-mx-6">
                     {showings.map((s) => <ShowingItem key={s.id} s={s} showBuyer={false} />)}

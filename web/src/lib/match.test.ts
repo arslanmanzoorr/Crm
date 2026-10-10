@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { compareHomes, matchListing, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
+import { compareHomes, learnedPreferences, matchListing, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
 
 test("parseBudget reads the ways agents write budgets", () => {
   assert.deepEqual(parseBudget("$600k–$650k"), { min: 600_000, max: 650_000 });
@@ -75,4 +75,17 @@ test("compareHomes flags the best value per row, skips missing numbers and singl
   assert.deepEqual(by["Price per sqft"].map((c) => [c.text, c.best]), [["$250", false], ["–", false]]); // only one real value: no "best"
   assert.deepEqual(by["Bedrooms"].map((c) => c.best), [true, true]);                                     // a tie: both flagged
   assert.equal(rows.some((r) => r.label === "Estimated rent"), false);
+});
+
+test("learnedPreferences: liked range, budget gap, bedrooms, repeated areas and features; quiet with too little feedback", () => {
+  const r = (interest: Parameters<typeof learnedPreferences>[0][number]["interest"], price: number, beds: number, area: string, features: string[] = []) => ({ interest, price, beds, area, features });
+  const out = learnedPreferences([
+    r("interested", 520_000, 3, "Westside", ["Backyard", "Garage"]), r("offer", 560_000, 4, "Westside", ["backyard"]),
+    r("not_interested", 450_000, 2, "Downtown"), r("not_interested", 430_000, 2, "Downtown"), r("maybe", 500_000, 3, "Midtown"),
+  ], "up to $500k")!;
+  assert.deepEqual(out.notes, [
+    "Liked 2 homes at $520k–$560k.", "That's above their stated budget ($500k). Worth confirming financing.",
+    "Every home they liked had 3+ bedrooms.", "Keeps liking Westside.", "Common thread: backyard.", "Passed on everything in Downtown.",
+  ]);
+  assert.equal(learnedPreferences([r("interested", 1, 1, "A"), r("maybe", 1, 1, "A")], ""), null);
 });
