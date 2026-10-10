@@ -87,7 +87,8 @@ Every table has row-level security: a user only ever sees rows of orgs they belo
 NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 SITE_URL=https://app.yourdomain.com          # used for auth email links; never taken from request headers
-ANTHROPIC_API_KEY=sk-ant-...                  # AI features (model claude-opus-5-5)
+OPENROUTER_API_KEY=sk-or-...                  # AI features, via OpenRouter
+OPENROUTER_MODEL=anthropic/claude-opus-5.5    # optional; any OpenRouter model with structured outputs
 AI_DAILY_LIMIT=200                            # AI calls per org per 24h (default 200)
 FORM_IP_SALT=<random 32+ bytes hex>           # salts visitor IP hashes on public lead forms
 FORM_RPC_KEY=<random 32+ bytes hex>           # server-only key for submit_lead (DB stores its SHA-256)

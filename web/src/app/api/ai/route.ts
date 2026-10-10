@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { AI_KEY_MISSING, AiError, chat } from "@/lib/ai-server";
 import { meterAi } from "@/lib/db";
 
 const MAX_BODY = 64_000; // chars; a long thread is ~20k
@@ -27,29 +27,15 @@ export async function POST(req: Request) {
   }
   const task = body.task as keyof typeof tasks;
   if (typeof task !== "string" || !Object.hasOwn(tasks, task)) return Response.json({ error: "Unknown task" }, { status: 400 });
-  if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: "Set ANTHROPIC_API_KEY in web/.env.local to enable AI." }, { status: 503 });
+  if (!process.env.OPENROUTER_API_KEY) return Response.json({ error: AI_KEY_MISSING }, { status: 503 });
   const limited = await meterAi(task);
   if (limited) return Response.json({ error: limited }, { status: 429 });
   const data = body.data;
 
   try {
-    const msg = await new Anthropic().beta.messages.create({
-      model: "claude-opus-5-5",
-      max_tokens: 2000,
-      output_config: { effort: "low" },
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      system: SYSTEM,
-      messages: [{ role: "user", content: tasks[task](JSON.stringify(data)) }],
-    });
-    if (msg.stop_reason === "refusal") return Response.json({ error: "The AI declined this request." }, { status: 422 });
-    const text = msg.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("").trim();
-    return Response.json({ text });
+    return Response.json({ text: await chat({ system: SYSTEM, user: tasks[task](JSON.stringify(data)), maxTokens: 2000 }) });
   } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError || (e instanceof Error && /api.?key|auth/i.test(e.message)))
-      return Response.json({ error: "Set ANTHROPIC_API_KEY in web/.env.local to enable AI." }, { status: 503 });
-    if (e instanceof Anthropic.RateLimitError) return Response.json({ error: "AI is busy, try again in a moment." }, { status: 429 });
-    if (e instanceof Anthropic.APIError) return Response.json({ error: e.message }, { status: 502 });
+    if (e instanceof AiError) return Response.json({ error: e.message }, { status: e.status });
     throw e;
   }
 }

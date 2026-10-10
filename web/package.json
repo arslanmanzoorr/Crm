@@ -10,7 +10,6 @@
     "test": "node --experimental-strip-types --test src/lib/*.test.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.132.1",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.3",
     "lucide-react": "^1.53.0",
