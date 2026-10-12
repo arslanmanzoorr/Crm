@@ -84,6 +84,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0058_score_why.sql` | The AI's one-line reason for a lead's score (explainable scoring) |
 | `0059_close_anon_storage.sql` | Security fix: removes the anon storage read rules from 0048/0055 (they also allowed listing paths across teams); files are served by the server with the service-role key after the token checks |
 | `0060_performance_routing.sql` | Lead routing "by performance": round-robin weighted by each agent's 90-day contact rate (0.5x–1.5x) |
+| `0061_split_tiers.sql` | Team commission tiers (`organizations.split_tiers`): past each year-to-date GCI threshold, new deals suggest a higher split |
 
 After `0010`, store the hash of your form key (per environment):
 

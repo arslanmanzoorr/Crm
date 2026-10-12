@@ -1,8 +1,9 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
-import { addExpense, deleteExpense, setAnnualCap, setPayout, setSplit } from "@/lib/actions";
+import { addExpense, deleteExpense, setAnnualCap, setPayout, setSplit, setSplitTiers } from "@/lib/actions";
+import type { Tier } from "@/lib/deals";
 import { ActionForm, inputAuto, primaryBtn } from "./forms";
 
 const CATEGORIES = { marketing: "Marketing", photography: "Photography", staging: "Staging", signage: "Signage", mls_fees: "MLS and dues", client_gifts: "Client gifts", travel: "Travel", other: "Other" } as const;
@@ -102,5 +103,37 @@ export function CapInput({ userId, value, label }: { userId: string; value: numb
         onChange={(e) => setV(e.target.value)} onBlur={save} onKeyDown={(e) => e.key === "Enter" && save()} className={`${inputAuto} w-28 px-3`} />
       {msg && <span role="alert" className="text-score-1">{msg}</span>}
     </span>
+  );
+}
+
+/** Team commission tiers: past each year-to-date GCI threshold, new deals suggest a higher split. */
+export function TierEditor({ tiers }: { tiers: Tier[] }) {
+  const [rows, setRows] = useState(tiers.map((t) => ({ gci: String(t.gci), split: String(t.split) })));
+  const [msg, setMsg] = useState<{ error?: string; ok?: string } | null>(null);
+  const [pending, start] = useTransition();
+  const set = (i: number, k: "gci" | "split", v: string) => setRows(rows.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+  return (
+    <div className="flex flex-col gap-2 rounded-card bg-surface-2 p-4 text-sm">
+      {rows.length === 0 && <p className="text-muted">No tiers. Every deal starts at the agent&apos;s own split.</p>}
+      {rows.map((r, i) => (
+        <div key={i} className="flex flex-wrap items-center gap-2">
+          <span className="text-muted">After $</span>
+          <input type="number" min={1} step="any" inputMode="numeric" value={r.gci} onChange={(e) => set(i, "gci", e.target.value)} aria-label={`Tier ${i + 1} GCI threshold`} className={`${inputAuto} w-32 px-3`} />
+          <span className="text-muted">GCI this year, split</span>
+          <input type="number" min={0} max={100} step="any" value={r.split} onChange={(e) => set(i, "split", e.target.value)} aria-label={`Tier ${i + 1} split %`} className={`${inputAuto} w-20 px-3`} />
+          <span className="text-muted">%</span>
+          <button type="button" onClick={() => setRows(rows.filter((_, j) => j !== i))} aria-label={`Remove tier ${i + 1}`} className="flex size-10 items-center justify-center rounded-full text-muted hover:bg-surface-3 hover:text-ink"><Trash2 aria-hidden className="size-4" /></button>
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        {rows.length < 5 && (
+          <button type="button" onClick={() => setRows([...rows, { gci: "", split: "" }])} className="flex min-h-10 items-center gap-1.5 rounded-full bg-surface-3 px-3.5 hover:bg-surface-1"><Plus aria-hidden className="size-4" /> Add tier</button>
+        )}
+        <button type="button" disabled={pending} className={primaryBtn}
+          onClick={() => start(async () => setMsg((await setSplitTiers(rows.map((r) => ({ gci: Number(r.gci), split: Number(r.split) })))) ?? null))}>{pending ? "Saving…" : "Save tiers"}</button>
+        {msg?.error && <span role="alert" className="text-score-1">{msg.error}</span>}
+        {msg?.ok && <span role="status" className="text-muted">{msg.ok}</span>}
+      </div>
+    </div>
   );
 }

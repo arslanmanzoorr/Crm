@@ -7,7 +7,7 @@ import { AI_KEY_MISSING, AiError, chat } from "./ai-server";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
 import { dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
-import { defaultMilestones } from "./deals";
+import { cleanTiers, defaultMilestones, type Tier } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
 import { DOCS, LOAN_STAGES } from "./readiness";
 import { cleanSteps, TEMPLATES, TRIGGERS } from "./playbooks";
@@ -698,6 +698,17 @@ export async function setOffice(userId: string, officeId: string | null) {
 }
 
 /** Set or clear an agent's annual cap (owners and admins; the database checks). */
+export async function setSplitTiers(raw: Tier[]): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const tiers = cleanTiers(raw.map((t) => ({ gci: Number(t.gci), split: Number(t.split) })));
+  if ("error" in tiers) return tiers;
+  const db = await authed();
+  const { data } = await db.from("organizations").update({ split_tiers: tiers }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/team");
+  return { ok: "Saved" };
+}
+
 export async function setAnnualCap(userId: string, cap: number | null): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   if (!UUID.test(userId) || (cap !== null && !(cap > 0 && cap < 1e9))) return { error: "Enter a positive amount, or leave it empty for no cap." };

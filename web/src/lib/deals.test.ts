@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addDays, capSplit, closeOutlook, commission, daysBetween, defaultMilestones, pipelineByAgent, riskFlags } from "./deals.ts";
+import { addDays, capSplit, cleanTiers, closeOutlook, commission, daysBetween, defaultMilestones, pipelineByAgent, riskFlags, tierSplit } from "./deals.ts";
 
 test("date helpers cross month ends", () => {
   assert.equal(addDays("2026-01-30", 3), "2026-02-02");
@@ -70,4 +70,15 @@ test("closeOutlook: high flag beats medium, none is on track with progress", () 
   assert.deepEqual(closeOutlook([], ms), { rank: 0, label: "On track", why: "Nothing overdue, 1 of 2 milestones done" });
   assert.equal(closeOutlook([{ level: "medium", text: "m" }, { level: "high", text: "h" }], ms).why, "h");
   assert.equal(closeOutlook([{ level: "medium", text: "m" }], ms).label, "Watch");
+});
+
+test("tierSplit raises the default once year-to-date GCI passes a threshold, never lowers it", () => {
+  const tiers = [{ gci: 100_000, split: 80 }, { gci: 200_000, split: 90 }];
+  assert.equal(tierSplit(tiers, 50_000, 70), 70);
+  assert.equal(tierSplit(tiers, 100_000, 70), 80);
+  assert.equal(tierSplit(tiers, 250_000, 70), 90);
+  assert.equal(tierSplit(tiers, 150_000, 85), 85);
+  assert.deepEqual(cleanTiers([{ gci: 200_000, split: 90 }, { gci: 100_000, split: 80 }]), tiers);
+  assert.ok("error" in (cleanTiers([{ gci: 0, split: 80 }]) as object));
+  assert.ok("error" in (cleanTiers([{ gci: 1, split: 80 }, { gci: 1, split: 90 }]) as object));
 });

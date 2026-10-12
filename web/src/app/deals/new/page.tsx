@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { DealForm } from "@/components/deal-form";
 import { Skeleton } from "@/components/ui";
-import { getCaps, getLead, getLeadOptions, getMembers, getOffer, getProperties, getSplits } from "@/lib/db";
+import { getCaps, getLead, getLeadOptions, getMembers, getOffer, getProperties, getSplits, getTiers } from "@/lib/db";
+import { tierSplit } from "@/lib/deals";
 
 export const metadata: Metadata = { title: "New deal" };
 
@@ -20,7 +21,7 @@ export default function NewDealPage({ searchParams }: PageProps<"/deals/new">) {
 }
 
 async function Form({ searchParams }: { searchParams: PageProps<"/deals/new">["searchParams"] }) {
-  const [clients, listings, sp, me, splits, caps] = await Promise.all([getLeadOptions(), getProperties(), searchParams, getMembers(), getSplits(), getCaps()]);
+  const [clients, listings, sp, me, splits, caps, tiers] = await Promise.all([getLeadOptions(), getProperties(), searchParams, getMembers(), getSplits(), getCaps(), getTiers()]);
   const contact = typeof sp.contact === "string" ? sp.contact : undefined;
   if (contact && !clients.some((c) => c.id === contact)) {
     const lead = await getLead(contact); // older leads fall outside the recent-200 picker
@@ -30,5 +31,5 @@ async function Form({ searchParams }: { searchParams: PageProps<"/deals/new">["s
   const prefill = offer?.status === "accepted"
     ? { offerId: offer.id, side: offer.side, propertyId: offer.property?.id ?? null, address: offer.property ? "" : offer.address, price: offer.amount, closeOn: offer.closeOn }
     : undefined;
-  return <DealForm clients={clients} listings={listings.filter((p) => p.status !== "Sold").map(({ id, address }) => ({ id, address }))} contactId={contact} prefill={prefill} defaultSplit={splits[me.me]} cap={caps[me.me]} />;
+  return <DealForm clients={clients} listings={listings.filter((p) => p.status !== "Sold").map(({ id, address }) => ({ id, address }))} contactId={contact} prefill={prefill} defaultSplit={tierSplit(tiers, caps[me.me]?.gci ?? 0, splits[me.me] ?? 70)} cap={caps[me.me]} />;
 }

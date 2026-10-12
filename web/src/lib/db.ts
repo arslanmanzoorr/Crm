@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { cache } from "react";
 import * as mock from "./data";
 import { likeSafe } from "./search";
-import { commission, type Side } from "./deals";
+import { commission, type Side, type Tier } from "./deals";
 import type { Contingency, Financing, OfferTerms } from "./offers";
 import { BUYING_TYPES } from "./match";
 import type { PastClient } from "./retention";
@@ -906,8 +906,8 @@ export async function getSplits(): Promise<Record<string, number>> {
   return Object.fromEntries((data ?? []).map((m) => [m.user_id, Number(m.default_split_pct)]));
 }
 
-/** Each agent's annual cap (null = none) and what they've paid the brokerage on deals closed this calendar year. */
-export async function getCaps(): Promise<Record<string, { cap: number | null; paid: number }>> {
+/** Each agent's annual cap (null = none), what they've paid the brokerage and their gross commission (GCI) on deals closed this calendar year. */
+export async function getCaps(): Promise<Record<string, { cap: number | null; paid: number; gci: number }>> {
   if (!dbEnabled) return {};
   const db = await supabase();
   const [{ data: org }, year] = await Promise.all([db.rpc("active_org"), teamToday().then((d) => d.slice(0, 4))]);
@@ -915,10 +915,21 @@ export async function getCaps(): Promise<Record<string, { cap: number | null; pa
     db.from("memberships").select("user_id,annual_cap").eq("org_id", org),
     db.from("deals").select("owner_id,price,commission_pct,agent_split_pct,referral_pct").eq("status", "closed").gte("closed_at", `${year}-01-01`).limit(5000),
   ]);
-  const out = Object.fromEntries((members ?? []).map((m) => [m.user_id, { cap: m.annual_cap === null ? null : Number(m.annual_cap), paid: 0 }]));
-  for (const d of deals ?? []) if (d.owner_id && out[d.owner_id])
-    out[d.owner_id].paid += commission(Number(d.price), Number(d.commission_pct), Number(d.agent_split_pct), Number(d.referral_pct)).brokerage;
+  const out = Object.fromEntries((members ?? []).map((m) => [m.user_id, { cap: m.annual_cap === null ? null : Number(m.annual_cap), paid: 0, gci: 0 }]));
+  for (const d of deals ?? []) if (d.owner_id && out[d.owner_id]) {
+    const c = commission(Number(d.price), Number(d.commission_pct), Number(d.agent_split_pct), Number(d.referral_pct));
+    out[d.owner_id].paid += c.brokerage;
+    out[d.owner_id].gci += c.gci;
+  }
   return out;
+}
+
+/** The team's tiered commission plan (empty = none). */
+export async function getTiers(): Promise<Tier[]> {
+  if (!dbEnabled) return [];
+  const db = await supabase();
+  const { data } = await db.from("organizations").select("split_tiers").eq("id", (await db.rpc("active_org")).data).single();
+  return (data?.split_tiers ?? []) as Tier[];
 }
 
 export type PropertyEvent = { kind: "listed" | "price" | "status"; old: string | null; new: string | null; ts: string };

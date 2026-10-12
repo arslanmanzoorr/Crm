@@ -112,3 +112,21 @@ export function closeOutlook(flags: Flag[], milestones: Milestone[]): Outlook {
   if (flags[0]) return { rank: 1, label: "Watch", why: flags[0].text };
   return { rank: 0, label: "On track", why: milestones.length ? `Nothing overdue, ${progress}` : "Nothing overdue" };
 }
+
+export type Tier = { gci: number; split: number };
+
+/** Validate tiers from the editor: up to 5, positive thresholds, splits 0–100, sorted by threshold. */
+export function cleanTiers(raw: Tier[]): Tier[] | { error: string } {
+  if (raw.length > 5) return { error: "Up to 5 tiers." };
+  for (const t of raw) {
+    if (!(t.gci > 0 && t.gci < 1e9)) return { error: "Each threshold must be a positive amount." };
+    if (!(t.split >= 0 && t.split <= 100)) return { error: "Each split must be between 0 and 100%." };
+  }
+  if (new Set(raw.map((t) => t.gci)).size !== raw.length) return { error: "Two tiers have the same threshold." };
+  return [...raw].sort((a, b) => a.gci - b.gci);
+}
+
+/** The split a new deal should start at: the agent's default, raised by the highest tier their year-to-date GCI has reached. */
+export function tierSplit(tiers: Tier[], ytdGci: number, base: number): number {
+  return tiers.reduce((s, t) => (ytdGci >= t.gci ? Math.max(s, t.split) : s), base);
+}
