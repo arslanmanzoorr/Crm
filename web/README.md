@@ -82,6 +82,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0056_shared_shortlist.sql` | Collaborative shortlist: agents add homes to a client's saved list, notes from both sides (`portal_shortlist`, `portal_note`) |
 | `0057_move_timeline.sql` | When a lead plans to move (`move_by`); soon movers surface on Today |
 | `0058_score_why.sql` | The AI's one-line reason for a lead's score (explainable scoring) |
+| `0059_close_anon_storage.sql` | Security fix: removes the anon storage read rules from 0048/0055 (they also allowed listing paths across teams); files are served by the server with the service-role key after the token checks |
 
 After `0010`, store the hash of your form key (per environment):
 
@@ -97,6 +98,7 @@ Every table has row-level security: a user only ever sees rows of orgs they belo
 NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 SITE_URL=https://app.yourdomain.com          # used for auth email links; never taken from request headers
+SUPABASE_SERVICE_ROLE_KEY=...                 # server only; serves portal documents and feed photos after token checks. Never NEXT_PUBLIC_
 OPENROUTER_API_KEY=sk-or-...                  # AI features, via OpenRouter
 OPENROUTER_MODEL=deepseek/deepseek-v4-flash-0731  # optional; default anthropic/claude-haiku-5.5. Thinking is turned off per call
 AI_DAILY_LIMIT=200                            # AI calls per org per 24h (default 200)
