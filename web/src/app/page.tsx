@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { PlanMyDay } from "@/components/plan-my-day";
 import { Reveal, Skeleton, LoadingCards } from "@/components/ui";
 import { Workspace } from "@/components/workspace";
 import { CircleAlert, Flame } from "lucide-react";
@@ -27,6 +28,7 @@ async function Home_() {
       <Workspace name={me.name} leads={top.leads} soon={soon} total={top.total} tasks={tasks} options={options}
         extra={dbEnabled && (
           <>
+            <Suspense fallback={null}><Plan /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><Signals /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><ShowingsSoon /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><DealsAtRisk /></Suspense>
@@ -36,6 +38,25 @@ async function Home_() {
         )} />
     </Reveal>
   );
+}
+
+/** Compact facts for the AI day plan: open tasks due by tomorrow, hot leads, showings and deals at risk. */
+async function Plan() {
+  const [tasks, top, deals, today] = await Promise.all([getTasks(), getTopLeads(8), listDeals(), teamToday()]);
+  const now = new Date().getTime();
+  const showings = await getShowings({ from: new Date(now).toISOString(), to: new Date(now + 86_400_000).toISOString() });
+  const data = {
+    today,
+    tasks: tasks.filter((t) => !t.done && t.dueAt && Date.parse(t.dueAt) < now + 86_400_000).slice(0, 15)
+      .map((t) => ({ title: t.title, kind: t.kind, lead: t.contact, overdue: Date.parse(t.dueAt!) < now, canCall: !!t.phone, canEmail: !!t.email })),
+    hotLeads: top.leads.filter((l) => !["Closed", "Lost"].includes(l.stage ?? "")).slice(0, 6)
+      .map((l) => ({ name: l.name, score: l.score, stage: l.stage, next: l.nextAction, consent: l.consent && { call: l.consent.call, text: l.consent.sms, email: l.consent.email, dnc: l.consent.dnc } })),
+    showings: showings.filter((s) => s.status === "requested" || s.status === "confirmed").map((s) => ({ at: s.startsAt, address: s.address, buyer: s.contact.name, status: s.status })),
+    dealsAtRisk: deals.filter((d) => d.status === "active").map((d) => ({ client: d.contact.name, address: d.address, flags: riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today).map((f) => f.text) }))
+      .filter((d) => d.flags.length).slice(0, 5),
+  };
+  if (!data.tasks.length && !data.hotLeads.length && !data.showings.length && !data.dealsAtRisk.length) return null;
+  return <PlanMyDay data={data} />;
 }
 
 /** Active deals with something overdue or about to slip, most urgent first. Quiet when everything is on track. */
