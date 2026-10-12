@@ -4,7 +4,7 @@ Numbers refer to the feature list in [FEATURES.md](FEATURES.md).
 **Done** = working and tested in the app. **Partial** = a real but smaller version exists.
 **Needs account** = can't be built or tested until an outside service is connected (keys, app review, licenses).
 
-Last updated: 2026-10-09.
+Last updated: 2026-10-13.
 
 | # | Module | Done | Partial | Needs account | Not started |
 |---|---|---|---|---|---|
@@ -24,7 +24,7 @@ Last updated: 2026-10-09.
 | 14 | Brokerage & Team Ops | 188, 189, 190, 191 (conversion by agent), 192 (Deals: whole-team view, pipeline by agent), 193, 195 | 187, 194, 196 (offices + territories; analytics and team pipeline per office) | | |
 | 15 | Commissions & Finance | 198, 199, 201, 202, 203, 204, 206 | 197 (default split + annual cap with blended split on the deal that crosses it; no tiers yet), 200 (pending and 30-day view) | 205 | |
 | 16 | Investor Toolkit | 207, 208, 209, 210, 211, 214, 215 (homes they own: equity, yield), 216 | 213 (portal hearts) | 212 (rent comps) | — |
-| 17 | Automation & Workflows | 218, 219, 220, 222, 225, 226 | 217 (structured builder, not a canvas), 223, 224 | 221 (Task prep drafts the call/email for an automation task with AI on the lead page; agent approves, nothing auto-sends) | |
+| 17 | Automation & Workflows | 218, 219, 220, 222, 225, 226 | 217 (structured builder, not a canvas), 223, 224, 221 (Task prep drafts the call/email for an automation task with AI on the lead page; agent approves, nothing auto-sends) | | |
 | 18 | Analytics | 227, 228, 229, 230, 231, 232, 233, 234, 235 | 236 (CSV per table) | | |
 | 19 | Security & Compliance | 237, 239, 240, 241, 242, 243, 244, 245 (AI use log on Account: who, what, when, vs daily cap), 246 (secrets stay in host env; Account shows connected or not, never values), 248 | | 238 (SSO) | 247 |
 | 20 | Platform & Mobile | 260 (import) | 250 (responsive web) | 249, 251, 254, 255 | 252, 253, 256–258, 259 (offices done; per-office settings later) |
