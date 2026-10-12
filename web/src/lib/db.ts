@@ -14,6 +14,7 @@ import type { Comp, Home, NetInputs, Rates } from "./cma";
 import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
 import { areaKey, campaignResults, type FarmListing, type FarmPerson } from "./farm";
 import { scrubbed } from "./consent";
+import type { DormantLead } from "./reactivate";
 import type { Fee } from "./rental-feed";
 export { likeSafe };
 import type { Channel, Lead, Property, Stage, Task, Thread } from "./data";
@@ -717,6 +718,19 @@ export async function getShortlist(contactId: string): Promise<ShortlistItem[]> 
     .eq("contact_id", contactId).order("created_at");
   type Row = { property_id: string; added_by: "client" | "agent"; client_note: string; agent_note: string; properties: { address: string; price: number } | null };
   return ((data ?? []) as unknown as Row[]).map((r) => ({ propertyId: r.property_id, address: r.properties?.address ?? "Listing removed", price: Number(r.properties?.price ?? 0), addedBy: r.added_by, clientNote: r.client_note, agentNote: r.agent_note }));
+}
+
+/** Open leads with no activity in the last `days` (dormant() does the final filter and sort). */
+export async function getDormantCandidates(days: number): Promise<DormantLead[]> {
+  if (!dbEnabled) return [];
+  const db = await supabase();
+  const cutoff = new Date(Date.parse(await teamToday()) - days * 86_400_000).toISOString();
+  // ponytail: first 500 quietest; page further if a team ever has more dormant leads than that
+  const { data } = await db.from("contacts").select("id,name,type,stage,last_activity_at,created_at,dnc,consent_email")
+    .not("stage", "in", "(Closed,Lost)").eq("dnc", false)
+    .or(`last_activity_at.lt.${cutoff},and(last_activity_at.is.null,created_at.lt.${cutoff})`)
+    .order("last_activity_at", { ascending: true, nullsFirst: true }).limit(500);
+  return (data ?? []).map((c) => ({ id: c.id, name: c.name, type: c.type, stage: c.stage, lastTouch: c.last_activity_at, createdAt: c.created_at, dnc: c.dnc, email: c.consent_email }));
 }
 
 export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;
