@@ -3,6 +3,7 @@
 import { ActionForm, Field, input, primaryBtn } from "@/components/forms";
 import { saveLead } from "@/lib/actions";
 import type { Lead } from "@/lib/data";
+import { MOVE_BY } from "@/lib/timeline";
 
 const TYPES = ["buyer", "seller", "renter", "investor", "landlord", "vendor"];
 
@@ -23,6 +24,13 @@ export function LeadForm({ lead }: { lead?: Lead }) {
           <Field label="Phone" name="phone" type="tel" placeholder="+15550100001" defaultValue={lead?.phone} />
           <Field label="Budget" name="budget" placeholder="$600k–$650k" defaultValue={lead?.budget} />
           <Field label="Source" name="sources" hint="comma separated" placeholder="Zillow, Instagram" defaultValue={lead?.sources.join(", ")} />
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="text-muted">Moving</span>
+            <select name="move_by" className={input} defaultValue={lead?.moveBy ?? ""}>
+              <option value="">Not sure yet</option>
+              {Object.entries(MOVE_BY).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </label>
           <Field label="Areas" name="areas" hint="comma separated" placeholder="Westside, Oak Park" defaultValue={lead?.areas.join(", ")} />
           <Field label="Wants" name="preferences" hint="comma separated" placeholder="3 bed, Garage" defaultValue={lead?.preferences.join(", ")} />
           <Field label="Tags" name="tags" hint="comma separated" placeholder="pre-approved, relocation" defaultValue={lead?.tags?.join(", ")} maxLength={400} />

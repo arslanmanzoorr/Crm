@@ -14,6 +14,7 @@ import { cleanSteps, TEMPLATES, TRIGGERS } from "./playbooks";
 import { cleanCma } from "./cma";
 import { checkUpload, safeFileName } from "./docs";
 import { planTour, US_TIME_ZONES } from "./showings";
+import { isMoveBy } from "./timeline";
 import { feesFromForm, HOME_TYPES, PARKING } from "./rental-feed";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTags, safeNext } from "./search";
@@ -75,6 +76,7 @@ const leadFields = (f: FormData) => ({
     consent_email: f.get("consent_email") === "on",
     dnc: f.get("dnc") === "on",
     tags: normTags(str(f, "tags")),
+    move_by: isMoveBy(str(f, "move_by")) ? str(f, "move_by") : null,
 });
 
 /** Create or (with an `id` field) update a lead. */

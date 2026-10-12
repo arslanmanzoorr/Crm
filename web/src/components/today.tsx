@@ -3,6 +3,7 @@
 import { Mail, Phone } from "lucide-react";
 import Link from "next/link";
 import { scrubbed } from "@/lib/consent";
+import { movingSoon } from "@/lib/timeline";
 import type { Lead, Task } from "@/lib/data";
 import { useNow } from "./header";
 import { LocalTime } from "./local-time";
@@ -24,7 +25,7 @@ export function Today({ leads, tasks }: { leads: Lead[]; tasks: Task[] }) {
   const overdue = open.filter((t) => new Date(t.dueAt!) < now);
   const today = open.filter((t) => new Date(t.dueAt!) >= now && new Date(t.dueAt!).toDateString() === now.toDateString());
   const planned = new Set(open.map((t) => t.contactId));
-  const hot = leads.filter((l) => l.score >= 80 && !planned.has(l.id) && !["Closed", "Lost"].includes(l.stage ?? ""));
+  const hot = leads.filter((l) => (l.score >= 80 || movingSoon(l.moveBy)) && !planned.has(l.id) && !["Closed", "Lost"].includes(l.stage ?? ""));
 
   const items: Item[] = [
     ...overdue.map((task) => ({ kind: "task" as const, task, overdue: true })),
@@ -97,7 +98,7 @@ function LeadRow({ lead }: { lead: Lead }) {
       <Avatar name={lead.name} size={32} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">
-          {lead.name} <span className="font-normal text-score-2">· Hot {lead.score}</span>
+          {lead.name} <span className="font-normal text-score-2">· {lead.score >= 80 ? `Hot ${lead.score}` : lead.moveBy === "asap" ? "Moving ASAP" : "Moving in 1–3 months"}</span>
         </p>
         <p className="truncate text-sm text-muted">{lead.nextAction || `No next step yet · ${lead.intent}`}</p>
       </div>

@@ -20,6 +20,7 @@ export type Lead = {
   stage?: Stage;
   nextAction?: string;
   consent?: { sms: boolean; call: boolean; email: boolean; dnc: boolean; dncCheckedOn?: string | null };
+  moveBy?: string | null; // asap | 1-3 | 3-6 | 6-12 | 12+
   ownerId?: string | null;
   tags?: string[];
   createdAt?: string;

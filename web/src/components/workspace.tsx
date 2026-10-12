@@ -7,11 +7,11 @@ import { TopLeads } from "./leads";
 import { DayTasks } from "./tasks";
 import { Today } from "./today";
 
-export function Workspace({ name, leads, total, tasks, options, extra }: { name: string; leads: Lead[]; total: number; tasks: Task[]; options: { id: string; name: string }[]; extra?: ReactNode }) {
+export function Workspace({ name, leads, soon = [], total, tasks, options, extra }: { name: string; leads: Lead[]; soon?: Lead[]; total: number; tasks: Task[]; options: { id: string; name: string }[]; extra?: ReactNode }) {
   return (
     <div className="flex flex-col gap-10">
       <Header name={name} tasks={tasks} />
-      <Today leads={leads} tasks={tasks} />
+      <Today leads={[...leads, ...soon.filter((s) => !leads.some((l) => l.id === s.id))]} tasks={tasks} />
       {extra}
       <TopLeads leads={leads} total={total} />
       <DayTasks tasks={tasks} leads={options} />

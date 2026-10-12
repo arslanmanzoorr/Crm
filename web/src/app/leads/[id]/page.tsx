@@ -28,6 +28,7 @@ import { STATUS_LABEL } from "@/lib/offers";
 import { money } from "@/lib/data";
 import { learnedPreferences, matchListing, outreachDraft, type Match } from "@/lib/match";
 import { FarmNote } from "@/components/farm-note";
+import { isMoveBy, MOVE_BY, movingSoon } from "@/lib/timeline";
 import { AddToShortlist, AgentShortlist } from "@/components/shortlist";
 import { fmtDuration } from "@/lib/search";
 import { OwnerSelect } from "@/components/owner-select";
@@ -82,6 +83,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               <p className="text-muted">{lead.headline}</p>
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                 <span className="flex items-center gap-2"><ScoreDots score={lead.score} /> {scoreLabel(lead.score)} · {lead.score}</span>
+                {lead.moveBy && isMoveBy(lead.moveBy) && <span className={`rounded-full px-2.5 py-1 text-xs ${movingSoon(lead.moveBy) ? "bg-accent/15 text-accent" : "bg-surface-3 text-muted"}`}>Moving {MOVE_BY[lead.moveBy].replace(/^In /, "in ").replace(/^As soon/, "as soon")}</span>}
                 {lead.stage && <StageSelect id={lead.id} stage={lead.stage} />}
                 {team.members.length > 0 && <OwnerSelect contactId={lead.id} ownerId={lead.ownerId ?? null} members={team.members} />}
               </div>

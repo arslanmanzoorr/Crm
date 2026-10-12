@@ -6,7 +6,7 @@ import { CircleAlert, Flame } from "lucide-react";
 import Link from "next/link";
 import { daysBetween } from "@/lib/deals";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getBuyingSignals, getLeadOptions, getProperties, getMe, getPastClients, getShowings, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
+import { dbEnabled, getBuyingSignals, getLeadOptions, getProperties, getMe, getPastClients, getShowings, getSoonMovers, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
 import { ShowingItem } from "@/components/showing-controls";
 import { agenda } from "@/lib/retention";
 
@@ -21,10 +21,10 @@ export default function Home() {
 }
 
 async function Home_() {
-  const [me, top, tasks, options] = await Promise.all([getMe(), getTopLeads(), getTasks(), getLeadOptions()]);
+  const [me, top, tasks, options, soon] = await Promise.all([getMe(), getTopLeads(), getTasks(), getLeadOptions(), getSoonMovers()]);
   return (
     <Reveal>
-      <Workspace name={me.name} leads={top.leads} total={top.total} tasks={tasks} options={options}
+      <Workspace name={me.name} leads={top.leads} soon={soon} total={top.total} tasks={tasks} options={options}
         extra={dbEnabled && (
           <>
             <Suspense fallback={<Skeleton className="h-32" />}><Signals /></Suspense>
