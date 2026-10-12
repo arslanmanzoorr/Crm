@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createDeal, updateDeal } from "@/lib/actions";
 import { cash } from "@/lib/data";
-import { commission } from "@/lib/deals";
+import { capSplit, commission } from "@/lib/deals";
 import type { Deal } from "@/lib/db";
 import { ActionForm, input, primaryBtn } from "./forms";
 
@@ -22,13 +22,14 @@ function Labeled({ label, hint, children }: { label: string; hint?: string; chil
 /** New deal (pick client and home) or edit terms. Shows the commission split live as numbers change. */
 export type DealPrefill = { offerId: string; side: "buyer" | "seller"; propertyId: string | null; address: string; price: number; closeOn: string | null };
 
-export function DealForm({ deal, clients, listings, contactId, prefill, defaultSplit }: { deal?: Deal; clients?: Option[]; listings?: { id: string; address: string }[]; contactId?: string; prefill?: DealPrefill; defaultSplit?: number }) {
+export function DealForm({ deal, clients, listings, contactId, prefill, defaultSplit, cap }: { deal?: Deal; clients?: Option[]; listings?: { id: string; address: string }[]; contactId?: string; prefill?: DealPrefill; defaultSplit?: number; cap?: { cap: number | null; paid: number } }) {
   const [price, setPrice] = useState(deal ? String(deal.price) : prefill ? String(prefill.price) : "");
   const [rate, setRate] = useState(String(deal?.commissionPct ?? 3));
   const [split, setSplit] = useState(String(deal?.agentSplitPct ?? defaultSplit ?? 70));
   const [referral, setReferral] = useState(String(deal?.referralPct ?? 0));
   const [listing, setListing] = useState(deal?.property?.id ?? prefill?.propertyId ?? "");
   const c = commission(Number(price) || 0, Number(rate) || 0, Number(split) || 0, Number(referral) || 0);
+  const plan = !deal && cap?.cap ? capSplit({ splitPct: defaultSplit ?? 70, cap: cap.cap, paid: cap.paid, price: Number(price) || 0, commissionPct: Number(rate) || 0, referralPct: Number(referral) || 0 }) : null;
 
   return (
     <ActionForm action={deal ? updateDeal : createDeal}>
@@ -93,6 +94,14 @@ export function DealForm({ deal, clients, listings, contactId, prefill, defaultS
               <div><dt className="text-muted">Brokerage</dt><dd>{cash(c.brokerage)}</dd></div>
               <div><dt className="text-muted">You</dt><dd className="font-medium text-accent">{cash(c.agent)}</dd></div>
             </dl>
+            {plan && (
+              <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+                <span>Annual cap: {cash(cap!.paid)} of {cash(cap!.cap!)} paid this year.{plan.capped && ` This deal reaches the cap, so your split becomes ${plan.splitPct}%.`}</span>
+                {plan.capped && Number(split) !== plan.splitPct && (
+                  <button type="button" onClick={() => setSplit(String(plan.splitPct))} className="min-h-10 rounded-full bg-surface-3 px-3.5 text-ink hover:bg-surface-2">Use {plan.splitPct}%</button>
+                )}
+              </p>
+            )}
           </fieldset>
 
           <Labeled label="Notes">

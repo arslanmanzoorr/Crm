@@ -2,7 +2,7 @@
 
 import { Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
-import { addExpense, deleteExpense, setPayout, setSplit } from "@/lib/actions";
+import { addExpense, deleteExpense, setAnnualCap, setPayout, setSplit } from "@/lib/actions";
 import { ActionForm, inputAuto, primaryBtn } from "./forms";
 
 const CATEGORIES = { marketing: "Marketing", photography: "Photography", staging: "Staging", signage: "Signage", mls_fees: "MLS and dues", client_gifts: "Client gifts", travel: "Travel", other: "Other" } as const;
@@ -81,6 +81,25 @@ export function SplitInput({ userId, value, label }: { userId: string; value: nu
       <input type="number" min={0} max={100} step="any" value={v} disabled={pending} aria-label={`${label} split %`}
         onChange={(e) => setV(e.target.value)} onBlur={save} onKeyDown={(e) => e.key === "Enter" && save()} className={`${inputAuto} w-20 px-3`} />
       <span className="text-muted">%</span>
+      {msg && <span role="alert" className="text-score-1">{msg}</span>}
+    </span>
+  );
+}
+
+/** Annual cap on what the agent pays the brokerage. Empty = no cap. */
+export function CapInput({ userId, value, label }: { userId: string; value: number | null; label: string }) {
+  const [v, setV] = useState(value === null ? "" : String(value));
+  const [msg, setMsg] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const save = () => {
+    const n = v.trim() === "" ? null : Number(v);
+    if (n !== value) start(async () => { const r = await setAnnualCap(userId, n); setMsg(r?.error ?? null); });
+  };
+  return (
+    <span className="flex items-center gap-2">
+      <span className="text-muted">cap $</span>
+      <input type="number" min={0} step="any" inputMode="numeric" value={v} disabled={pending} placeholder="none" aria-label={`${label} annual cap`}
+        onChange={(e) => setV(e.target.value)} onBlur={save} onKeyDown={(e) => e.key === "Enter" && save()} className={`${inputAuto} w-28 px-3`} />
       {msg && <span role="alert" className="text-score-1">{msg}</span>}
     </span>
   );

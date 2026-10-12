@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addDays, commission, daysBetween, defaultMilestones, pipelineByAgent, riskFlags } from "./deals.ts";
+import { addDays, capSplit, commission, daysBetween, defaultMilestones, pipelineByAgent, riskFlags } from "./deals.ts";
 
 test("date helpers cross month ends", () => {
   assert.equal(addDays("2026-01-30", 3), "2026-02-02");
@@ -53,4 +53,14 @@ test("pipelineByAgent groups active and closed per agent, ignores fallen-through
   assert.deepEqual(rows.map((r) => [r.ownerId, r.active, r.volume, r.gci, r.soon, r.closed]), [["b", 1, 1_000_000, 30_000, 0, 0], ["a", 2, 800_000, 24_000, 1, 1]]);
   assert.equal(rows[1].closedGci, 12_000);
   assert.equal(rows[1].brokerage, 3_600); // 30% of 12,000
+});
+
+test("capSplit: under the cap keeps the plan, crossing it blends, past it gives 100%", () => {
+  const base = { splitPct: 70, price: 500_000, commissionPct: 3, referralPct: 0 }; // 15k GCI, brokerage would take 4.5k
+  assert.deepEqual(capSplit({ ...base, cap: null, paid: 0 }), { splitPct: 70, left: null, capped: false });
+  assert.deepEqual(capSplit({ ...base, cap: 20_000, paid: 10_000 }), { splitPct: 70, left: 10_000, capped: false });
+  assert.deepEqual(capSplit({ ...base, cap: 20_000, paid: 18_000 }), { splitPct: 86.667, left: 2_000, capped: true }); // brokerage gets the last 2k
+  assert.deepEqual(capSplit({ ...base, cap: 20_000, paid: 25_000 }), { splitPct: 100, left: 0, capped: true });
+  // the blended split really leaves exactly the remaining cap to the brokerage
+  assert.equal(commission(500_000, 3, 86.667, 0).brokerage.toFixed(0), "2000");
 });

@@ -86,3 +86,17 @@ export function pipelineByAgent(deals: PipeDeal[], today: string) {
   }
   return [...rows.values()].sort((a, b) => b.gci - a.gci || b.closedGci - a.closedGci);
 }
+
+/**
+ * The split a new deal should use under an annual cap. The brokerage's share of this deal is limited to what's
+ * left of the cap; once the cap is paid, the agent keeps 100%. Returns the suggested split and the cap position.
+ */
+export function capSplit(a: { splitPct: number; cap: number | null; paid: number; price: number; commissionPct: number; referralPct: number }) {
+  if (!a.cap) return { splitPct: a.splitPct, left: null, capped: false };
+  const left = Math.max(a.cap - a.paid, 0);
+  const net = commission(a.price, a.commissionPct, 100, a.referralPct).gci * (1 - a.referralPct / 100); // after referral
+  const normal = (net * (100 - a.splitPct)) / 100;
+  if (net <= 0 || normal <= left) return { splitPct: a.splitPct, left, capped: false };
+  // Round up (agent-favourable) so the brokerage never collects past the cap, even by cents.
+  return { splitPct: Math.min(100, Math.ceil((100 - (left / net) * 100) * 1000) / 1000), left, capped: true };
+}

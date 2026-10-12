@@ -694,6 +694,16 @@ export async function setOffice(userId: string, officeId: string | null) {
   revalidatePath("/team");
 }
 
+/** Set or clear an agent's annual cap (owners and admins; the database checks). */
+export async function setAnnualCap(userId: string, cap: number | null): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(userId) || (cap !== null && !(cap > 0 && cap < 1e9))) return { error: "Enter a positive amount, or leave it empty for no cap." };
+  const { error } = await (await authed()).rpc("set_annual_cap", { p_user: userId, p_cap: cap });
+  if (error) return { error: error.message };
+  revalidatePath("/team");
+  return { ok: "Saved" };
+}
+
 /** Schedule an open house for a listing. Times arrive as ISO from the browser, so they keep the agent's timezone. */
 export async function scheduleOpenHouse(_: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
