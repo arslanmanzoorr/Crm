@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CsvDownload } from "@/components/csv-download";
+import { AskBusiness } from "@/components/ask-business";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { dbEnabled, getAnalytics, getCampaigns, getOffices, type Analytics } from "@/lib/db";
@@ -69,6 +70,8 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
         <Stat label="Reached within 5 min" value={pct(a.response.within_5m, a.leads)} sub={`${pct(a.response.within_1h, a.leads)} within an hour`} />
         <Stat label={`Earned, ${label}`} value={money(earned)} sub={`${money(pipeline)} in the pipeline`} accent />
       </dl>
+
+      <AskBusiness />
 
       <Revenue a={a} />
 
