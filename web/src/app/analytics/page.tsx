@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CsvDownload } from "@/components/csv-download";
 import { AskBusiness } from "@/components/ask-business";
+import { WeeklySummary } from "@/components/weekly-summary";
+import { weekOverWeek } from "@/lib/summary";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { dbEnabled, getAnalytics, getCampaigns, getOffices, type Analytics } from "@/lib/db";
@@ -53,13 +55,18 @@ const monthName = (ym: string) => (ym === "no date" ? "No date" : new Date(`${ym
 
 async function Report({ searchParams }: { searchParams: PageProps<"/analytics">["searchParams"] }) {
   const days = await daysOf(searchParams);
-  const [a0, campaigns, offices, { office }] = await Promise.all([getAnalytics(days), getCampaigns(days), getOffices(), searchParams]);
+  const [a0, w7, w14, campaigns, offices, { office }] = await Promise.all([getAnalytics(days), getAnalytics(7), getAnalytics(14), getCampaigns(days), getOffices(), searchParams]);
   const a = a0!;
   const officeId = offices.some((o) => o.id === office) ? (office as string) : null;
   const agents = officeId ? a.agents.filter((x) => x.office_id === officeId) : a.agents;
   const officeName = offices.find((o) => o.id === officeId)?.name;
   const earned = a.agents.reduce((n, x) => n + Number(x.closed_agent), 0);
   const pipeline = a.forecast.reduce((n, f) => n + Number(f.agent), 0);
+  const scoped = (w: Analytics) => {
+    const ag = officeId ? w.agents.filter((x) => x.office_id === officeId) : w.agents;
+    return { leads: officeId ? ag.reduce((n, x) => n + x.leads, 0) : w.leads, agents: ag };
+  };
+  const week = weekOverWeek(scoped(w7!), scoped(w14!));
   const label = days === 365 ? "12 months" : `${days} days`;
 
   return (
@@ -70,6 +77,8 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
         <Stat label="Reached within 5 min" value={pct(a.response.within_5m, a.leads)} sub={`${pct(a.response.within_1h, a.leads)} within an hour`} />
         <Stat label={`Earned, ${label}`} value={money(earned)} sub={`${money(pipeline)} in the pipeline`} accent />
       </dl>
+
+      <WeeklySummary metrics={week} scope={officeName ?? "whole team"} />
 
       <AskBusiness />
 
