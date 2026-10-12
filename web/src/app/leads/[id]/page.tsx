@@ -30,6 +30,7 @@ import { learnedPreferences, matchListing, outreachDraft, type Match } from "@/l
 import { FarmNote } from "@/components/farm-note";
 import { isMoveBy, MOVE_BY, movingSoon } from "@/lib/timeline";
 import { AddToShortlist, AgentShortlist } from "@/components/shortlist";
+import { TaskPrep } from "@/components/task-prep";
 import { fmtDuration } from "@/lib/search";
 import { OwnerSelect } from "@/components/owner-select";
 
@@ -180,6 +181,18 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               <h2 id="tasks" className="mb-4 text-xl">Tasks</h2>
               <TaskForm contactId={lead.id} />
               <div className="mt-4"><TaskList tasks={mine} /></div>
+              {(() => {
+                const next = mine.find((t) => !t.done && (t.kind === "call" || t.kind === "email"));
+                return next && (
+                  <TaskPrep task={{ title: next.title, kind: next.kind as "call" | "email" }} lead={{ id: lead.id, name: lead.name }} blocked={next.kind === "call" ? b.call : b.email} data={{
+                    agent: me.name,
+                    task: { title: next.title, kind: next.kind, note: next.note },
+                    lead: { name: lead.name, type: lead.type, stage: lead.stage, budget: lead.budget, areas: lead.areas, wants: lead.preferences, intent: lead.intent, moveBy: lead.moveBy,
+                      consent: { call: c.call || scrubbed(c.dncCheckedOn, today), email: c.email, dnc: c.dnc } },
+                    recentTimeline: lead.activity.slice(0, 12).map((a) => ({ when: a.when, channel: a.channel, text: a.text.slice(0, 300), fromLead: !!a.inbound })),
+                  }} />
+                );
+              })()}
             </section>
 
             <section aria-labelledby="timeline" className="rounded-card bg-surface-2 p-5 sm:p-6">
