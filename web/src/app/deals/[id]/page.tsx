@@ -8,6 +8,7 @@ import { DealForm } from "@/components/deal-form";
 import { Chip, Skeleton } from "@/components/ui";
 import { cash, money } from "@/lib/data";
 import { commission, daysBetween, riskFlags } from "@/lib/deals";
+import { DealRescue } from "@/components/deal-rescue";
 import { EXPENSE_CATEGORIES, getDeal, getDocuments, getExpenses, getFinancing, getMembers, teamToday } from "@/lib/db";
 import { Documents } from "@/components/documents";
 import { DeleteExpense, ExpenseForm, PayoutControls } from "@/components/money-controls";
@@ -67,6 +68,12 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
                   </li>
                 ))}
               </ul>
+            )}
+            {flags.length > 0 && d.status === "active" && (
+              <DealRescue data={{
+                today, client: d.contact.name, side: d.side, address: d.address, price: d.price, closeOn: d.closeOn, lastContact: d.contact.lastActivityAt?.slice(0, 10) ?? null,
+                problems: flags.map((f) => f.text), milestones: d.milestones.map((m) => ({ title: m.title, due: m.dueOn, done: !!m.doneAt })),
+              }} />
             )}
           </section>
 

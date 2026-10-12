@@ -47,7 +47,7 @@ Last updated: 2026-10-09.
 Items that need no outside account are built first, in roadmap phase order:
 
 1. **Revenue engine:** ~~lead ownership, round-robin routing, response time, tags~~ (done), territories (43), ~~Instant Buyer Matching (84–86)~~ (done: listing page ranks buyers, lead page ranks listings, with reasons), ~~new-listing and price-drop alerts (91)~~ (done, as tasks for the buyer's owner), ~~showings and open-house check-in (111, 115–122)~~ (done).
-2. **Closing engine:** ~~deals, milestones, deadline flags, commission splits~~ (done), ~~offers, comparison and negotiation history (123–125)~~ (done), Deal Rescue drafts once AI is connected.
+2. **Closing engine:** ~~deals, milestones, deadline flags, commission splits~~ (done), ~~offers, comparison and negotiation history (123–125)~~ (done), ~~Deal Rescue~~ (done: rescue plan + client message on at-risk deals).
 3. **Growth and analytics:** ~~source, conversion, response, cycle, revenue, agent and listing analytics~~ (done; cost-per-lead 25 needs spend data), ~~past-client anniversaries and retention (177–186)~~ (done except partner directory 181 and neighborhood updates 184), broker views (190–192).
 4. **Privacy rights:** ~~export, erase on delete, do-not-contact list, public request form with 45-day tracker~~ (done).
-5. **Intelligence layer** once an OpenRouter key is connected: Ask Your Business, morning briefing, explainable scoring, Deal Rescue.
+5. **Intelligence layer** (OpenRouter connected 2026-10-13): ~~morning briefing~~ (Plan my day), ~~explainable scoring~~, ~~Deal Rescue~~, ~~natural-language lead search~~ (Ask on Leads), ~~listing descriptions, video scripts, context-aware replies~~. Still to do: full Ask Your Business (questions across all data, approval-based actions).
