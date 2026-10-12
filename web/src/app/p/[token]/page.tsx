@@ -217,7 +217,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
                 </div>
                 {notes.get(l.id)?.added_by === "agent" && <p className="text-xs font-medium text-accent">Suggested by your agent</p>}
                 {notes.get(l.id)?.agent_note && <p className="text-sm"><span className="text-muted">Your agent: </span>{notes.get(l.id)!.agent_note}</p>}
-                {m && <MatchReasons m={m} />}
+                {m && <MatchReasons m={m} fitsOnly />}
                 {p.favorites.includes(l.id) && <PortalNote token={token} propertyId={l.id} address={l.address} value={notes.get(l.id)?.client_note ?? ""} />}
                 {l.tour_url && <a href={l.tour_url} target="_blank" rel="noopener noreferrer" className="w-fit text-sm text-accent underline">Take the virtual tour</a>}
               </li>
