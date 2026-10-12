@@ -4,7 +4,8 @@
 1. Read `docs/STATUS.md` (what's built, what's next) before planning. The full backlog is `docs/FEATURES.md`.
 2. For questions about how the code fits together, use the knowledge graph before reading files:
    `graphify query "<question>"` (graph lives in `graphify-out/`, local only, gitignored).
-   If `graphify-out/graph.json` is missing or older than the last commits, run `/graphify . --update` first.
+   A git post-commit hook (`graphify hook install`, local to this machine) rebuilds the code graph after every commit.
+   If `graphify-out/graph.json` is missing or older than the last commits (new machine, hook not installed), run `graphify update .` first.
 3. Next.js 16 with breaking changes: read `web/AGENTS.md` and the docs in `web/node_modules/next/dist/docs/` before writing Next code.
 
 ## How this project is built
