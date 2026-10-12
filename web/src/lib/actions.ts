@@ -704,6 +704,42 @@ export async function setAnnualCap(userId: string, cap: number | null): Promise<
   return { ok: "Saved" };
 }
 
+/** Suggest a listing to a client: it appears on their portal shortlist marked as from you. */
+export async function addToShortlist(contactId: string, propertyId: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(contactId) || !UUID.test(propertyId)) return { error: "Not found." };
+  const { error } = await (await authed()).from("favorites").insert({ contact_id: contactId, property_id: propertyId, added_by: "agent" });
+  if (error && error.code !== "23505") return { error: "Couldn't add it. Try again." }; // already on the list is fine
+  revalidatePath(`/leads/${contactId}`);
+  return { ok: "Added" };
+}
+
+export async function removeFromShortlist(contactId: string, propertyId: string) {
+  if (!dbEnabled || !UUID.test(contactId) || !UUID.test(propertyId)) return;
+  const { error } = await (await authed()).from("favorites").delete().eq("contact_id", contactId).eq("property_id", propertyId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/leads/${contactId}`);
+}
+
+/** The agent's note on a shortlisted home; the client reads it in their portal. */
+export async function setShortlistNote(contactId: string, propertyId: string, text: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(contactId) || !UUID.test(propertyId)) return { error: "Not found." };
+  const { error } = await (await authed()).from("favorites").update({ agent_note: text.trim().slice(0, 500) }).eq("contact_id", contactId).eq("property_id", propertyId);
+  if (error) return { error: error.message };
+  revalidatePath(`/leads/${contactId}`);
+  return { ok: "Saved" };
+}
+
+/** From the client portal: their note on a saved home. */
+export async function portalNote(token: string, propertyId: string, text: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!PORTAL_TOKEN.test(token) || !UUID.test(propertyId)) return { error: "This link isn't valid anymore." };
+  const { data, error } = await (await supabase()).rpc("portal_note", { p_token: token, p_property: propertyId, p_text: text });
+  if (error || data !== "ok") return { error: data === "closed" ? "This link isn't valid anymore." : "Couldn't save that note." };
+  return { ok: "Saved" };
+}
+
 /** Schedule an open house for a listing. Times arrive as ISO from the browser, so they keep the agent's timezone. */
 export async function scheduleOpenHouse(_: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;

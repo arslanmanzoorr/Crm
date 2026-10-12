@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { LocalTime } from "@/components/local-time";
 import { MatchReasons } from "@/components/match-reasons";
 import { FavoriteButton, MessageAgent } from "@/components/portal-client";
+import { PortalNote } from "@/components/shortlist";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { supabase } from "@/lib/db";
@@ -51,7 +52,8 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
   const { token } = await params;
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) notFound();
   const db = await supabase();
-  const [{ data }, { data: docData }] = await Promise.all([db.rpc("portal_view", { p_token: token }), db.rpc("portal_documents", { p_token: token })]);
+  const [{ data }, { data: docData }, { data: listData }] = await Promise.all([db.rpc("portal_view", { p_token: token }), db.rpc("portal_documents", { p_token: token }), db.rpc("portal_shortlist", { p_token: token })]);
+  const notes = new Map(((listData ?? []) as { property_id: string; added_by: "client" | "agent"; client_note: string; agent_note: string }[]).map((x) => [x.property_id, x]));
   const p = data as Portal | null;
   const docs = (docData ?? []) as { id: string; name: string; size: number; created_at: string }[];
   if (!p) return <Closed />;
@@ -213,7 +215,10 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
                   </div>
                   <FavoriteButton token={token} propertyId={l.id} on={p.favorites.includes(l.id)} address={l.address} />
                 </div>
+                {notes.get(l.id)?.added_by === "agent" && <p className="text-xs font-medium text-accent">Suggested by your agent</p>}
+                {notes.get(l.id)?.agent_note && <p className="text-sm"><span className="text-muted">Your agent: </span>{notes.get(l.id)!.agent_note}</p>}
                 {m && <MatchReasons m={m} />}
+                {p.favorites.includes(l.id) && <PortalNote token={token} propertyId={l.id} address={l.address} value={notes.get(l.id)?.client_note ?? ""} />}
                 {l.tour_url && <a href={l.tour_url} target="_blank" rel="noopener noreferrer" className="w-fit text-sm text-accent underline">Take the virtual tour</a>}
               </li>
             ))}

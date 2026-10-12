@@ -79,6 +79,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0053_offices.sql` | Offices: admins create them and place members (`set_office`); analytics agent rows carry the office |
 | `0054_commission_caps.sql` | Annual cap per agent (`set_annual_cap`); new deals suggest the capped or blended split |
 | `0055_portal_documents.sql` | Share documents with the client: they download them from their portal (`/p/<token>/doc/<id>`), checked against the link each time and logged |
+| `0056_shared_shortlist.sql` | Collaborative shortlist: agents add homes to a client's saved list, notes from both sides (`portal_shortlist`, `portal_note`) |
 
 After `0010`, store the hash of your form key (per environment):
 

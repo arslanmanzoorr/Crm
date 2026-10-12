@@ -708,6 +708,17 @@ export async function getRentalFeed(): Promise<RentalFeedInfo> {
   return data ? { contactName: data.contact_name, contactEmail: data.contact_email, contactPhone: data.contact_phone, createdAt: data.created_at, lastFetchedAt: data.last_fetched_at, listings: count ?? 0 } : null;
 }
 
+export type ShortlistItem = { propertyId: string; address: string; price: number; addedBy: "client" | "agent"; clientNote: string; agentNote: string };
+
+/** The client's shortlist (their saved homes plus the agent's suggestions), with both sides' notes. */
+export async function getShortlist(contactId: string): Promise<ShortlistItem[]> {
+  if (!dbEnabled) return [];
+  const { data } = await (await supabase()).from("favorites").select("property_id,added_by,client_note,agent_note,properties(address,price)")
+    .eq("contact_id", contactId).order("created_at");
+  type Row = { property_id: string; added_by: "client" | "agent"; client_note: string; agent_note: string; properties: { address: string; price: number } | null };
+  return ((data ?? []) as unknown as Row[]).map((r) => ({ propertyId: r.property_id, address: r.properties?.address ?? "Listing removed", price: Number(r.properties?.price ?? 0), addedBy: r.added_by, clientNote: r.client_note, agentNote: r.agent_note }));
+}
+
 export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;
 
 /** The client's live portal link, if any (the token itself is never stored). */

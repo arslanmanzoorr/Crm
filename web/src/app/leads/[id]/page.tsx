@@ -13,7 +13,7 @@ import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/com
 import { blockers, scrubbed } from "@/lib/consent";
 import { farmReport, homeUpdate } from "@/lib/farm";
 import { DncCheck } from "@/components/dnc-check";
-import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks, teamToday } from "@/lib/db";
+import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, getShortlist, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks, teamToday } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { TourPlanner } from "@/components/tour-planner";
 import { FinancingForm } from "@/components/financing-controls";
@@ -28,6 +28,7 @@ import { STATUS_LABEL } from "@/lib/offers";
 import { money } from "@/lib/data";
 import { learnedPreferences, matchListing, outreachDraft, type Match } from "@/lib/match";
 import { FarmNote } from "@/components/farm-note";
+import { AddToShortlist, AgentShortlist } from "@/components/shortlist";
 import { fmtDuration } from "@/lib/search";
 import { OwnerSelect } from "@/components/owner-select";
 
@@ -48,7 +49,7 @@ export default function LeadPage({ params }: PageProps<"/leads/[id]">) {
 async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"] }) {
   const lead = await getLead((await params).id);
   if (!lead) notFound();
-  const [tasks, properties, team, deals, offers, refs, people, showings, financing, partners, portal, signals, links, docs, homes, me] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id }), getFinancing(lead.id), getPartners(), getPortalLink(lead.id), getBuyingSignals(lead.id), getLinks(lead.id), getDocuments({ contactId: lead.id }), getHoldings(lead.id), getMe()]);
+  const [tasks, properties, team, deals, offers, refs, people, showings, financing, partners, portal, signals, links, docs, homes, me, shortlist] = await Promise.all([getTasks(), getProperties(), getMembers(), getDealsFor(lead.id), getOffers({ contactId: lead.id }), getReferrals(lead.id), getLeadOptions(), getShowings({ contactId: lead.id }), getFinancing(lead.id), getPartners(), getPortalLink(lead.id), getBuyingSignals(lead.id), getLinks(lead.id), getDocuments({ contactId: lead.id }), getHoldings(lead.id), getMe(), getShortlist(lead.id)]);
   const updates = homes.length ? await homeUpdates(homes, lead.areas[0] ?? null) : undefined;
   if (refs.referredBy && !people.some((p) => p.id === refs.referredBy!.id)) people.unshift(refs.referredBy); // keep the current referrer selectable
   const mine = tasks.filter((t) => t.contactId === lead.id);
@@ -210,6 +211,12 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               <h2 id="people" className="text-xl">People</h2>
               <div className="rounded-card bg-surface-2 p-5"><PeopleLinks contactId={lead.id} links={links} people={people} /></div>
             </section>
+            {["buyer", "investor", "renter"].includes(lead.type ?? "") && (
+              <section aria-labelledby="shortlist" className="flex flex-col gap-2">
+                <h2 id="shortlist" className="text-xl">Shortlist {shortlist.length > 0 && <span className="text-muted">({shortlist.length})</span>}</h2>
+                <div className="rounded-card bg-surface-2 px-5 py-2"><AgentShortlist contactId={lead.id} items={shortlist} /></div>
+              </section>
+            )}
             <section aria-labelledby="portal" className="flex flex-col gap-2">
               <h2 id="portal" className="text-xl">Client portal</h2>
               <div className="rounded-card bg-surface-2 p-5"><PortalControls contactId={lead.id} link={portal} /></div>
@@ -279,6 +286,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 {matches.map(({ p, m }) => (
                   <div key={p.id} className="flex flex-col gap-2">
                     <PropertyCard p={p} match={m} />
+                    <AddToShortlist contactId={lead.id} propertyId={p.id} on={shortlist.some((i) => i.propertyId === p.id)} />
                     {!c.dnc && (
                       <details className="rounded-card bg-surface-2 px-5 py-1">
                         <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Draft a message about it</summary>
