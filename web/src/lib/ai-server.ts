@@ -1,5 +1,5 @@
 // One AI call through OpenRouter (OpenAI-compatible chat API). The key stays on the server.
-// Model is configurable; default is the same Claude model the app was built against.
+// Model is configurable; the default is the cheapest Claude model (Haiku), which handles these short tasks well.
 
 export const AI_KEY_MISSING = "Set OPENROUTER_API_KEY in web/.env.local to enable AI.";
 
@@ -18,7 +18,7 @@ export async function chat(o: { system: string; user: string; maxTokens: number;
       ...(process.env.SITE_URL && { "http-referer": process.env.SITE_URL }), "x-title": "EstateOS",
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || "anthropic/claude-opus-5.5",
+      model: process.env.OPENROUTER_MODEL || "anthropic/claude-haiku-5.5", // cheapest Claude; set OPENROUTER_MODEL to change
       max_tokens: o.maxTokens,
       messages: [{ role: "system", content: o.system }, { role: "user", content: o.user }],
       ...(o.schema && { response_format: { type: "json_schema", json_schema: { name: o.schema.name, strict: true, schema: o.schema.schema } } }),
