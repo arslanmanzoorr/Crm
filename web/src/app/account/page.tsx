@@ -3,10 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { integrationStatus } from "@/lib/integrations";
+import { LocalTime } from "@/components/local-time";
 import { Avatar, Reveal } from "@/components/ui";
 import { signOut } from "@/lib/actions";
 import { LeadFormSettings } from "@/components/lead-form-settings";
-import { dbEnabled, getLeadForm, getMe, getPrivacyRequests, getSuppressions, isOwnerOrAdmin } from "@/lib/db";
+import { dbEnabled, getAiLog, getLeadForm, getMe, getPrivacyRequests, getSuppressions, isOwnerOrAdmin } from "@/lib/db";
 import { PrivacyRequests } from "@/components/privacy-request";
 import { Suppressions } from "@/components/suppressions";
 
@@ -40,6 +41,12 @@ export default function AccountPage() {
       {dbEnabled && (
         <Suspense fallback={null}>
           <Integrations />
+        </Suspense>
+      )}
+
+      {dbEnabled && (
+        <Suspense fallback={null}>
+          <AiLog />
         </Suspense>
       )}
 
@@ -143,6 +150,31 @@ async function Integrations() {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+const AI_TASKS: Record<string, string> = { analyze: "Lead analysis", reply: "Reply draft", caption: "Social caption", describe: "Listing description", plan: "Plan my day", script: "Video script", rescue: "Deal rescue", search: "Ask on Leads", ask: "Ask your business" };
+
+/** Owners and admins: every AI use in the last 30 days, and today's use against the daily cap. */
+async function AiLog() {
+  if (!(await isOwnerOrAdmin())) return null;
+  const log = await getAiLog();
+  if (log.recent.length === 0) return null;
+  return (
+    <section aria-labelledby="ai-log" className="flex flex-col gap-2">
+      <h2 id="ai-log" className="text-sm text-muted">AI use</h2>
+      <div className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 text-sm">
+        <p>{log.last24h} of {log.limit} AI uses in the last 24 hours (team cap). Last 30 days: {Object.entries(log.byTask).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${AI_TASKS[t] ?? t} ${n}`).join(" · ")}.</p>
+        <ul className="flex flex-col divide-y divide-white/5">
+          {log.recent.map((r, i) => (
+            <li key={i} className="flex flex-wrap justify-between gap-x-3 py-2">
+              <span>{AI_TASKS[r.task] ?? r.task} <span className="text-muted">· {r.who}</span></span>
+              <span className="text-muted"><LocalTime ts={r.ts} opts={{ month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} /></span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

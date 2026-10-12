@@ -768,6 +768,22 @@ export async function promoSentFor(address: string): Promise<boolean> {
   return (count ?? 0) > 0;
 }
 
+/** AI audit log: the last 30 days of AI calls (who, what, when), plus today's count against the daily cap. */
+export async function getAiLog() {
+  if (!dbEnabled) return { recent: [], byTask: {} as Record<string, number>, last24h: 0, limit: AI_DAILY_LIMIT };
+  const db = await supabase();
+  const since = new Date(Date.now() - 30 * 864e5).toISOString(), day = new Date(Date.now() - 864e5).toISOString();
+  const [{ data }, members] = await Promise.all([
+    db.from("ai_usage").select("task,user_id,ts").gte("ts", since).order("ts", { ascending: false }).limit(1000),
+    getMembers(),
+  ]);
+  const email = new Map(members.members.map((m) => [m.userId, m.email]));
+  const rows = (data ?? []).map((r) => ({ task: r.task as string, who: email.get(r.user_id) ?? "Former member", ts: r.ts as string }));
+  const byTask: Record<string, number> = {};
+  for (const r of rows) byTask[r.task] = (byTask[r.task] ?? 0) + 1;
+  return { recent: rows.slice(0, 15), byTask, last24h: rows.filter((r) => r.ts >= day).length, limit: AI_DAILY_LIMIT };
+}
+
 export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;
 
 /** The client's live portal link, if any (the token itself is never stored). */
