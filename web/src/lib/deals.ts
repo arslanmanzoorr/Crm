@@ -100,3 +100,15 @@ export function capSplit(a: { splitPct: number; cap: number | null; paid: number
   // Round up (agent-favourable) so the brokerage never collects past the cap, even by cents.
   return { splitPct: Math.min(100, Math.ceil((100 - (left / net) * 100) * 1000) / 1000), left, capped: true };
 }
+
+export type Outlook = { rank: 0 | 1 | 2; label: "On track" | "Watch" | "At risk"; why: string };
+
+/** How likely a deal closes on its date, from its risk flags and checklist progress. Rule-based so the reason is always shown. */
+export function closeOutlook(flags: Flag[], milestones: Milestone[]): Outlook {
+  const done = milestones.filter((m) => m.doneAt).length;
+  const progress = `${done} of ${milestones.length} milestones done`;
+  const high = flags.find((f) => f.level === "high");
+  if (high) return { rank: 2, label: "At risk", why: high.text };
+  if (flags[0]) return { rank: 1, label: "Watch", why: flags[0].text };
+  return { rank: 0, label: "On track", why: milestones.length ? `Nothing overdue, ${progress}` : "Nothing overdue" };
+}

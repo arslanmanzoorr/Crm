@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addDays, capSplit, commission, daysBetween, defaultMilestones, pipelineByAgent, riskFlags } from "./deals.ts";
+import { addDays, capSplit, closeOutlook, commission, daysBetween, defaultMilestones, pipelineByAgent, riskFlags } from "./deals.ts";
 
 test("date helpers cross month ends", () => {
   assert.equal(addDays("2026-01-30", 3), "2026-02-02");
@@ -63,4 +63,11 @@ test("capSplit: under the cap keeps the plan, crossing it blends, past it gives 
   assert.deepEqual(capSplit({ ...base, cap: 20_000, paid: 25_000 }), { splitPct: 100, left: 0, capped: true });
   // the blended split really leaves exactly the remaining cap to the brokerage
   assert.equal(commission(500_000, 3, 86.667, 0).brokerage.toFixed(0), "2000");
+});
+
+test("closeOutlook: high flag beats medium, none is on track with progress", () => {
+  const ms = [{ title: "Inspection", dueOn: "2026-10-01", doneAt: "2026-10-01" }, { title: "Appraisal", dueOn: "2026-10-20", doneAt: null }];
+  assert.deepEqual(closeOutlook([], ms), { rank: 0, label: "On track", why: "Nothing overdue, 1 of 2 milestones done" });
+  assert.equal(closeOutlook([{ level: "medium", text: "m" }, { level: "high", text: "h" }], ms).why, "h");
+  assert.equal(closeOutlook([{ level: "medium", text: "m" }], ms).label, "Watch");
 });

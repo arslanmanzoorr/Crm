@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
-import { commission, daysBetween, pipelineByAgent, riskFlags } from "@/lib/deals";
+import { closeOutlook, commission, daysBetween, pipelineByAgent, riskFlags } from "@/lib/deals";
 import { dbEnabled, getMembers, getOffices, listDeals, type Deal, teamToday } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Deals" };
@@ -102,6 +102,8 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
         <Stat label={`${isTeam ? "Closed" : "Earned"} in ${today.slice(0, 4)}`} value={money(sum(closed))} sub={`${closed.length} closed${isTeam ? ", team GCI" : ""}`} accent />
       </dl>
 
+      <ThisMonth deals={active} today={today} />
+
       <section aria-labelledby="active" className="flex flex-col gap-3">
         <h2 id="active" className="text-xl">Under contract</h2>
         {active.length === 0 && <p className="text-sm text-muted">Nothing under contract right now.</p>}
@@ -126,6 +128,40 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
         </section>
       )}
     </>
+  );
+}
+
+const flagsOf = (d: Deal, today: string) => riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
+const TONE = ["text-accent", "text-ink", "text-score-1"] as const;
+
+/** Deals set to close this calendar month, most likely first, each with the reason. */
+function ThisMonth({ deals, today }: { deals: Deal[]; today: string }) {
+  const rows = deals
+    .filter((d) => d.closeOn?.slice(0, 7) === today.slice(0, 7))
+    .map((d) => ({ d, o: closeOutlook(flagsOf(d, today), d.milestones) }))
+    .sort((a, b) => a.o.rank - b.o.rank || a.d.closeOn!.localeCompare(b.d.closeOn!));
+  if (rows.length === 0) return null;
+  const month = new Date(`${today.slice(0, 7)}-15T00:00:00Z`).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" });
+  return (
+    <section aria-labelledby="this-month" className="flex flex-col gap-3">
+      <div>
+        <h2 id="this-month" className="text-xl">Closing in {month}</h2>
+        <p className="text-sm text-muted">Most likely to close on time first, from overdue items, the closing date and client contact.</p>
+      </div>
+      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        {rows.map(({ d, o }) => (
+          <li key={d.id}>
+            <Link href={`/deals/${d.id}`} className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3 hover:bg-surface-3">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate"><span className="font-medium">{d.contact.name}</span> <span className="text-muted">· {d.address}</span></span>
+                <span className="block text-sm text-muted"><span className={`font-medium ${TONE[o.rank]}`}>{o.label}</span> · {o.why}</span>
+              </span>
+              <span className="text-sm tabular-nums text-muted">{money(d.price)} · {new Date(`${d.closeOn}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
