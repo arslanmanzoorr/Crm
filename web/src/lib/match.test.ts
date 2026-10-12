@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { compareHomes, filterListings, learnedPreferences, matchListing, outreachDraft, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
+import { compareHomes, filterListings, learnedPreferences, lifestyleFit, matchListing, outreachDraft, minBeds, minCapRate, parseBudget, quickCapRate } from "./match.ts";
 
 test("parseBudget reads the ways agents write budgets", () => {
   assert.deepEqual(parseBudget("$600k–$650k"), { min: 600_000, max: 650_000 });
@@ -105,4 +105,14 @@ test("outreachDraft speaks in the buyer's terms and is honest about a stretch", 
   const stretch = outreachDraft(p, { score: 70, fits: ["In Westside"], gaps: ["$20k over budget"] }, "Sam");
   assert.match(stretch, /a bit above the budget you mentioned \(\$520,000\)/);
   assert.doesNotMatch(stretch, /within your budget/);
+});
+
+test("lifestyleFit: matches wants to listing text, never wants about people", () => {
+  const r = lifestyleFit(["Backyard", "3 bed", "Garage", "Home office", "No stairs", "Good schools", "Wine cellar", "Quiet street"],
+    "Fenced backyard · 2-car garage · Den off the kitchen · Wine cellar");
+  assert.deepEqual(r.met, ["Yard", "Garage", "Home office"]);
+  assert.deepEqual(r.unmet, ["Single story", "Quiet street"]);       // "3 bed", "Good schools", "Wine cellar": not lifestyle categories, left alone
+  const m = matchListing({ type: "buyer", budget: "$600k", areas: ["Westside"], preferences: ["Backyard", "Pool"] },
+    { area: "Westside", price: 550_000, beds: 3, status: "Active", features: ["Backyard"] })!;
+  assert.ok(m.fits.includes("Has yard") && m.gaps.includes("No mention of pool") && m.score === 95);
 });

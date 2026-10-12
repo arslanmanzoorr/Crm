@@ -5,7 +5,7 @@
 export const BUYING_TYPES = ["buyer", "investor", "renter"];
 
 type Buyer = { type?: string; budget: string; areas: string[]; preferences: string[] };
-type Listing = { area: string; price: number; beds: number; status: string; estRent?: number | null; listingKind?: "sale" | "rent" };
+type Listing = { area: string; price: number; beds: number; status: string; estRent?: number | null; listingKind?: "sale" | "rent"; features?: string[]; description?: string };
 export type Match = { score: number; fits: string[]; gaps: string[] };
 
 /** Minimum cap rate from wants like "Cap rate > 6%" or "6.5% cap". */
@@ -47,6 +47,36 @@ export function minBeds(preferences: string[]): number | undefined {
   }
 }
 
+/**
+ * Lifestyle wants, matched against what the listing says about itself (features and description). Property facts only:
+ * wants about people or neighbors are never matched (Fair Housing), and wants outside these categories are left alone.
+ */
+const LIFESTYLE: [RegExp, RegExp, string][] = [
+  [/\b(back)?yard|garden|outdoor space/i, /\b(back)?yard|garden|patio|deck|outdoor/i, "Yard"],
+  [/garage/i, /garage/i, "Garage"],
+  [/pool/i, /\bpool\b/i, "Pool"],
+  [/office|work from home|wfh|study/i, /office|study|\bden\b/i, "Home office"],
+  [/single[- ]?(story|level)|one[- ]?story|no stairs|ranch/i, /single[- ]?(story|level)|one[- ]?story|ranch/i, "Single story"],
+  [/walk(able|ability|ing distance)?/i, /walk/i, "Walkable"],
+  [/view/i, /\bviews?\b/i, "Views"],
+  [/fireplace/i, /fireplace/i, "Fireplace"],
+  [/basement/i, /basement/i, "Basement"],
+  [/\bev\b|charger|electric vehicle/i, /\bev\b|charg/i, "EV charging"],
+  [/quiet|cul[- ]de[- ]sac/i, /quiet|cul[- ]de[- ]sac/i, "Quiet street"],
+  [/transit|\bbus\b|train|metro|subway/i, /transit|\bbus\b|train|metro|subway|station/i, "Near transit"],
+  [/updated|renovated|move[- ]in ready|turnkey/i, /updated|renovated|remodel|move[- ]in|turnkey|new (kitchen|roof|bath)/i, "Updated"],
+];
+
+/** Which of the buyer's lifestyle wants the listing mentions, and which it doesn't. */
+export function lifestyleFit(preferences: string[], text: string) {
+  const met: string[] = [], unmet: string[] = [];
+  for (const pref of preferences) {
+    const known = LIFESTYLE.find(([want]) => want.test(pref));
+    if (known) (known[1].test(text) ? met : unmet).push(known[2]);
+  }
+  return { met: [...new Set(met)], unmet: [...new Set(unmet)] };
+}
+
 const STRETCH = 0.1; // listings up to 10% over the ceiling still show, flagged as a stretch
 
 /** How well a listing fits a buyer, or null when it clearly doesn't (wrong area, sold, far over budget). */
@@ -86,6 +116,9 @@ export function matchListing(b: Buyer, p: Listing): Match | null {
       else return null;
     }
   }
+  const life = lifestyleFit(b.preferences, [...(p.features ?? []), p.description ?? ""].join(" · "));
+  fits.push(...life.met.map((m) => `Has ${m.toLowerCase()}`));
+  for (const u of life.unmet) { score -= 5; gaps.push(`No mention of ${u.toLowerCase()}`); }
   if (p.status === "Under contract") { score -= 30; gaps.push("Under contract"); }
 
   return score > 0 ? { score, fits, gaps } : null;

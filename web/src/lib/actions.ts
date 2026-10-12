@@ -155,7 +155,7 @@ const MAX_ALERTS = 25;
  * Instant Buyer Matching alerts: a follow-up task for each open buyer a new or cheaper listing fits,
  * assigned to the buyer's owner. Tasks are the alert channel until email/SMS sending is connected.
  */
-async function alertMatches(db: Db, p: { id: string; address: string; area: string; price: number; beds: number; status: string; estRent: number | null; listingKind?: "sale" | "rent" }, why: "New listing" | "Price drop") {
+async function alertMatches(db: Db, p: { id: string; address: string; area: string; price: number; beds: number; status: string; estRent: number | null; listingKind?: "sale" | "rent"; features?: string[]; description?: string }, why: "New listing" | "Price drop") {
   if (p.status === "Sold") return;
   const { data: buyers } = await db.from("contacts").select("id,name,type,budget,areas,preferences,owner_id,score")
     .in("type", BUYING_TYPES).not("stage", "in", "(Closed,Lost)").order("score", { ascending: false }).limit(1000);
@@ -186,7 +186,7 @@ export async function saveProperty(_: FormState, f: FormData): Promise<FormState
   const row = { ...propertyFields(f), fees };
   const before = id ? (await db.from("properties").select("price").eq("id", id).maybeSingle()).data : null;
   const q = id ? db.from("properties").update(row).eq("id", id) : db.from("properties").insert(row);
-  const { data, error } = await q.select("id,address,area,price,beds,status,est_rent,listing_kind").single();
+  const { data, error } = await q.select("id,address,area,price,beds,status,est_rent,listing_kind,features,description").single();
   if (error) return { error: error.message };
   const p = { ...data, price: Number(data.price), estRent: data.est_rent == null ? null : Number(data.est_rent), listingKind: data.listing_kind as "sale" | "rent" };
   if (!id) await alertMatches(db, p, "New listing");
@@ -239,7 +239,7 @@ export async function loadDemo(): Promise<void> {
   await db.from("activities").insert(
     mock.leads.flatMap((l) => l.activity.map((a) => ({
       contact_id: idByName.get(l.name), channel: a.channel, content: a.text,
-      direction: /^(“|DM|Requested|Viewed|Opened|Signed|Came)/.test(a.text) ? "in" : "out", // demo: lead-initiated items
+      direction: /^(“|DM\b|Requested|Viewed|Opened|Signed|Came)/.test(a.text) ? "in" : "out", // demo: lead-initiated items
     }))),
   );
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
