@@ -60,7 +60,7 @@ function TaskCard({ task }: { task: Task }) {
   const sub = tone === "accent" ? "text-on-light/70" : "text-muted";
   const late = overdue(task);
   return (
-    <NotchCard tone={tone} label={`Open ${task.contact}`} href={task.contactId ? `/leads/${task.contactId}` : undefined} className="transition-opacity">
+    <NotchCard tone={tone} label={`Open ${task.contact}`} href={task.contactId ? `/leads/${task.contactId}` : undefined} className="min-w-0 transition-opacity">
       <div className="flex items-center gap-3 pr-12">
         {task.contact ? <Avatar name={task.contact} size={36} /> : null}
         <div className="min-w-0">
@@ -70,7 +70,7 @@ function TaskCard({ task }: { task: Task }) {
       </div>
       <div className="mt-5 flex items-center gap-2">
         <Icon aria-hidden className="size-5 shrink-0" />
-        <h3 className={`truncate text-2xl font-medium ${task.done ? "text-muted line-through" : ""}`}>{task.title}</h3>
+        <h3 className={`min-w-0 truncate text-2xl font-medium ${task.done ? "text-muted line-through" : ""}`}>{task.title}</h3>
       </div>
       <p className={`mt-1 text-sm ${sub}`}>
         {late && <span className={`mr-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${tone === "accent" ? "bg-on-light text-score-1" : "bg-score-1/15 text-score-1"}`}>Overdue</span>}
