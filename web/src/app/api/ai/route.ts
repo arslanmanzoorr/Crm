@@ -11,7 +11,7 @@ const tasks = {
   analyze: (d: string) =>
     `Analyze this lead. Reply with 4 short lines: "Intent:", "Timeline:", "Next best action:", "Talking points:".\n<data>${d}</data>`,
   reply: (d: string) =>
-    `Draft the agent's next reply in this conversation, in the same channel style (SMS/DM short, email can be longer). Reply with the message text only.\n<data>${d}</data>`,
+    `Draft the agent's next reply in this conversation, in the same channel style (SMS/DM short, email can be longer). Use what you know about the lead (budget, areas, wants). Only mention homes listed under matchingListings, never invent listings or details. Reply with the message text only.\n<data>${d}</data>`,
   plan: (d: string) =>
     `This is the agent's day. Write a prioritized plan: 3 to 6 numbered steps, one line each, most urgent first, naming the person or property and the concrete action. Use only this data; skip anything empty. Respect consent strictly: only suggest a call when canCall or consent.call is true, an email only when canEmail or consent.email is true, never anything for dnc. Never claim consent the data doesn't show. Plain words for the agent: never mention data field names. Reply with the numbered steps only.\n<data>${d}</data>`,
   script: (d: string) =>

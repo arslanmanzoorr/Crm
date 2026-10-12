@@ -272,9 +272,9 @@ const MSG_CHANNELS: Channel[] = ["SMS", "WhatsApp", "Email", "Instagram"];
 /** One thread per lead + channel, from the latest 500 messages across the org; most recent first. */
 export async function getThreads(): Promise<Thread[]> {
   if (!dbEnabled) return mock.mockThreads;
-  type Row = ActivityRow & { contacts: { id: string; name: string; phone: string | null; email: string | null; intent: string; budget: string; preferences: string[] } };
+  type Row = ActivityRow & { contacts: { id: string; name: string; phone: string | null; email: string | null; intent: string; budget: string; preferences: string[]; type: string; areas: string[] } };
   const rows = must(await (await supabase()).from("activities")
-    .select("channel,content,ts,direction,contacts(id,name,phone,email,intent,budget,preferences)")
+    .select("channel,content,ts,direction,contacts(id,name,phone,email,intent,budget,preferences,type,areas)")
     .in("channel", MSG_CHANNELS).order("ts", { ascending: false }).limit(500)) as unknown as Row[];
   const byKey = new Map<string, Thread>();
   for (const r of rows.reverse()) {

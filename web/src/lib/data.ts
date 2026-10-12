@@ -222,7 +222,7 @@ export const properties: Property[] = [
 ];
 
 export type Message = { from: "lead" | "agent"; text: string; at: string };
-export type Thread = { leadId: string; name: string; phone: string; email: string; channel: Channel; messages: Message[]; lead?: Pick<Lead, "intent" | "budget" | "preferences"> };
+export type Thread = { leadId: string; name: string; phone: string; email: string; channel: Channel; messages: Message[]; lead?: Pick<Lead, "intent" | "budget" | "preferences"> & { type?: string; areas?: string[] }; homes?: { address: string; price: number; beds: number; why: string[] }[] };
 
 const threadsSeed: Omit<Thread, "name" | "phone" | "email">[] = [
   { leadId: "l1", channel: "SMS", messages: [

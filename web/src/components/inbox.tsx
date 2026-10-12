@@ -47,7 +47,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
     setBusy(true);
     setErr("");
     try {
-      setDraft(await askAi("reply", { channel: t.channel, lead: { name: t.name, ...t.lead }, messages: t.messages.slice(-20) }));
+      setDraft(await askAi("reply", { channel: t.channel, lead: { name: t.name, ...t.lead }, matchingListings: t.homes ?? [], messages: t.messages.slice(-20) }));
     } catch (e) {
       setErr((e as Error).message);
     } finally {
