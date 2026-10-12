@@ -4,6 +4,8 @@ import { CalendarPlus, Check, Copy } from "lucide-react";
 import { useState, useTransition } from "react";
 import { saveShowingFeedback, scheduleShowing, setShowingStatus } from "@/lib/actions";
 import type { Showing } from "@/lib/db";
+import { followUpDraft } from "@/lib/showings";
+import { FarmNote } from "./farm-note";
 import { ActionForm, input, inputAuto, primaryBtn } from "./forms";
 import { LocalTime } from "./local-time";
 
@@ -134,6 +136,12 @@ export function ShowingItem({ s, conflict, showBuyer = true }: { s: Showing; con
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${s.status === "confirmed" ? "bg-accent text-on-light" : s.status === "cancelled" || s.status === "no_show" ? "bg-surface-3 text-muted" : "bg-surface-3"}`}>{STATUS[s.status]}</span>
       </div>
       {needsFeedback || (s.status === "done" && s.interest) ? <ShowingFeedback s={s} /> : <ShowingActions s={s} />}
+      {s.status === "done" && s.interest && (
+        <details>
+          <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Draft a follow-up</summary>
+          <FarmNote label="Showing follow-up" draft={followUpDraft(s.interest, s.address)} due={[{ id: s.contact.id, name: s.contact.name }]} />
+        </details>
+      )}
     </li>
   );
 }

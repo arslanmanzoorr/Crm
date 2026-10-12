@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { conflicts, ics, openSlots, planTour, zonedTime } from "./showings.ts";
+import { conflicts, followUpDraft, ics, openSlots, planTour, zonedTime } from "./showings.ts";
 
 const s = (id: string, start: string, end: string, agentId = "a", status = "confirmed") => ({ id, agentId, startsAt: `2026-10-10T${start}:00Z`, endsAt: `2026-10-10T${end}:00Z`, status });
 
@@ -57,4 +57,9 @@ test("zonedTime and openSlots follow the team's time zone, across DST", () => {
   assert.equal(s.length, 18);
   assert.equal(s[0].toISOString(), "2026-10-10T14:00:00.000Z");
   assert.equal(s[17].toISOString(), "2026-10-10T22:30:00.000Z");
+});
+
+test("followUpDraft matches the buyer's reaction", () => {
+  assert.match(followUpDraft("offer", "14 Oak Ave"), /^Hi \{first_name\}, thanks for coming to see 14 Oak Ave. Let's move quickly/);
+  assert.match(followUpDraft("not_interested", "14 Oak Ave"), /what would you change about it\?/);
 });

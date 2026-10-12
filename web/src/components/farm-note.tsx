@@ -8,7 +8,7 @@ import { input } from "./forms";
 const pill = "flex min-h-10 items-center gap-1.5 rounded-full bg-surface-3 px-3.5 text-sm hover:bg-surface-1 disabled:opacity-60";
 
 /** The market note: edit, copy, and log it on each neighbor's timeline as you send it. */
-export function FarmNote({ draft, due, label = "Market note" }: { draft: string; due: { id: string; name: string; email: boolean }[]; label?: string }) {
+export function FarmNote({ draft, due, label = "Market note" }: { draft: string; due: { id: string; name: string; email?: boolean }[]; label?: string }) {
   const [text, setText] = useState(draft);
   const [copied, setCopied] = useState(false);
   const [logged, setLogged] = useState<Set<string>>(new Set());
@@ -29,7 +29,7 @@ export function FarmNote({ draft, due, label = "Market note" }: { draft: string;
         <ul className="flex flex-col divide-y divide-white/5">
           {due.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-              <a href={`/leads/${p.id}`} className="min-w-0 break-words hover:text-accent">{p.name}{!p.email && <span className="text-xs text-muted"> · no email consent</span>}</a>
+              <a href={`/leads/${p.id}`} className="min-w-0 break-words hover:text-accent">{p.name}{p.email === false && <span className="text-xs text-muted"> · no email consent</span>}</a>
               {logged.has(p.id)
                 ? <span className="flex min-h-10 items-center gap-1.5 text-sm text-accent"><Check aria-hidden className="size-4" />Logged</span>
                 : <button type="button" disabled={pending} className={pill}

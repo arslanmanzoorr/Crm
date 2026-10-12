@@ -106,3 +106,14 @@ export function openSlots(now: Date, busy: [string, string][], tz?: string | nul
   }
   return out;
 }
+
+/** Follow-up after a showing, matched to how the buyer felt about it. `{first_name}` is filled in when logged. */
+export function followUpDraft(interest: "not_interested" | "maybe" | "interested" | "offer", address: string) {
+  const body = {
+    not_interested: `thanks for coming to see ${address}. Sounds like it wasn't the one, and that helps: what would you change about it? I'll use that to narrow the next few homes.`,
+    maybe: `thanks for coming to see ${address}. What's holding you back on it? If it helps, I can find out more from the listing agent or set up a second look.`,
+    interested: `thanks for coming to see ${address}. Glad it stood out! Want to see it again, or talk through what a strong offer would look like?`,
+    offer: `thanks for coming to see ${address}. Let's move quickly: I'll pull the recent sales nearby so we can talk numbers and terms. When's a good time today?`,
+  }[interest];
+  return `Hi {first_name}, ${body}`;
+}
