@@ -12,6 +12,8 @@ const tasks = {
     `Analyze this lead. Reply with 4 short lines: "Intent:", "Timeline:", "Next best action:", "Talking points:".\n<data>${d}</data>`,
   reply: (d: string) =>
     `Draft the agent's next reply in this conversation, in the same channel style (SMS/DM short, email can be longer). Reply with the message text only.\n<data>${d}</data>`,
+  describe: (d: string) =>
+    `Write a listing description of 110 to 170 words from these facts only. Never invent rooms, upgrades, numbers, schools or views that aren't in the data. Describe the property and location features, not who should live there (no "perfect for families", "ideal for couples" and the like). No exclamation marks or clichés like "must see" or "won't last". Plain paragraphs, reply with the description only.\n<data>${d}</data>`,
   caption: (d: string) =>
     `Write a social media caption for this listing for the platform named in the data. Match the platform's length and style, add a call to action and fitting hashtags. Reply with the caption only.\n<data>${d}</data>`,
 } as const;

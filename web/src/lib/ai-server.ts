@@ -31,6 +31,9 @@ export async function chat(o: { system: string; user: string; maxTokens: number;
     body: JSON.stringify({
       model: process.env.OPENROUTER_MODEL || "anthropic/claude-haiku-5.5",
       max_tokens: o.maxTokens,
+      // Thinking off: these are short tasks, and reasoning models (DeepSeek, Nemotron) otherwise spend the whole
+      // budget thinking and return nothing. Models without reasoning ignore it.
+      reasoning: { enabled: false },
       messages: [{ role: "system", content: system }, { role: "user", content: o.user }],
       ...(structured && o.schema && { response_format: { type: "json_schema", json_schema: { name: o.schema.name, strict: true, schema: o.schema.schema } } }),
     }),
@@ -48,5 +51,6 @@ export async function chat(o: { system: string; user: string; maxTokens: number;
   const c = body.choices[0];
   if (c.message?.refusal || c.finish_reason === "refusal" || c.finish_reason === "content_filter") throw new AiError("The AI declined this request.", 422);
   const text = (c.message?.content ?? "").trim();
+  if (!text) throw new AiError(c.finish_reason === "length" ? "The AI ran out of room before answering. Try again, or pick a different model." : "The AI returned an empty answer. Try again.", 502);
   return o.schema ? extractJson(text) : text;
 }
