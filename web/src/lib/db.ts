@@ -400,8 +400,11 @@ export async function getOffices(): Promise<Office[]> {
 
 export type Member = { userId: string; email: string; role: Role; inRotation: boolean; officeId: string | null };
 
+export const ROUTING = ["off", "round_robin", "performance"] as const;
+export type Routing = (typeof ROUTING)[number];
+
 /** Members of the active org (for owner pickers and routing settings). */
-export async function getMembers(): Promise<{ me: string; members: Member[]; routing: "off" | "round_robin" }> {
+export async function getMembers(): Promise<{ me: string; members: Member[]; routing: Routing }> {
   if (!dbEnabled) return { me: "", members: [], routing: "off" };
   const db = await supabase();
   const [{ data: auth }, org] = await Promise.all([db.auth.getUser(), db.rpc("active_org")]);
@@ -412,7 +415,7 @@ export async function getMembers(): Promise<{ me: string; members: Member[]; rou
   return {
     me: auth.user?.id ?? "",
     members: (members.data ?? []).map((m) => ({ userId: m.user_id, email: m.email ?? "", role: m.role as Role, inRotation: m.in_rotation, officeId: m.office_id })),
-    routing: (orgRow.data?.routing ?? "off") as "off" | "round_robin",
+    routing: (orgRow.data?.routing ?? "off") as Routing,
   };
 }
 

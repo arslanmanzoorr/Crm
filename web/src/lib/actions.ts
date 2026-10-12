@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { AI_KEY_MISSING, AiError, chat } from "./ai-server";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
-import { dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, supabase, teamToday } from "./db";
+import { dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
 import { defaultMilestones } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
 import { DOCS, LOAN_STAGES } from "./readiness";
@@ -657,10 +657,10 @@ export async function bulkSetOwner(ids: string[], userId: string | null): Promis
   return { assigned: data.length };
 }
 
-export async function setRouting(on: boolean) {
-  if (!dbEnabled) return;
+export async function setRouting(mode: Routing) {
+  if (!dbEnabled || !ROUTING.includes(mode)) return;
   const db = await authed();
-  const { data } = await db.from("organizations").update({ routing: on ? "round_robin" : "off" }).eq("id", (await db.rpc("active_org")).data).select("id");
+  const { data } = await db.from("organizations").update({ routing: mode }).eq("id", (await db.rpc("active_org")).data).select("id");
   if (!data?.length) throw new Error(NOT_ALLOWED);
   revalidatePath("/team");
 }

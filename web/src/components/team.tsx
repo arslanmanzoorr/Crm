@@ -4,7 +4,7 @@ import { Check, Copy, LogOut, UserMinus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { inviteMember, removeMember, renameOrg, revokeInvite, setInRotation, setMemberRole, setRouting, switchOrg } from "@/lib/actions";
-import type { Member, Role, Team } from "@/lib/db";
+import type { Member, Role, Routing, Team } from "@/lib/db";
 import { US_TIME_ZONES } from "@/lib/showings";
 import { ActionForm, Field, input, primaryBtn, inputAuto } from "./forms";
 import { LocalTime } from "./local-time";
@@ -35,7 +35,7 @@ function Armed({ label, confirm, onConfirm, icon }: { label: string; confirm: st
   );
 }
 
-export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: { members: Member[]; routing: "off" | "round_robin" }; siteUrl: string }) {
+export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: { members: Member[]; routing: Routing }; siteUrl: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
@@ -112,16 +112,22 @@ export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: {
       {isAdmin && team.members.length > 1 && (
         <section aria-labelledby="routing" className="flex flex-col gap-3">
           <h2 id="routing" className="text-xl">Lead routing</h2>
-          <label className="flex items-start gap-3 rounded-card bg-surface-2 p-4 text-sm">
-            <input type="checkbox" defaultChecked={routing.routing === "round_robin"} disabled={pending}
-              onChange={(e) => { const on = e.target.checked; run(() => setRouting(on)); }}
-              className="mt-0.5 size-5 shrink-0 accent-[var(--color-accent)]" />
-            <span>
-              Round-robin new web-form leads
-              <span className="block text-xs text-muted">Each new lead without an owner goes to the person in the rotation who has waited longest. Assistants are never assigned.</span>
-            </span>
-          </label>
-          {routing.routing === "round_robin" && (
+          <fieldset className="flex min-w-0 flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2 text-sm">
+            <legend className="sr-only">How new leads without an owner are assigned</legend>
+            {([
+              ["off", "Don't assign", "New web-form leads stay unassigned until someone takes them."],
+              ["round_robin", "Round-robin", "Each new lead goes to the person in the rotation who has waited longest."],
+              ["performance", "By performance", "Like round-robin, but people who contact their leads get more: up to 3x the share of the slowest, based on the last 90 days."],
+            ] as const).map(([mode, label, why]) => (
+              <label key={mode} className="flex items-start gap-3 p-4">
+                <input type="radio" name="routing" defaultChecked={routing.routing === mode} disabled={pending}
+                  onChange={() => run(() => setRouting(mode))} className="mt-0.5 size-5 shrink-0 accent-[var(--color-accent)]" />
+                <span>{label}<span className="block text-xs text-muted">{why}</span></span>
+              </label>
+            ))}
+          </fieldset>
+          <p className="text-xs text-muted">Territories always win first. Assistants are never assigned.</p>
+          {routing.routing !== "off" && (
             <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
               {routing.members.filter((m) => m.role !== "assistant").map((m) => (
                 <li key={m.userId}>
