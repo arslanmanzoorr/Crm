@@ -21,6 +21,7 @@ export type Lead = {
   nextAction?: string;
   consent?: { sms: boolean; call: boolean; email: boolean; dnc: boolean; dncCheckedOn?: string | null };
   moveBy?: string | null; // asap | 1-3 | 3-6 | 6-12 | 12+
+  scoreWhy?: string; // the AI's reason for the score
   ownerId?: string | null;
   tags?: string[];
   createdAt?: string;

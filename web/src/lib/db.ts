@@ -43,7 +43,7 @@ export async function supabase() {
 type ActivityRow = { channel: Channel; content: string; ts: string; direction: "in" | "out" };
 type ContactRow = {
   id: string; type: string; stage: Stage; next_action: string; name: string; email: string | null; phone: string | null; sources: string[];
-  score: number; owner_id: string | null; tags: string[]; created_at: string; first_response_at: string | null; consent_sms: boolean; consent_call: boolean; consent_email: boolean; dnc: boolean; dnc_checked_on: string | null; move_by?: string | null; intent: string; budget: string; areas: string[]; preferences: string[]; activities: ActivityRow[];
+  score: number; owner_id: string | null; tags: string[]; created_at: string; first_response_at: string | null; consent_sms: boolean; consent_call: boolean; consent_email: boolean; dnc: boolean; dnc_checked_on: string | null; move_by?: string | null; score_why?: string; intent: string; budget: string; areas: string[]; preferences: string[]; activities: ActivityRow[];
 };
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
@@ -69,6 +69,7 @@ export function toLead(r: ContactRow): Lead {
     nextAction: r.next_action,
     consent: { sms: r.consent_sms, call: r.consent_call, email: r.consent_email, dnc: r.dnc, dncCheckedOn: r.dnc_checked_on },
     moveBy: r.move_by ?? null,
+    scoreWhy: r.score_why ?? "",
     ownerId: r.owner_id,
     tags: r.tags,
     createdAt: r.created_at,
@@ -84,7 +85,7 @@ const toProperty = ({ mls_id, listing_kind, street, unit, city, state, zip, home
   ({ ...r, price: Number(r.price), baths: Number(r.baths), tone: toneFor(r.id), showingNotes: showing_notes ?? "", sellerId: seller_id ?? null, createdAt: created_at, listingExpires: listing_expires ?? null, tourUrl: tour_url ?? null, floorPlanUrl: floor_plan_url ?? null, approved: approved_at !== null, estRent: est_rent == null ? null : Number(est_rent), mlsId: mls_id ?? null, listingKind: listing_kind === "rent" ? "rent" : "sale",
     rental: { street: street ?? null, unit: unit ?? null, city: city ?? null, state: state ?? null, zip: zip ?? null, homeType: home_type ?? null, leaseMonths: lease_months ?? null, availableOn: available_on ?? null, furnished: !!furnished, catsOk: cats_ok ?? null, dogsOk: dogs_ok ?? null, parking: parking ?? null, fees: (fees ?? []) as Fee[] } });
 
-const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,dnc_checked_on,move_by,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
+const CONTACT_COLS = "id,type,stage,next_action,name,email,phone,sources,score,owner_id,tags,created_at,first_response_at,consent_sms,consent_call,consent_email,dnc,dnc_checked_on,move_by,score_why,intent,budget,areas,preferences,activities(channel,content,ts,direction)";
 const PROPERTY_COLS = "id,address,area,price,beds,baths,sqft,status,features,description,showing_notes,seller_id,created_at,listing_expires,tour_url,floor_plan_url,approved_at,est_rent,mls_id,listing_kind,street,unit,city,state,zip,home_type,lease_months,available_on,furnished,cats_ok,dogs_ok,parking,fees";
 
 function must<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {

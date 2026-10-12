@@ -82,7 +82,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               <h1 className="truncate text-4xl font-light">{lead.name}</h1>
               <p className="text-muted">{lead.headline}</p>
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                <span className="flex items-center gap-2"><ScoreDots score={lead.score} /> {scoreLabel(lead.score)} · {lead.score}</span>
+                <span className="flex items-center gap-2" title={lead.scoreWhy || undefined}><ScoreDots score={lead.score} /> {scoreLabel(lead.score)} · {lead.score}</span>
                 {lead.moveBy && isMoveBy(lead.moveBy) && <span className={`rounded-full px-2.5 py-1 text-xs ${movingSoon(lead.moveBy) ? "bg-accent/15 text-accent" : "bg-surface-3 text-muted"}`}>Moving {MOVE_BY[lead.moveBy].replace(/^In /, "in ").replace(/^As soon/, "as soon")}</span>}
                 {lead.stage && <StageSelect id={lead.id} stage={lead.stage} />}
                 {team.members.length > 0 && <OwnerSelect contactId={lead.id} ownerId={lead.ownerId ?? null} members={team.members} />}
@@ -274,6 +274,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               <h2 id="ai-profile" className="text-2xl">AI profile</h2>
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
                 <dt className="text-on-light/70">Intent</dt><dd>{lead.intent}</dd>
+                {lead.scoreWhy && <><dt className="text-on-light/70">Score {lead.score}</dt><dd>{lead.scoreWhy}</dd></>}
                 {lead.nextAction && <><dt className="text-on-light/70">Next</dt><dd className="font-medium">{lead.nextAction}</dd></>}
                 <dt className="text-on-light/70">Budget</dt><dd>{lead.budget || "—"}</dd>
                 <dt className="text-on-light/70">Areas</dt><dd>{lead.areas.join(", ") || "—"}</dd>
