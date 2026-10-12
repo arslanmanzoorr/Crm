@@ -1455,6 +1455,14 @@ export async function documentUrl(id: string) {
   return data?.signedUrl ?? null;
 }
 
+/** Show or hide a document in the client's portal (their lead, their deal, or the listing they're selling). */
+export async function shareDocument(id: string, on: boolean) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("documents").update({ shared_with_client: on }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
 export async function deleteDocument(id: string) {
   if (!dbEnabled || !UUID.test(id)) return;
   const db = await authed();

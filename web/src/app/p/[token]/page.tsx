@@ -10,6 +10,7 @@ import { money } from "@/lib/data";
 import { supabase } from "@/lib/db";
 import { daysBetween } from "@/lib/deals";
 import { compareHomes, matchListing } from "@/lib/match";
+import { fileSize } from "@/lib/docs";
 import { FINANCING, type Financing as Fin } from "@/lib/offers";
 import { DOC_SHORT, DOCS, LOAN_STAGES, type Doc, type LoanStage } from "@/lib/readiness";
 
@@ -49,8 +50,10 @@ const INTEREST: Record<string, string> = { not_interested: "Not for them", maybe
 async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }) {
   const { token } = await params;
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) notFound();
-  const { data } = await (await supabase()).rpc("portal_view", { p_token: token });
+  const db = await supabase();
+  const [{ data }, { data: docData }] = await Promise.all([db.rpc("portal_view", { p_token: token }), db.rpc("portal_documents", { p_token: token })]);
   const p = data as Portal | null;
+  const docs = (docData ?? []) as { id: string; name: string; size: number; created_at: string }[];
   if (!p) return <Closed />;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -212,6 +215,22 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
                 </div>
                 {m && <MatchReasons m={m} />}
                 {l.tour_url && <a href={l.tour_url} target="_blank" rel="noopener noreferrer" className="w-fit text-sm text-accent underline">Take the virtual tour</a>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {docs.length > 0 && (
+        <section aria-labelledby="docs" className="flex flex-col gap-3">
+          <h2 id="docs" className="text-xl">Documents from your agent</h2>
+          <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+            {docs.map((d) => (
+              <li key={d.id}>
+                <a href={`/p/${token}/doc/${d.id}`} className="flex min-h-14 items-center justify-between gap-3 px-5 py-2 hover:bg-surface-3">
+                  <span className="min-w-0 break-words">{d.name}</span>
+                  <span className="shrink-0 text-sm text-muted">{fileSize(Number(d.size))} · Download</span>
+                </a>
               </li>
             ))}
           </ul>

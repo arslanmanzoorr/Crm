@@ -1,9 +1,9 @@
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
-import { Download, FileText, Paperclip, Trash2 } from "lucide-react";
+import { Download, FileText, Paperclip, Share2, Trash2 } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
-import { confirmDocument, deleteDocument, documentUploadUrl, documentUrl } from "@/lib/actions";
+import { confirmDocument, deleteDocument, documentUploadUrl, documentUrl, shareDocument } from "@/lib/actions";
 import type { StoredDoc } from "@/lib/db";
 import { checkUpload, DOC_TYPES, fileSize } from "@/lib/docs";
 import { LocalTime } from "./local-time";
@@ -49,6 +49,11 @@ export function Documents({ parent, docs }: { parent: Parent; docs: StoredDoc[] 
             <li key={d.id} className="flex min-h-14 items-center gap-3 px-4 py-2 text-sm">
               <FileText aria-hidden className="size-5 shrink-0 text-muted" />
               <span className="min-w-0 flex-1"><span className="block truncate">{d.name}</span><span className="text-xs text-muted">{DOC_TYPES[d.mime] ?? "File"} · {fileSize(d.size)} · <LocalTime ts={d.createdAt} opts={{ month: "short", day: "numeric" }} /></span></span>
+              <button type="button" disabled={pending} aria-pressed={!!d.shared} onClick={() => start(() => shareDocument(d.id, !d.shared))}
+                aria-label={d.shared ? `Stop sharing ${d.name} with the client` : `Share ${d.name} in the client portal`} title={d.shared ? "Shared in the client portal" : "Share in the client portal"}
+                className={`flex min-h-10 items-center gap-1.5 rounded-full px-3 text-xs ${d.shared ? "bg-accent/15 text-accent" : "text-muted hover:bg-surface-3"}`}>
+                <Share2 aria-hidden className="size-4" />{d.shared && "Shared"}
+              </button>
               <button type="button" disabled={pending} onClick={() => open(d.id)} aria-label={`Download ${d.name}`} className="grid size-10 place-items-center rounded-full hover:bg-surface-3"><Download aria-hidden className="size-4" /></button>
               <button type="button" disabled={pending} onBlur={() => setArmed(null)} aria-label={armed === d.id ? `Press again to delete ${d.name}` : `Delete ${d.name}`}
                 onClick={() => (armed === d.id ? start(() => deleteDocument(d.id)) : setArmed(d.id))}

@@ -850,16 +850,16 @@ export async function getPropertyHistory(propertyId: string): Promise<PropertyEv
   return (must(res) as { kind: PropertyEvent["kind"]; old_value: string | null; new_value: string | null; ts: string }[]).map((e) => ({ kind: e.kind, old: e.old_value, new: e.new_value, ts: e.ts }));
 }
 
-export type StoredDoc = { id: string; name: string; size: number; mime: string; createdAt: string };
+export type StoredDoc = { id: string; name: string; size: number; mime: string; createdAt: string; shared?: boolean };
 
 export async function getDocuments(by: { propertyId?: string; dealId?: string; contactId?: string }): Promise<StoredDoc[]> {
   if (!dbEnabled) return [];
-  let q = (await supabase()).from("documents").select("id,name,size,mime,created_at");
+  let q = (await supabase()).from("documents").select("id,name,size,mime,created_at,shared_with_client");
   if (by.propertyId) q = q.eq("property_id", by.propertyId);
   if (by.dealId) q = q.eq("deal_id", by.dealId);
   if (by.contactId) q = q.eq("contact_id", by.contactId);
   const res = await q.order("created_at", { ascending: false }).limit(200);
-  return (must(res) as { id: string; name: string; size: number; mime: string; created_at: string }[]).map((d) => ({ id: d.id, name: d.name, size: Number(d.size), mime: d.mime, createdAt: d.created_at }));
+  return (must(res) as { id: string; name: string; size: number; mime: string; created_at: string; shared_with_client: boolean }[]).map((d) => ({ id: d.id, name: d.name, size: Number(d.size), mime: d.mime, createdAt: d.created_at, shared: d.shared_with_client }));
 }
 
 export async function getSuppressions(): Promise<{ kind: "email" | "phone"; value: string; reason: string; createdAt: string }[]> {

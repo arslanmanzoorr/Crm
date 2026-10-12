@@ -78,6 +78,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0052_agent_funnels.sql` | Analytics: per-agent conversion (contacted, qualified, under contract) |
 | `0053_offices.sql` | Offices: admins create them and place members (`set_office`); analytics agent rows carry the office |
 | `0054_commission_caps.sql` | Annual cap per agent (`set_annual_cap`); new deals suggest the capped or blended split |
+| `0055_portal_documents.sql` | Share documents with the client: they download them from their portal (`/p/<token>/doc/<id>`), checked against the link each time and logged |
 
 After `0010`, store the hash of your form key (per environment):
 
