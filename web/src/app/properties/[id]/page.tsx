@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Calculator, ChartNoAxesCombined, Clapperboard, FileImage, LayoutPanelTop, Pencil, Printer, Rotate3d, Send, TrendingUp } from "lucide-react";
+import { Calculator, ChartNoAxesCombined, Circle, CircleCheck, Clapperboard, FileImage, LayoutPanelTop, Pencil, Printer, Rotate3d, Send, TrendingUp } from "lucide-react";
 import { approveListing, createCmaFromListing } from "@/lib/actions";
 import Link from "next/link";
 import { daysBetween } from "@/lib/deals";
@@ -14,7 +14,7 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getFarmData, getMe, getLeadForm, getShowings, type OpenHouse } from "@/lib/db";
+import { dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getFarmData, getMe, getLeadForm, promoSentFor, getShowings, type OpenHouse } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { SellerUpdateCard } from "@/components/seller-update-card";
 import { ListingPromo } from "@/components/listing-promo";
@@ -22,6 +22,7 @@ import { SocialGraphic } from "@/components/social-graphic";
 import { areaKey, PROMO_LABEL, type Promo } from "@/lib/farm";
 import { checkUrl, PORTALS, syndicationSteps } from "@/lib/syndication";
 import { feedGaps } from "@/lib/rental-feed";
+import { launchChecklist } from "@/lib/launch";
 import { Documents } from "@/components/documents";
 import { sellerUpdate } from "@/lib/seller-update";
 import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
@@ -93,6 +94,11 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
         </Link>
       </div>
       {dbEnabled ? <PhotoManager propertyId={p.id} photos={p.photos ?? []} /> : <div className={`aspect-[21/9] rounded-card bg-gradient-to-br ${p.tone}`} />}
+      {dbEnabled && (p.status === "Active" || p.status === "Coming soon") && (
+        <Suspense fallback={null}>
+          <Launch p={p} />
+        </Suspense>
+      )}
       <Suspense fallback={<Skeleton className="h-40 max-w-2xl" />}>
         <Buyers p={p} />
       </Suspense>
@@ -134,6 +140,27 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
       )}
       <div className="self-start"><DeleteButton id={p.id} what="listing" /></div>
     </div>
+  );
+}
+
+/** Launch checklist: shown until every step is done, each one read from the system rather than ticked by hand. */
+async function Launch({ p }: { p: Property }) {
+  const [openHouses, promoSent] = await Promise.all([getOpenHouses(p.id), promoSentFor(p.address)]);
+  const steps = launchChecklist({ photos: p.photos?.length ?? 0, description: p.description, approved: p.approved !== false, mlsId: p.mlsId ?? null, rent: p.listingKind === "rent", openHouses: openHouses.length, promoSent });
+  const left = steps.filter((s) => !s.done);
+  if (left.length === 0) return null;
+  return (
+    <section aria-labelledby="launch" className="flex max-w-2xl flex-col gap-3 rounded-card bg-surface-2 p-5">
+      <h2 id="launch" className="text-xl">Launch <span className="text-muted">({steps.length - left.length} of {steps.length} done)</span></h2>
+      <ul className="flex flex-col gap-2 text-sm">
+        {steps.map((s) => (
+          <li key={s.key} className="flex items-start gap-2">
+            {s.done ? <CircleCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-accent" /> : <Circle aria-hidden className="mt-0.5 size-4 shrink-0 text-muted" />}
+            <span className={s.done ? "text-muted line-through decoration-white/20" : ""}>{s.label}{!s.done && s.hint && <span className="text-muted"> · {s.hint}</span>}<span className="sr-only">{s.done ? " (done)" : " (to do)"}</span></span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

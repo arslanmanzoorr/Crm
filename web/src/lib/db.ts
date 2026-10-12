@@ -733,6 +733,14 @@ export async function getDormantCandidates(days: number): Promise<DormantLead[]>
   return (data ?? []).map((c) => ({ id: c.id, name: c.name, type: c.type, stage: c.stage, lastTouch: c.last_activity_at, createdAt: c.created_at, dnc: c.dnc, email: c.consent_email }));
 }
 
+/** Whether a "Just listed" or open house note about this address has been logged as sent to anyone. */
+export async function promoSentFor(address: string): Promise<boolean> {
+  if (!dbEnabled || !address.trim()) return false;
+  const { count } = await (await supabase()).from("activities").select("id", { count: "exact", head: true })
+    .or("content.like.Just listed sent:%,content.like.Open house sent:%").ilike("content", `%${likeSafe(address.trim())}%`);
+  return (count ?? 0) > 0;
+}
+
 export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;
 
 /** The client's live portal link, if any (the token itself is never stored). */
