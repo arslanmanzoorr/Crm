@@ -97,7 +97,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
                   <span className={`text-xs font-normal ${sel ? "text-on-light/70" : "text-muted"}`}>{x.channel}</span>
                 </span>
                 <span className={`block truncate text-xs ${sel ? "text-on-light/70" : "text-muted"}`}>
-                  {last?.from === "lead" && <span className="font-medium text-score-2">Awaiting reply · </span>}
+                  {last?.from === "lead" && <span className={`font-medium ${sel ? "text-on-light" : "text-score-2"}`}>Awaiting reply · </span>}
                   {last?.text}
                 </span>
               </span>

@@ -34,7 +34,7 @@ export function LeadCard({ lead, selected, onToggle, owner }: { lead: Lead; sele
         </button>
       )}
       <LeadAvatar id={lead.id} name={lead.name} size={52} />
-      <h3 className="mt-4 truncate pr-2 text-xl font-medium">{lead.name}</h3>
+      <h2 className="mt-4 truncate pr-2 text-xl font-medium">{lead.name}</h2>
       {owner !== undefined && <p className="text-xs text-muted">{owner ? `Owner: ${owner}` : "Unassigned"}</p>}
       <p className="line-clamp-2 text-sm text-muted">{lead.headline}</p>
 

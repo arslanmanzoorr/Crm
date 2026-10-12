@@ -90,7 +90,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
         rows: a.by_source.map((s) => [s.source, s.leads, s.reached, s.qualified, s.contracted, s.closed, pct(s.closed, s.leads), s.median_response_min ?? "", s.spend]),
       }}>
         {a.by_source.length === 0 ? <Empty>No new leads in this period.</Empty> : (
-          <Table head={["Source", "Leads", "Contacted", "Qualified", "Contract", "Closed", "Close rate", "First response", "Spend", "Per lead", "Per closing"]}>
+          <Table label="Lead sources" head={["Source", "Leads", "Contacted", "Qualified", "Contract", "Closed", "Close rate", "First response", "Spend", "Per lead", "Per closing"]}>
             {a.by_source.map((s) => (
               <tr key={s.source}>
                 <th scope="row" className="py-2.5 pr-4 text-left font-normal">{s.source}</th>
@@ -115,7 +115,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
         header: ["Agent", "Role", "New leads", "Median first response (min)", "Touches", "Active deals", "Closed", "Earned"],
         rows: agents.map((x) => [x.email, x.role, x.leads, x.median_response_min ?? "", x.touches, x.active_deals, x.closed, x.closed_agent]),
       }}>
-        <Table head={["Agent", "New leads", "First response", "Touches", "Active deals", "Closed", "Earned"]}>
+        <Table label="Agents" head={["Agent", "New leads", "First response", "Touches", "Active deals", "Closed", "Earned"]}>
           {agents.map((x) => (
             <tr key={x.user_id}>
               <th scope="row" className="max-w-56 truncate py-2.5 pr-4 text-left font-normal">{x.email} <Dim>{x.role}</Dim></th>
@@ -141,7 +141,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
         rows: agents.map((x) => [x.email, x.leads, x.reached, x.qualified, x.contracted]),
       }}>
         {agents.every((x) => x.leads === 0) ? <Empty>No leads were assigned to anyone in this period.</Empty> : (
-          <Table head={["Agent", "New leads", "Contacted", "Qualified", "Contract"]}>
+          <Table label="Conversion by agent" head={["Agent", "New leads", "Contacted", "Qualified", "Contract"]}>
             {agents.filter((x) => x.leads > 0).map((x) => (
               <tr key={x.user_id}>
                 <th scope="row" className="max-w-56 truncate py-2.5 pr-4 text-left font-normal">{x.email}</th>
@@ -155,7 +155,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
 
       <Section id="listings" title="Listings" note="Active inventory, longest on market first.">
         {a.listings.length === 0 ? <Empty>No active listings.</Empty> : (
-          <Table head={["Listing", "Status", "Days on market", "Open house visitors", "Showings", "Offers", "Best offer vs. price"]}>
+          <Table label="Listings" head={["Listing", "Status", "Days on market", "Open house visitors", "Showings", "Offers", "Best offer vs. price"]}>
             {a.listings.map((l) => (
               <tr key={l.id}>
                 <th scope="row" className="max-w-64 truncate py-2.5 pr-4 text-left font-normal"><Link href={`/properties/${l.id}`} className="hover:text-accent">{l.address}</Link></th>
@@ -169,7 +169,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
 
       <Section id="cohorts" title="Lead cohorts" note="Leads by the month they arrived, and how far they've come since. Last 12 months.">
         {a.cohorts.length === 0 ? <Empty>No leads in the last 12 months.</Empty> : (
-          <Table head={["Month", "Leads", "Contacted", "Qualified", "Contract", "Closed"]}>
+          <Table label="Lead cohorts" head={["Month", "Leads", "Contacted", "Qualified", "Contract", "Closed"]}>
             {a.cohorts.map((k) => (
               <tr key={k.month}>
                 <th scope="row" className="py-2.5 pr-4 text-left font-normal">{monthName(k.month)}</th>
@@ -183,7 +183,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
 
       <Section id="campaigns" title="Campaigns" note="Market and listing notes logged as sent, and how many of those leads wrote back within 14 days.">
         {campaigns.length === 0 ? <Empty>No notes logged as sent in this period. Send one from Farming or a listing page.</Empty> : (
-          <Table head={["Note", "Sent", "Replied", "Reply rate"]}>
+          <Table label="Campaigns" head={["Note", "Sent", "Replied", "Reply rate"]}>
             {campaigns.map((c) => (
               <tr key={c.campaign}>
                 <th scope="row" className="py-2.5 pr-4 text-left font-normal">{c.campaign}</th>
@@ -267,9 +267,9 @@ function Section({ id, title, note, csv, children }: { id: string; title: string
   );
 }
 
-function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
+function Table({ head, label, children }: { head: string[]; label: string; children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-card bg-surface-2 px-5" tabIndex={0} role="region" aria-label="Scrollable table">
+    <div className="overflow-x-auto rounded-card bg-surface-2 px-5" tabIndex={0} role="region" aria-label={`${label} table`}>
       <table className="w-full min-w-[40rem] text-sm">
         <thead><tr className="border-b border-white/5 text-left text-muted">{head.map((h, i) => <th key={h} scope="col" className={`py-2.5 font-normal ${i ? "px-3 text-right" : "pr-4"}`}>{h}</th>)}</tr></thead>
         <tbody className="divide-y divide-white/5">{children}</tbody>
