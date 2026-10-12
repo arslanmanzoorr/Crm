@@ -4,7 +4,9 @@ import { EmptyDemo } from "@/components/empty-demo";
 import { LeadViews } from "@/components/lead-views";
 import { LeadList, type Filter } from "@/components/leads";
 import { Reveal, LoadingCards } from "@/components/ui";
-import { PAGE, getMembers, listLeads, type Temp } from "@/lib/db";
+import { PAGE, getMembers, listLeads, type LeadFilters, type Temp } from "@/lib/db";
+import { AskLeads } from "@/components/ask-leads";
+import Link from "next/link";
 import { normTag } from "@/lib/search";
 
 export const metadata: Metadata = { title: "Leads" };
@@ -34,13 +36,29 @@ async function Leads({ searchParams }: { searchParams: PageProps<"/leads">["sear
   const ownerFilter = ownerParam === "me" || ownerParam === "none" ? ownerParam : "";
   const tag = normTag(one(sp.tag));
   const team = await getMembers();
+  const f: LeadFilters = {
+    type: one(sp.type) || undefined, stage: one(sp.stage) || undefined, area: one(sp.area).slice(0, 80) || undefined,
+    quietDays: Number(one(sp.quiet)) > 0 ? Math.min(Number(one(sp.quiet)), 3650) : undefined, moveSoon: one(sp.soon) === "1",
+  };
+  const asked = one(sp.asked).slice(0, 200);
+  const narrowed = [f.type && `${f.type}s`, f.stage, f.area && `in ${f.area}`, f.quietDays && `quiet ${f.quietDays}+ days`, f.moveSoon && "moving soon"].filter(Boolean) as string[];
+  const summary = [...narrowed, temp !== "All" && temp, q && `"${q}"`, tag && `#${tag}`].filter(Boolean) as string[];
   const { leads, total, counts } = await listLeads({
     q, temp: temp === "All" ? undefined : (temp as Temp), limit, tag: tag || undefined,
-    owner: ownerFilter === "me" ? team.me || undefined : ownerFilter || undefined,
+    owner: ownerFilter === "me" ? team.me || undefined : ownerFilter || undefined, f,
   });
-  if (counts.All === 0 && !q && !tag && !ownerFilter) return <EmptyDemo what="leads" />;
+  if (counts.All === 0 && !q && !tag && !ownerFilter && narrowed.length === 0) return <EmptyDemo what="leads" />;
   return (
     <Reveal>
+      <div className="mb-4 flex flex-col gap-2">
+        <AskLeads initial={asked} />
+        {(narrowed.length > 0 || asked) && (
+          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+            <span>{summary.length ? `Showing ${summary.join(" · ")}` : "No filters matched that question."}</span>
+            <Link href="/leads" className="text-accent underline">Clear</Link>
+          </p>
+        )}
+      </div>
       <LeadList leads={leads} total={total} counts={counts} q={q} temp={temp} limit={limit} owner={ownerFilter} tag={tag} members={team.members} />
     </Reveal>
   );

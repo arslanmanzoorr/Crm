@@ -101,7 +101,9 @@ const TEMP_RANGE: Record<Temp, [number, number]> = { Hot: [80, 100], Warm: [50, 
  * One page of leads with only their latest activity. Search and filters run in Postgres
  * (trigram index on contacts.search), so this stays fast at any list size.
  */
-export async function listLeads({ q = "", temp, limit = PAGE, owner, tag }: { q?: string; temp?: Temp; limit?: number; owner?: string; tag?: string }) {
+export type LeadFilters = { type?: string; stage?: string; area?: string; quietDays?: number; moveSoon?: boolean };
+
+export async function listLeads({ q = "", temp, limit = PAGE, owner, tag, f = {} }: { q?: string; temp?: Temp; limit?: number; owner?: string; tag?: string; f?: LeadFilters }) {
   if (!dbEnabled) {
     const all = mock.leads.filter((l) => `${l.name} ${l.headline}`.toLowerCase().includes(q.toLowerCase()));
     return { leads: all, total: all.length, counts: { All: all.length, Hot: 0, Warm: 0, Cold: 0 } };
@@ -113,14 +115,27 @@ export async function listLeads({ q = "", temp, limit = PAGE, owner, tag }: { q?
     if (term) b = b.ilike("search", `%${term}%`);
     if (owner) b = owner === "none" ? b.is("owner_id", null) : b.eq("owner_id", owner);
     if (tag) b = b.contains("tags", [tag]);
-    return b;
+    return narrow(b);
   };
+  // Structured filters (from the Ask box): exact values only, validated by the caller.
+  function narrow<Q extends { eq: (c: string, v: string) => Q; contains: (c: string, v: string[]) => Q; or: (f: string) => Q; in: (c: string, v: string[]) => Q }>(b: Q): Q {
+    if (f.type) b = b.eq("type", f.type);
+    if (f.stage) b = b.eq("stage", f.stage);
+    if (f.area) b = b.contains("areas", [f.area]);
+    if (f.moveSoon) b = b.in("move_by", ["asap", "1-3"]);
+    if (f.quietDays) {
+      const cutoff = new Date(Date.now() - f.quietDays * 86_400_000).toISOString();
+      b = b.or(`last_activity_at.lt.${cutoff},and(last_activity_at.is.null,created_at.lt.${cutoff})`);
+    }
+    return b;
+  }
   let query = db.from("contacts").select(CONTACT_COLS, { count: "exact" })
     .order("ts", { referencedTable: "activities", ascending: false }).limit(1, { referencedTable: "activities" });
   if (term) query = query.ilike("search", `%${term}%`);
   if (temp) query = query.gte("score", TEMP_RANGE[temp][0]).lte("score", TEMP_RANGE[temp][1]);
   if (owner) query = owner === "none" ? query.is("owner_id", null) : query.eq("owner_id", owner);
   if (tag) query = query.contains("tags", [tag]);
+  query = narrow(query);
   const [res, all, ...temps] = await Promise.all([
     query.order("score", { ascending: false }).order("id").range(0, Math.min(limit, 500) - 1),
     base(),
