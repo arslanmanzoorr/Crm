@@ -44,6 +44,10 @@ export function WebChat({ formId }: { formId: string }) {
         <input value={text} onChange={(e) => setText(e.target.value)} maxLength={600} placeholder="Type your question" aria-label="Your question" className={`${input} flex-1`} />
         <button disabled={busy || !text.trim()} aria-label="Send" className="grid size-11 shrink-0 place-items-center rounded-full bg-accent text-on-light disabled:opacity-60"><Send aria-hidden className="size-4" /></button>
       </form>
+      {msgs.length > 2 && (
+        <a href={`/f/${formId}?source=Website+chat`} onClick={() => { try { sessionStorage.setItem(`chat:${formId}`, `From the website chat: ${msgs.filter((m) => m.from === "visitor").map((m) => m.text).join(" / ")}`.slice(0, 1900)); } catch {} }}
+          className="flex min-h-11 items-center justify-center rounded-full bg-surface-3 px-4 text-sm hover:bg-surface-1">Talk to a person</a>
+      )}
       <p className="text-xs text-muted">Automated answers from listing details; an agent follows up on anything else. Don&apos;t share personal details here. <a href={`/f/${formId}`} className="underline hover:text-ink">Contact form</a> · <a href={`/f/${formId}/book`} className="underline hover:text-ink">Book a showing</a></p>
     </section>
   );

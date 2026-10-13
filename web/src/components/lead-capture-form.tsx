@@ -1,7 +1,7 @@
 "use client";
 
 import { CircleCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { submitLeadForm } from "@/lib/actions";
 import { ActionForm, Field, input, primaryBtn } from "./forms";
 
@@ -9,6 +9,12 @@ import { ActionForm, Field, input, primaryBtn } from "./forms";
 export function LeadCaptureForm({ formId, who, open, source }: { formId: string; who: string; open: boolean; source: string }) {
   const [startedAt] = useState(() => Date.now());
   const [sent, setSent] = useState(false);
+  const msg = useRef<HTMLTextAreaElement>(null);
+  // Handoff from the website chat: carry the visitor's questions into the message (kept in this tab only, never in the URL).
+  useEffect(() => {
+    if (source !== "Website chat" || !msg.current || msg.current.value) return;
+    try { msg.current.value = sessionStorage.getItem(`chat:${formId}`) ?? ""; } catch {}
+  }, [formId, source]);
 
   if (!open)
     return <p className="rounded-card bg-surface-2 p-8 text-center">This form isn&apos;t taking inquiries right now.</p>;
@@ -51,7 +57,7 @@ export function LeadCaptureForm({ formId, who, open, source }: { formId: string;
             <p className="-mt-2 text-xs text-muted">Email or phone, whichever you prefer.</p>
             <label className="flex flex-col gap-1.5 text-sm">
               <span className="text-muted">What are you looking for?</span>
-              <textarea name="message" rows={3} maxLength={2000} placeholder="e.g. 3-bed in Westside under $650k, moving this summer" className={`${input} resize-y`} />
+              <textarea ref={msg} name="message" rows={3} maxLength={2000} placeholder="e.g. 3-bed in Westside under $650k, moving this summer" className={`${input} resize-y`} />
             </label>
             <label className="flex gap-3 text-xs leading-relaxed text-muted">
               <input type="checkbox" name="consent_call_sms" className="mt-0.5 size-5 shrink-0 accent-[var(--color-accent)]" />
