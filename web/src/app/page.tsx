@@ -3,13 +3,14 @@ import { Suspense } from "react";
 import { PlanMyDay } from "@/components/plan-my-day";
 import { Reveal, Skeleton, LoadingCards } from "@/components/ui";
 import { Workspace } from "@/components/workspace";
-import { CircleAlert, Flame } from "lucide-react";
+import { CircleAlert, Flame, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { daysBetween } from "@/lib/deals";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getBuyingSignals, getLeadOptions, getProperties, getMe, getPastClients, getShowings, getSoonMovers, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
+import { dbEnabled, getBuyingSignals, getLeadOptions, getProperties, getMe, getSavedPriceDrops, getPastClients, getShowings, getSoonMovers, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
 import { ShowingItem } from "@/components/showing-controls";
 import { agenda } from "@/lib/retention";
+import { money } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Workspace" };
 
@@ -30,6 +31,7 @@ async function Home_() {
           <>
             <Suspense fallback={null}><Plan /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><Signals /></Suspense>
+            <Suspense fallback={null}><SavedDrops /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><ShowingsSoon /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><DealsAtRisk /></Suspense>
             <Suspense fallback={<Skeleton className="h-32" />}><ExpiringListings /></Suspense>
@@ -161,6 +163,30 @@ async function Signals() {
               <span className="min-w-0 flex-1">
                 <span className="block font-medium">{l.name}</span>
                 <span className="block text-sm text-ink/80">{l.reasons.join(" · ")}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Homes a client saved that just dropped in price. Quiet when there are none. */
+async function SavedDrops() {
+  const drops = await getSavedPriceDrops();
+  if (drops.length === 0) return null;
+  return (
+    <section aria-labelledby="drops" className="flex flex-col gap-4">
+      <h2 id="drops" className="text-xl">Price cuts on saved homes</h2>
+      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        {drops.slice(0, 6).map((d) => (
+          <li key={d.contactId + d.propertyId}>
+            <Link href={`/leads/${d.contactId}`} className="flex min-h-14 items-start gap-3 px-4 py-3 hover:bg-surface-3 sm:px-5">
+              <TrendingDown aria-hidden className="mt-0.5 size-5 shrink-0 text-accent" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate"><span className="font-medium">{d.name}</span> <span className="text-muted">saved {d.address}</span></span>
+                <span className="block text-sm text-ink/80">Now {money(d.to)}, down {money(d.from - d.to)}</span>
               </span>
             </Link>
           </li>

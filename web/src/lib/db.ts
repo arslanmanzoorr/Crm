@@ -750,6 +750,26 @@ export async function getShortlist(contactId: string): Promise<ShortlistItem[]> 
   return ((data ?? []) as unknown as Row[]).map((r) => ({ propertyId: r.property_id, address: r.properties?.address ?? "Listing removed", price: Number(r.properties?.price ?? 0), addedBy: r.added_by, clientNote: r.client_note, agentNote: r.agent_note }));
 }
 
+export type SavedDrop = { contactId: string; name: string; propertyId: string; address: string; from: number; to: number; on: string };
+
+/** Price cuts in the last 14 days on homes a client saved or was sent to their shortlist: a reason to call. */
+export async function getSavedPriceDrops(): Promise<SavedDrop[]> {
+  if (!dbEnabled) return [];
+  const db = await supabase();
+  const since = new Date(Date.parse(await teamToday()) - 14 * 86_400_000).toISOString();
+  const { data: ev } = await db.from("property_events").select("property_id,old_value,new_value,ts,properties(address,status)").eq("kind", "price").gte("ts", since).order("ts", { ascending: false }).limit(200);
+  type E = { property_id: string; old_value: string | null; new_value: string | null; ts: string; properties: { address: string; status: string } | null };
+  const cuts = new Map<string, E>();
+  for (const e of (ev ?? []) as unknown as E[]) if (!cuts.has(e.property_id) && Number(e.new_value) < Number(e.old_value) && e.properties?.status !== "Sold") cuts.set(e.property_id, e);
+  if (cuts.size === 0) return [];
+  const { data: fav } = await db.from("favorites").select("contact_id,property_id,contacts(name)").in("property_id", [...cuts.keys()]).limit(500);
+  type F = { contact_id: string; property_id: string; contacts: { name: string } | null };
+  return ((fav ?? []) as unknown as F[]).map((f) => {
+    const e = cuts.get(f.property_id)!;
+    return { contactId: f.contact_id, name: f.contacts?.name ?? "", propertyId: f.property_id, address: e.properties?.address ?? "", from: Number(e.old_value), to: Number(e.new_value), on: e.ts.slice(0, 10) };
+  });
+}
+
 /** Open leads with no activity in the last `days` (dormant() does the final filter and sort). */
 export async function getDormantCandidates(days: number): Promise<DormantLead[]> {
   if (!dbEnabled) return [];
