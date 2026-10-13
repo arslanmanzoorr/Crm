@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { campaignResults, farmNote, farmReport, homeUpdate, listingNote } from "./farm.ts";
+import { campaignResults, farmNote, farmReport, homeUpdate, listingNote, monthsOfSupply, soldTrend } from "./farm.ts";
 
 const L = (area: string, status: string, price: number, soldOn: string | null = null) => ({ area, status, price, soldOn });
 const P = (id: string, lastTouch: string | null, dnc = false) => ({ id, name: id, lastTouch, dnc, email: true });
@@ -52,4 +52,14 @@ test("homeUpdate: equity change only when both prices are known; area lines only
   const bare = homeUpdate({ address: "9 Elm St", valueEstimate: null, purchasePrice: 400_000 }, null, null, "Sam");
   assert.doesNotMatch(bare, /\$/);
   assert.match(bare, /^Hi \{first_name\}, Sam here with a quick update on 9 Elm St\.\nThinking about/);
+});
+
+test("soldTrend buckets solds by month for 12 months; monthsOfSupply from 90-day pace", () => {
+  const t = soldTrend("Oak", [L("Oak", "Sold", 400_000, "2026-09-03"), L("Oak", "Sold", 600_000, "2026-09-20"), L("Oak", "Sold", 500_000, "2025-01-01"), L("Elm", "Sold", 1, "2026-09-01")], "2026-10-10");
+  assert.equal(t.length, 12);
+  assert.equal(t[0].month, "2025-11");
+  assert.deepEqual(t[10], { month: "2026-09", sold: 2, median: 500_000 });
+  assert.equal(t[11].sold, 0);
+  assert.equal(monthsOfSupply({ active: 6, sold90: 3 }), 6);
+  assert.equal(monthsOfSupply({ active: 6, sold90: 0 }), null);
 });

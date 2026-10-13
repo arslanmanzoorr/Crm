@@ -87,3 +87,15 @@ export function homeUpdate(h: { address: string; valueEstimate: number | null; p
   lines.push("Thinking about refinancing, renting it out or moving up? Happy to run the numbers.");
   return lines.join("\n");
 }
+
+/** Closed sales per month in an area, last 12 months (oldest first), with the median sold price. Own listings only. */
+export function soldTrend(area: string, listings: FarmListing[], today: string) {
+  const months = Array.from({ length: 12 }, (_, i) => { const d = new Date(`${today.slice(0, 7)}-15T00:00:00Z`); d.setUTCMonth(d.getUTCMonth() - 11 + i); return d.toISOString().slice(0, 7); });
+  const sold = listings.filter((l) => areaKey(l.area) === areaKey(area) && l.status === "Sold" && l.soldOn);
+  return months.map((m) => { const p = sold.filter((l) => l.soldOn!.startsWith(m)).map((l) => l.price); return { month: m, sold: p.length, median: median(p) }; });
+}
+
+/** Months of supply: homes for sale ÷ average monthly sales over the last 90 days. Under ~4 favors sellers, over ~6 buyers. */
+export function monthsOfSupply(r: { active: number; sold90: number }): number | null {
+  return r.sold90 ? Math.round((r.active / (r.sold90 / 3)) * 10) / 10 : null;
+}
