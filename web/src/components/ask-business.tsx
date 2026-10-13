@@ -2,6 +2,7 @@
 
 import { Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
+import { Dictate } from "./dictate";
 import { askBusiness } from "@/lib/actions";
 import { inputAuto } from "./forms";
 
@@ -19,6 +20,7 @@ export function AskBusiness() {
       <h2 id="ask" className="text-xl">Ask your business</h2>
       <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (q.trim()) ask(q); }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} maxLength={300} aria-label="Question about your business" placeholder="e.g. Which agent closed the most this year?" className={`${inputAuto} min-w-0 flex-1`} />
+        <Dictate onText={setQ} label="Speak your question" />
         <button disabled={pending || !q.trim()} className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-surface-3 px-4 text-sm hover:bg-surface-1 disabled:opacity-60">
           <Sparkles aria-hidden className="size-4" />{pending ? "Thinking…" : "Ask"}
         </button>

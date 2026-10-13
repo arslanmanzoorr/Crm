@@ -3,6 +3,7 @@
 import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { Dictate } from "./dictate";
 import { askLeads } from "@/lib/actions";
 import { inputAuto } from "./forms";
 
@@ -17,6 +18,7 @@ export function AskLeads({ initial }: { initial: string }) {
       <div className="flex gap-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} maxLength={200} aria-label="Ask about your leads"
           placeholder="Ask: buyers in Westside nobody's called in 30 days" className={`${inputAuto} min-w-0 flex-1`} />
+        <Dictate onText={setQ} label="Speak your question about leads" />
         <button disabled={pending || !q.trim()} className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3 disabled:opacity-60">
           <Sparkles aria-hidden className="size-4" />{pending ? "Asking…" : "Ask"}
         </button>
