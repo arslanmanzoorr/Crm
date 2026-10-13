@@ -778,6 +778,25 @@ export async function setOffice(userId: string, officeId: string | null) {
 }
 
 /** Set or clear an agent's annual cap (owners and admins; the database checks). */
+/** New API key, returned once in plain text; only its hash is stored. */
+export async function createApiKey(name: string): Promise<{ key: string } | { error: string }> {
+  if (!dbEnabled) return NO_DB as { error: string };
+  const n = name.trim();
+  if (!n || n.length > 80) return { error: "Name the key (up to 80 characters), e.g. \"Website\"." };
+  const { data, error } = await (await authed()).rpc("create_api_key", { p_name: n });
+  if (error || typeof data !== "string") return { error: error?.message ?? "Couldn't create the key." };
+  revalidatePath("/team");
+  return { key: data };
+}
+
+export async function revokeApiKey(id: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(id)) return NO_DB;
+  const { data } = await (await authed()).from("api_keys").update({ revoked_at: new Date().toISOString() }).eq("id", id).is("revoked_at", null).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/team");
+  return { ok: "Revoked" };
+}
+
 export async function setBranding(color: string | null, hide: boolean): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   const c = color?.toLowerCase() ?? null;

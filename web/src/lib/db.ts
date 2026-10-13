@@ -944,6 +944,15 @@ export async function getCaps(): Promise<Record<string, { cap: number | null; pa
   return out;
 }
 
+export type ApiKey = { id: string; name: string; prefix: string; createdAt: string; lastUsedAt: string | null };
+
+/** Active API keys (owners and admins only; RLS returns none to others). */
+export async function getApiKeys(): Promise<ApiKey[]> {
+  if (!dbEnabled) return [];
+  const { data } = await (await supabase()).from("api_keys").select("id,name,prefix,created_at,last_used_at").is("revoked_at", null).order("created_at");
+  return (data ?? []).map((k) => ({ id: k.id, name: k.name, prefix: k.prefix, createdAt: k.created_at, lastUsedAt: k.last_used_at }));
+}
+
 export async function getBranding(): Promise<{ color: string | null; hide: boolean }> {
   if (!dbEnabled) return { color: null, hide: false };
   const db = await supabase();

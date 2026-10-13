@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { TeamManager } from "@/components/team";
 import { Skeleton } from "@/components/ui";
-import { getCaps, getMembers, getOffices, getRentalFeed, getSplits, getTeam, getTerritories, getTiers, getBranding } from "@/lib/db";
+import { getCaps, getMembers, getOffices, getRentalFeed, getSplits, getTeam, getTerritories, getTiers, getBranding, getApiKeys } from "@/lib/db";
+import { ApiKeys } from "@/components/api-keys";
 import { BrandSettings } from "@/components/brand-settings";
 import { tierSplit } from "@/lib/deals";
 import { money } from "@/lib/data";
@@ -25,7 +26,7 @@ export default function TeamPage() {
 }
 
 async function TeamView() {
-  const [team, routing, territories, splits, feed, offices, caps, tiers, brand] = await Promise.all([getTeam(), getMembers(), getTerritories(), getSplits(), getRentalFeed(), getOffices(), getCaps(), getTiers(), getBranding()]);
+  const [team, routing, territories, splits, feed, offices, caps, tiers, brand, apiKeys] = await Promise.all([getTeam(), getMembers(), getTerritories(), getSplits(), getRentalFeed(), getOffices(), getCaps(), getTiers(), getBranding(), getApiKeys()]);
   if (!team) return <p className="text-muted">Teams need a connected database.</p>;
   const agents = team.members.filter((m) => m.role !== "assistant").map((m) => ({ id: m.userId, email: m.email }));
   return (
@@ -38,6 +39,13 @@ async function TeamView() {
           <h2 id="branding" className="text-xl">Branding</h2>
           <p className="-mt-2 text-sm text-muted">Your color on lead forms, open house sign-in, showing booking and the client portal.</p>
           <BrandSettings color={brand.color} hide={brand.hide} />
+        </section>
+      )}
+      {(team.me.role === "owner" || team.me.role === "admin") && (
+        <section aria-labelledby="api" className="flex flex-col gap-3">
+          <h2 id="api" className="text-xl">API keys</h2>
+          <p className="-mt-2 text-sm text-muted">Connect your website or other tools: send leads in, read leads and listings out.</p>
+          <ApiKeys keys={apiKeys} base={process.env.SITE_URL ?? ""} />
         </section>
       )}
       <section aria-labelledby="rental-feed" className="flex flex-col gap-3">

@@ -87,6 +87,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0061_split_tiers.sql` | Team commission tiers (`organizations.split_tiers`): past each year-to-date GCI threshold, new deals suggest a higher split |
 | `0062_brand.sql` | White-label: `organizations.brand_color` / `hide_powered_by`, anon `public_brand(kind, id)` returning only those for a form, open house or live portal token |
 | `0063_mfa.sql` | Two-step sign-in: `private.mfa_ok()`; `my_org()`, `is_member()` and the organizations policy return nothing for a password-only (aal1) session of a user with a verified authenticator |
+| `0064_public_api.sql` | Public API v1: `api_keys` (SHA-256 hash only, admin-only RLS), `create_api_key`, key-gated `api_leads`, `api_listings`, `api_create_lead` (web-form rules) |
 
 After `0010`, store the hash of your form key (per environment):
 
