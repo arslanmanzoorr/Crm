@@ -25,6 +25,14 @@ export async function proxy(req: NextRequest) {
     return path.startsWith("/api/")
       ? NextResponse.json({ error: "Sign in again." }, { status: 401 })
       : NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(path + req.nextUrl.search)}`, req.url));
+  // Enrolled in two-step sign-in but only past the password: finish with the code first (the database also refuses aal1).
+  if (data.user && !PUBLIC.some((p) => path.startsWith(p)) && path !== "/mfa") {
+    const { data: aal } = await db.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2")
+      return path.startsWith("/api/")
+        ? NextResponse.json({ error: "Enter your sign-in code first." }, { status: 401 })
+        : NextResponse.redirect(new URL(`/mfa?next=${encodeURIComponent(path + req.nextUrl.search)}`, req.url));
+  }
   return res;
 }
 

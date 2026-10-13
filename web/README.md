@@ -86,6 +86,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0060_performance_routing.sql` | Lead routing "by performance": round-robin weighted by each agent's 90-day contact rate (0.5x–1.5x) |
 | `0061_split_tiers.sql` | Team commission tiers (`organizations.split_tiers`): past each year-to-date GCI threshold, new deals suggest a higher split |
 | `0062_brand.sql` | White-label: `organizations.brand_color` / `hide_powered_by`, anon `public_brand(kind, id)` returning only those for a form, open house or live portal token |
+| `0063_mfa.sql` | Two-step sign-in: `private.mfa_ok()`; `my_org()`, `is_member()` and the organizations policy return nothing for a password-only (aal1) session of a user with a verified authenticator |
 
 After `0010`, store the hash of your form key (per environment):
 

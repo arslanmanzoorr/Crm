@@ -26,7 +26,7 @@ Last updated: 2026-10-13.
 | 16 | Investor Toolkit | 207, 208, 209, 210, 211, 214, 215 (homes they own: equity, yield), 216 | 213 (portal hearts + shortlist; Today flags price cuts on saved homes) | 212 (rent comps) | — |
 | 17 | Automation & Workflows | 218, 219, 220, 222, 225, 226 | 217 (structured builder, not a canvas), 223, 224, 221 (Task prep drafts the call/email for an automation task with AI on the lead page; agent approves, nothing auto-sends) | | |
 | 18 | Analytics | 227, 228, 229, 230, 231, 232, 233, 234, 235 | 236 (CSV per table) | | |
-| 19 | Security & Compliance | 237, 239, 240, 241, 242, 243, 244, 245 (AI use log on Account: who, what, when, vs daily cap), 246 (secrets stay in host env; Account shows connected or not, never values), 248 | | 238 (SSO) | 247 |
+| 19 | Security & Compliance | 237, 239, 240, 241, 242, 243, 244, 245 (AI use log on Account: who, what, when, vs daily cap), 246 (secrets stay in host env; Account shows connected or not, never values), 248 | 238 (two-step sign-in with an authenticator app, enforced in the database: enrolled users get no team data until the code is entered) | 238 (SSO needs an identity provider) | 247 |
 | 20 | Platform & Mobile | 260 (import) | 250 (responsive web), 258 (team accent color and hidden "Powered by" on forms, open house, booking, portal; no custom domain yet) | 249, 251, 254, 255 | 252, 253, 256, 257, 259 (offices done; per-office settings later) |
 
 ## What "needs account" means in practice

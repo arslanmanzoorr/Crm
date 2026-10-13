@@ -37,6 +37,52 @@ async function authed() {
   return db;
 }
 
+const CODE = /^\d{6}$/;
+
+/** Start adding an authenticator app: returns the QR code (SVG data URL) and the secret for manual entry. */
+export async function mfaEnroll(): Promise<{ factorId: string; qr: string; secret: string } | { error: string }> {
+  if (!dbEnabled) return NO_DB as { error: string };
+  const db = await authed();
+  // Drop half-finished setups so a retry doesn't pile up unverified factors.
+  const { data: list } = await db.auth.mfa.listFactors();
+  for (const f of list?.all ?? []) if (f.status === "unverified") await db.auth.mfa.unenroll({ factorId: f.id });
+  const { data, error } = await db.auth.mfa.enroll({ factorType: "totp", friendlyName: `Authenticator ${new Date().toISOString().slice(0, 10)}` });
+  if (error || !data) return { error: error?.message ?? "Couldn't start setup." };
+  return { factorId: data.id, qr: data.totp.qr_code, secret: data.totp.secret };
+}
+
+/** Finish setup with the first code from the app. From now on this account needs a code at sign-in. */
+export async function mfaConfirm(factorId: string, code: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!CODE.test(code.trim())) return { error: "Enter the 6-digit code from your app." };
+  const { error } = await (await authed()).auth.mfa.challengeAndVerify({ factorId, code: code.trim() });
+  if (error) return { error: "That code didn't match. Codes change every 30 seconds; try the current one." };
+  revalidatePath("/account");
+  return { ok: "Two-step sign-in is on." };
+}
+
+export async function mfaRemove(factorId: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const { error } = await (await authed()).auth.mfa.unenroll({ factorId });
+  if (error) return { error: error.message };
+  revalidatePath("/account");
+  return { ok: "Removed." };
+}
+
+/** Second step of sign-in: the code from the authenticator app. */
+export async function mfaVerify(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const code = str(f, "code").replace(/\s/g, "");
+  if (!CODE.test(code)) return { error: "Enter the 6-digit code from your app." };
+  const db = await authed();
+  const { data } = await db.auth.mfa.listFactors();
+  const factor = data?.totp.find((x) => x.status === "verified");
+  if (!factor) redirect(safeNext(str(f, "next")));
+  const { error } = await db.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
+  if (error) return { error: "That code didn't match. Try the current code from your app." };
+  redirect(safeNext(str(f, "next")));
+}
+
 /** Login form: the clicked button's `mode` picks sign-in or sign-up. */
 export async function authenticate(_: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;

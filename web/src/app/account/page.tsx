@@ -7,9 +7,10 @@ import { LocalTime } from "@/components/local-time";
 import { Avatar, Reveal } from "@/components/ui";
 import { signOut } from "@/lib/actions";
 import { LeadFormSettings } from "@/components/lead-form-settings";
-import { dbEnabled, getAiLog, getLeadForm, getMe, getPrivacyRequests, getSuppressions, isOwnerOrAdmin } from "@/lib/db";
+import { dbEnabled, getAiLog, getLeadForm, getMe, getPrivacyRequests, getSuppressions, isOwnerOrAdmin, supabase } from "@/lib/db";
 import { PrivacyRequests } from "@/components/privacy-request";
 import { Suppressions } from "@/components/suppressions";
+import { TwoStep } from "@/components/two-step";
 
 export const metadata: Metadata = { title: "Account" };
 
@@ -22,6 +23,15 @@ export default function AccountPage() {
       <Suspense fallback={<div className="h-24 rounded-card bg-surface-2" />}>
         <Me />
       </Suspense>
+
+      {dbEnabled && (
+        <section aria-labelledby="security" className="flex flex-col gap-2">
+          <h2 id="security" className="text-sm text-muted">Two-step sign-in</h2>
+          <Suspense fallback={<div className="h-24 rounded-card bg-surface-2" />}>
+            <Security />
+          </Suspense>
+        </section>
+      )}
 
       {dbEnabled && (
         <section aria-labelledby="capture" className="flex flex-col gap-2">
@@ -177,4 +187,9 @@ async function AiLog() {
       </div>
     </section>
   );
+}
+
+async function Security() {
+  const { data } = await (await supabase()).auth.mfa.listFactors();
+  return <TwoStep factors={(data?.totp ?? []).filter((f) => f.status === "verified").map((f) => ({ id: f.id, name: f.friendly_name ?? "Authenticator app", created: f.created_at }))} />;
 }
