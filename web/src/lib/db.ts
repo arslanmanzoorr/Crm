@@ -944,6 +944,13 @@ export async function getCaps(): Promise<Record<string, { cap: number | null; pa
   return out;
 }
 
+export async function getBranding(): Promise<{ color: string | null; hide: boolean }> {
+  if (!dbEnabled) return { color: null, hide: false };
+  const db = await supabase();
+  const { data } = await db.from("organizations").select("brand_color,hide_powered_by").eq("id", (await db.rpc("active_org")).data).single();
+  return { color: data?.brand_color ?? null, hide: data?.hide_powered_by ?? false };
+}
+
 /** The team's tiered commission plan (empty = none). */
 export async function getTiers(): Promise<Tier[]> {
   if (!dbEnabled) return [];

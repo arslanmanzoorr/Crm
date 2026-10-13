@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { TeamManager } from "@/components/team";
 import { Skeleton } from "@/components/ui";
-import { getCaps, getMembers, getOffices, getRentalFeed, getSplits, getTeam, getTerritories, getTiers } from "@/lib/db";
+import { getCaps, getMembers, getOffices, getRentalFeed, getSplits, getTeam, getTerritories, getTiers, getBranding } from "@/lib/db";
+import { BrandSettings } from "@/components/brand-settings";
 import { tierSplit } from "@/lib/deals";
 import { money } from "@/lib/data";
 import { Offices } from "@/components/offices";
@@ -24,7 +25,7 @@ export default function TeamPage() {
 }
 
 async function TeamView() {
-  const [team, routing, territories, splits, feed, offices, caps, tiers] = await Promise.all([getTeam(), getMembers(), getTerritories(), getSplits(), getRentalFeed(), getOffices(), getCaps(), getTiers()]);
+  const [team, routing, territories, splits, feed, offices, caps, tiers, brand] = await Promise.all([getTeam(), getMembers(), getTerritories(), getSplits(), getRentalFeed(), getOffices(), getCaps(), getTiers(), getBranding()]);
   if (!team) return <p className="text-muted">Teams need a connected database.</p>;
   const agents = team.members.filter((m) => m.role !== "assistant").map((m) => ({ id: m.userId, email: m.email }));
   return (
@@ -32,6 +33,13 @@ async function TeamView() {
       <TeamManager team={team} routing={routing} siteUrl={process.env.SITE_URL ?? ""} />
       <Offices offices={offices} members={routing.members.map((m) => ({ id: m.userId, email: m.email, officeId: m.officeId }))} canEdit={team.me.role === "owner" || team.me.role === "admin"} />
       <Territories territories={territories} agents={agents} canEdit={team.me.role === "owner" || team.me.role === "admin"} />
+      {(team.me.role === "owner" || team.me.role === "admin") && (
+        <section aria-labelledby="branding" className="flex flex-col gap-3">
+          <h2 id="branding" className="text-xl">Branding</h2>
+          <p className="-mt-2 text-sm text-muted">Your color on lead forms, open house sign-in, showing booking and the client portal.</p>
+          <BrandSettings color={brand.color} hide={brand.hide} />
+        </section>
+      )}
       <section aria-labelledby="rental-feed" className="flex flex-col gap-3">
         <h2 id="rental-feed" className="text-xl">Zillow rentals feed</h2>
         <p className="-mt-2 text-sm text-muted">Active, approved rentals with a full address go to Zillow, Trulia and HotPads automatically. Take a rental off the market and it drops off.</p>

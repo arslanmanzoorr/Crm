@@ -7,6 +7,7 @@ import { AI_KEY_MISSING, AiError, chat } from "./ai-server";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
 import { dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
+import { brandColorError } from "./brand";
 import { cleanTiers, defaultMilestones, type Tier } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
 import { DOCS, LOAN_STAGES } from "./readiness";
@@ -698,6 +699,18 @@ export async function setOffice(userId: string, officeId: string | null) {
 }
 
 /** Set or clear an agent's annual cap (owners and admins; the database checks). */
+export async function setBranding(color: string | null, hide: boolean): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const c = color?.toLowerCase() ?? null;
+  const bad = c && brandColorError(c);
+  if (bad) return { error: bad };
+  const db = await authed();
+  const { data } = await db.from("organizations").update({ brand_color: c, hide_powered_by: hide === true }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/team");
+  return { ok: "Saved" };
+}
+
 export async function setSplitTiers(raw: Tier[]): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   const tiers = cleanTiers(raw.map((t) => ({ gci: Number(t.gci), split: Number(t.split) })));

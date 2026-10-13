@@ -34,7 +34,7 @@ async function SignIn({ params }: { params: PageProps<"/oh/[id]">["params"] }) {
         <p className="mt-1 text-muted">{[info.area, money(Number(info.price)), `${info.beds} bd`, `${Number(info.baths)} ba`].filter(Boolean).join(" · ")}</p>
       </header>
       {info.open ? <CheckinForm id={id} who={info.team} /> : <p className="rounded-card bg-surface-3 p-6 text-center">Sign-in for this open house is closed.</p>}
-      <p className="text-center text-xs text-muted">Hosted by {info.team} · Powered by EstateOS</p>
+      <p className="text-center text-xs text-muted">Hosted by {info.team}<span className="powered"> · Powered by EstateOS</span></p>
     </div>
   );
 }
