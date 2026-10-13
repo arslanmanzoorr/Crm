@@ -17,7 +17,8 @@ export function extractJson(text: string): string {
   return start >= 0 && end > start ? t.slice(start, end + 1) : t;
 }
 
-export async function chat(o: { system: string; user: string; maxTokens: number; schema?: { name: string; schema: object } }): Promise<string> {
+/** One chat call. With `image` (a data: URL) it goes to the vision model (OPENROUTER_VISION_MODEL). */
+export async function chat(o: { system: string; user: string; maxTokens: number; schema?: { name: string; schema: object }; image?: string }): Promise<string> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new AiError(AI_KEY_MISSING, 503);
   // The schema also goes in the prompt, so models without enforced structured output (most free ones) still answer in shape.
@@ -29,12 +30,12 @@ export async function chat(o: { system: string; user: string; maxTokens: number;
       ...(process.env.SITE_URL && { "http-referer": process.env.SITE_URL }), "x-title": "EstateOS",
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || "anthropic/claude-haiku-5.5",
+      model: o.image ? process.env.OPENROUTER_VISION_MODEL || "google/gemma-3-12b-it" : process.env.OPENROUTER_MODEL || "anthropic/claude-haiku-5.5",
       max_tokens: o.maxTokens,
       // Thinking off: these are short tasks, and reasoning models (DeepSeek, Nemotron) otherwise spend the whole
       // budget thinking and return nothing. Models without reasoning ignore it.
       reasoning: { enabled: false },
-      messages: [{ role: "system", content: system }, { role: "user", content: o.user }],
+      messages: [{ role: "system", content: system }, { role: "user", content: o.image ? [{ type: "text", text: o.user }, { type: "image_url", image_url: { url: o.image } }] : o.user }],
       ...(structured && o.schema && { response_format: { type: "json_schema", json_schema: { name: o.schema.name, strict: true, schema: o.schema.schema } } }),
     }),
     signal: AbortSignal.timeout(60_000),

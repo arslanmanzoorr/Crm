@@ -105,6 +105,7 @@ SITE_URL=https://app.yourdomain.com          # used for auth email links; never 
 SUPABASE_SERVICE_ROLE_KEY=...                 # server only; serves portal documents and feed photos after token checks. Never NEXT_PUBLIC_
 OPENROUTER_API_KEY=sk-or-...                  # AI features, via OpenRouter
 OPENROUTER_MODEL=deepseek/deepseek-v4-flash-0731  # optional; default anthropic/claude-haiku-5.5. Thinking is turned off per call
+OPENROUTER_VISION_MODEL=google/gemma-3-12b-it  # optional; reads business card photos (must accept images)
 AI_DAILY_LIMIT=200                            # AI calls per org per 24h (default 200)
 FORM_IP_SALT=<random 32+ bytes hex>           # salts visitor IP hashes on public lead forms
 FORM_RPC_KEY=<random 32+ bytes hex>           # server-only key for submit_lead (DB stores its SHA-256)

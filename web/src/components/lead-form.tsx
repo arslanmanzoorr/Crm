@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+import { CardScanButton } from "@/components/card-scan";
 import { ActionForm, Field, input, primaryBtn } from "@/components/forms";
 import { saveLead } from "@/lib/actions";
 import type { Lead } from "@/lib/data";
@@ -10,10 +12,17 @@ const TYPES = ["buyer", "seller", "renter", "investor", "landlord", "vendor"];
 /** New lead, or edit when `lead` is given. */
 export function LeadForm({ lead }: { lead?: Lead }) {
   const c = lead?.consent;
+  const box = useRef<HTMLDivElement>(null);
+  const set = (name: string, v: string) => {
+    const el = box.current?.querySelector<HTMLInputElement>(`[name="${name}"]`);
+    if (el && v) el.value = v;
+  };
   return (
+    <div ref={box} className="contents">
     <ActionForm action={saveLead} className="grid gap-4 rounded-card bg-surface-2 p-6 sm:grid-cols-2">
       {(pending) => (
         <>
+          {!lead && <CardScanButton onRead={(k) => { set("name", k.name); set("email", k.email); set("phone", k.phone); set("sources", "Business card"); }} />}
           {lead && <input type="hidden" name="id" value={lead.id} />}
           <Field label="Name" name="name" required autoFocus defaultValue={lead?.name} />
           <label className="flex flex-col gap-1.5 text-sm">
@@ -44,5 +53,6 @@ export function LeadForm({ lead }: { lead?: Lead }) {
         </>
       )}
     </ActionForm>
+    </div>
   );
 }
