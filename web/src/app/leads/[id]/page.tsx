@@ -31,6 +31,7 @@ import { FarmNote } from "@/components/farm-note";
 import { isMoveBy, MOVE_BY, movingSoon } from "@/lib/timeline";
 import { AddToShortlist, AgentShortlist } from "@/components/shortlist";
 import { TaskPrep } from "@/components/task-prep";
+import { ProfileUpdates } from "@/components/profile-updates";
 import { fmtDuration } from "@/lib/search";
 import { OwnerSelect } from "@/components/owner-select";
 
@@ -295,6 +296,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 <dt className="text-on-light/70">Source</dt><dd>{lead.sources.join(", ") || "—"}</dd>
               </dl>
               <AnalyzeButton id={lead.id} />
+              <ProfileUpdates id={lead.id} />
             </section>
             {matches.length > 0 && (
               <section aria-labelledby="matches" className="flex flex-col gap-3">
