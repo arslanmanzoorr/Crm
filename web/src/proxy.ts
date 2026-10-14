@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-const PUBLIC = ["/login", "/auth", "/f/", "/oh/", "/p/", "/legal", "/feeds/", "/api/chat/", "/api/v1/", "/tc/"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
+const PUBLIC = ["/login", "/auth", "/f/", "/oh/", "/p/", "/legal", "/feeds/", "/api/chat/", "/api/v1/", "/tc/", "/welcome", "/store", "/site/", "/concepts"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
 
 /** Refreshes the Supabase session cookie and sends signed-out visitors to /login. */
 export async function proxy(req: NextRequest) {
@@ -21,6 +21,8 @@ export async function proxy(req: NextRequest) {
   });
   const { data } = await db.auth.getUser();
   const path = req.nextUrl.pathname;
+  // Signed-out visitors at the root see the marketing site, not the sign-in form.
+  if (!data.user && path === "/") return NextResponse.redirect(new URL("/welcome", req.url));
   if (!data.user && !PUBLIC.some((p) => path.startsWith(p)))
     return path.startsWith("/api/")
       ? NextResponse.json({ error: "Sign in again." }, { status: 401 })

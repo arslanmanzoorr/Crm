@@ -144,3 +144,12 @@ dialog.palette::backdrop {
 
 /* Scroll strips (tables, chip rows) contain their visually hidden labels, so sr-only text can't widen the page. */
 @layer base { .overflow-x-auto { position: relative; } }
+
+/* Marketing site: the capability strip loops by translating exactly one copy of the row. */
+@keyframes site-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes aurora-a { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(12vw, 8vh) scale(1.15); } }
+@keyframes aurora-b { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-10vw, -6vh) scale(0.9); } }
+
+/* Marketing pages ([data-site]) run full bleed: the app column's padding and width cap step aside. */
+main:has([data-site]) { padding: 0; }
+main:has([data-site]) > div { max-width: none; }
