@@ -16,6 +16,7 @@ import { cleanCma } from "./cma";
 import { checkUpload, safeFileName } from "./docs";
 import { planTour, US_TIME_ZONES } from "./showings";
 import { isMoveBy, MOVE_BY } from "./timeline";
+import { unknownFields } from "./templates";
 import { checkSuggestions, type Change, type Suggestion } from "./profile-update";
 import { feesFromForm, HOME_TYPES, PARKING } from "./rental-feed";
 import { BUYING_TYPES, matchListing } from "./match";
@@ -1495,6 +1496,30 @@ export async function createPortalLink(contactId: string): Promise<{ url?: strin
   await db.from("activities").insert({ contact_id: contactId, channel: "Note", content: "Client portal link created" });
   revalidatePath(`/leads/${contactId}`);
   return { url: `${process.env.SITE_URL ?? ""}/p/${token}` };
+}
+
+/** Create or update a document template (owners and admins; the database checks). */
+export async function saveTemplate(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const id = str(f, "id"), name = str(f, "name").slice(0, 120), body = String(f.get("body") ?? "").slice(0, 50000), state = str(f, "state").toUpperCase();
+  if (!name || !body.trim()) return { error: "Give the template a name and some text." };
+  if (state && !/^[A-Z]{2}$/.test(state)) return { error: "State is a 2-letter code, e.g. TX." };
+  const bad = unknownFields(body);
+  if (bad.length) return { error: `Unknown field${bad.length > 1 ? "s" : ""}: ${bad.map((b) => `{{${b}}}`).join(", ")}. Use the fields listed below.` };
+  const db = await authed();
+  const row = { name, body, state: state || null, updated_at: new Date().toISOString() };
+  const { data, error } = UUID.test(id) ? await db.from("doc_templates").update(row).eq("id", id).select("id") : await db.from("doc_templates").insert(row).select("id");
+  if (error) return { error: error.code === "23505" ? "There's already a template with that name." : error.code === "42501" ? NOT_ALLOWED : error.message };
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/templates");
+  redirect("/templates");
+}
+
+export async function deleteTemplate(id: string) {
+  if (!dbEnabled || !UUID.test(id)) return;
+  const { error } = await (await authed()).from("doc_templates").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/templates");
 }
 
 /** Coordinator link for one deal (replaces any earlier one). Returned once; only its hash is stored. */

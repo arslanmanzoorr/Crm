@@ -813,6 +813,22 @@ export async function getAiLog() {
   return { recent: rows.slice(0, 15), byTask, last24h: rows.filter((r) => r.ts >= day).length, limit: AI_DAILY_LIMIT };
 }
 
+export type DocTemplate = { id: string; name: string; state: string | null; body: string; updatedAt: string };
+
+/** The team's document templates, by name. */
+export async function getTemplates(): Promise<DocTemplate[]> {
+  if (!dbEnabled) return [];
+  const { data } = await (await supabase()).from("doc_templates").select("id,name,state,body,updated_at").order("name");
+  return (data ?? []).map((t) => ({ id: t.id, name: t.name, state: t.state, body: t.body, updatedAt: t.updated_at }));
+}
+
+/** Earnest money from the accepted offer behind a deal, if one is linked. */
+export async function getDealEarnest(dealId: string): Promise<number | null> {
+  if (!dbEnabled) return null;
+  const { data } = await (await supabase()).from("offers").select("earnest").eq("deal_id", dealId).eq("status", "accepted").limit(1).maybeSingle();
+  return data?.earnest ? Number(data.earnest) : null;
+}
+
 export type DealLinkInfo = { label: string; createdAt: string; lastSeenAt: string | null } | null;
 
 /** The deal's live coordinator link, if any. */

@@ -83,6 +83,7 @@ export default function AccountPage() {
           <Link href="/farm" className={row}><MapPinned aria-hidden className="size-5 text-muted" /><span className="flex-1">Farming <span className="block text-xs text-muted">Neighborhood market notes</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/partners" className={row}><Contact aria-hidden className="size-5 text-muted" /><span className="flex-1">Partners <span className="block text-xs text-muted">Lenders, inspectors, title</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/team" className={row}><Users aria-hidden className="size-5 text-muted" /><span className="flex-1">Team and invites</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
+          <Link href="/templates" className={row}><Receipt aria-hidden className="size-5 text-muted" /><span className="flex-1">Document templates <span className="block text-xs text-muted">Your own forms, filled from a deal</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/studio" className={row}><Clapperboard aria-hidden className="size-5 text-muted" /><span className="flex-1">Video Studio</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/publish" className={row}><Send aria-hidden className="size-5 text-muted" /><span className="flex-1">Publish to socials</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           {dbEnabled && (
