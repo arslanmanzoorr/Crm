@@ -4,6 +4,7 @@ import { ArrowRight, Clapperboard, Home, Inbox, KanbanSquare, LayoutGrid, Plus, 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { searchEverything, type SearchHit } from "@/lib/actions";
+import { featureFor } from "@/lib/features";
 
 type Cmd = { id: string; title: string; sub: string; href: string; icon: typeof Home };
 
@@ -29,7 +30,7 @@ const isTyping = (el: EventTarget | null) =>
 export const openPalette = () => window.dispatchEvent(new Event("estateos:palette"));
 
 /** ⌘K / Ctrl+K or "/" anywhere: jump to any lead, listing or action. */
-export function CommandPalette() {
+export function CommandPalette({ off = [] }: { off?: readonly string[] }) {
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -86,7 +87,7 @@ export function CommandPalette() {
   }, [q]);
 
   const term = q.trim().toLowerCase();
-  const cmds = COMMANDS.filter((c) => !term || `${c.title} ${c.sub}`.toLowerCase().includes(term));
+  const cmds = COMMANDS.filter((c) => !off.includes(featureFor(c.href) ?? "")).filter((c) => !term || `${c.title} ${c.sub}`.toLowerCase().includes(term));
   const items = [...(term ? hits : []).map((h) => ({ ...h, icon: h.kind === "lead" ? UserRound : Home })), ...cmds];
   const sel = Math.min(active, Math.max(0, items.length - 1));
 

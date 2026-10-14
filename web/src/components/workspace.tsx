@@ -1,20 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { Lead, Task } from "@/lib/data";
+import type { Task } from "@/lib/data";
 import { Header } from "./header";
-import { TopLeads } from "./leads";
-import { DayTasks } from "./tasks";
-import { Today } from "./today";
 
-export function Workspace({ name, leads, soon = [], total, tasks, options, extra }: { name: string; leads: Lead[]; soon?: Lead[]; total: number; tasks: Task[]; options: { id: string; name: string }[]; extra?: ReactNode }) {
+/** Today: the header, then the sections in this person's chosen order. */
+export function Workspace({ name, tasks, children }: { name: string; tasks: Task[]; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-10">
       <Header name={name} tasks={tasks} />
-      <Today leads={[...leads, ...soon.filter((s) => !leads.some((l) => l.id === s.id))]} tasks={tasks} />
-      {extra}
-      <TopLeads leads={leads} total={total} />
-      <DayTasks tasks={tasks} leads={options} />
+      {children}
     </div>
   );
 }

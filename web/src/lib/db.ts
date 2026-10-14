@@ -14,6 +14,7 @@ import type { Comp, Home, NetInputs, Rates } from "./cma";
 import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
 import { areaKey, campaignResults, type FarmListing, type FarmPerson } from "./farm";
 import { scrubbed } from "./consent";
+import { cleanFeatures, cleanSections, homeLayout, type Feature, type Radius, type Section } from "./features";
 import type { DormantLead } from "./reactivate";
 import type { Fee } from "./rental-feed";
 export { likeSafe };
@@ -1003,11 +1004,31 @@ export async function getApiKeys(): Promise<ApiKey[]> {
   return (data ?? []).map((k) => ({ id: k.id, name: k.name, prefix: k.prefix, createdAt: k.created_at, lastUsedAt: k.last_used_at }));
 }
 
-export async function getBranding(): Promise<{ color: string | null; hide: boolean }> {
-  if (!dbEnabled) return { color: null, hide: false };
+export type Branding = { color: string | null; hide: boolean; radius: Radius; logo: string | null; off: Feature[] };
+
+export async function getBranding(): Promise<Branding> {
+  if (!dbEnabled) return { color: null, hide: false, radius: "pill", logo: null, off: [] };
   const db = await supabase();
-  const { data } = await db.from("organizations").select("brand_color,hide_powered_by").eq("id", (await db.rpc("active_org")).data).single();
-  return { color: data?.brand_color ?? null, hide: data?.hide_powered_by ?? false };
+  const { data } = await db.from("organizations").select("brand_color,hide_powered_by,button_radius,logo_path,disabled_features").eq("id", (await db.rpc("active_org")).data).single();
+  return { color: data?.brand_color ?? null, hide: data?.hide_powered_by ?? false, radius: (data?.button_radius as Radius) ?? "pill", logo: logoUrl(data?.logo_path), off: cleanFeatures(data?.disabled_features) };
+}
+
+const logoUrl = (path: string | null | undefined) => (path ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/brand-logos/${path}` : null);
+
+/** Theme, logo and switched-off modules for the app shell; null when signed out or without a database. */
+export async function getAppBrand(): Promise<{ color: string | null; radius: Radius; logo: string | null; off: Feature[]; name: string } | null> {
+  if (!dbEnabled) return null;
+  const { data } = await (await supabase()).rpc("app_brand");
+  if (!data) return null;
+  const b = data as { color: string | null; radius: Radius; logo: string | null; off: unknown; name: string };
+  return { color: b.color, radius: b.radius, logo: logoUrl(b.logo), off: cleanFeatures(b.off), name: b.name };
+}
+
+/** This person's Today layout: every section the team has on, in their order, plus the ones they hid. */
+export async function getHomeLayout(off: readonly string[]): Promise<{ order: Section[]; hidden: Section[] }> {
+  if (!dbEnabled) return { order: homeLayout(null, null, off), hidden: [] };
+  const { data } = await (await supabase()).from("user_prefs").select("home_order,home_hidden").maybeSingle();
+  return { order: homeLayout(data?.home_order, null, off), hidden: cleanSections(data?.home_hidden) };
 }
 
 /** The team's tiered commission plan (empty = none). */

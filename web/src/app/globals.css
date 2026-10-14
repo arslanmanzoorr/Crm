@@ -50,6 +50,11 @@ a {
   text-underline-offset: 3px;
 }
 
+/* White-label button shape: pill-shaped controls follow the team's choice (--radius-btn, set per team) */
+:where(button, a, input, select, textarea, summary, label)[class~="rounded-full"] {
+  border-radius: var(--radius-btn, 9999px);
+}
+
 /* One visible focus style for every control; inputs keep their ring */
 :focus-visible {
   outline: 2px solid var(--color-accent);

@@ -4,7 +4,7 @@ Numbers refer to the feature list in [FEATURES.md](FEATURES.md).
 **Done** = working and tested in the app. **Partial** = a real but smaller version exists.
 **Needs account** = can't be built or tested until an outside service is connected (keys, app review, licenses).
 
-Last updated: 2026-10-13.
+Last updated: 2026-10-14.
 
 | # | Module | Done | Partial | Needs account | Not started |
 |---|---|---|---|---|---|
@@ -27,7 +27,7 @@ Last updated: 2026-10-13.
 | 17 | Automation & Workflows | 218, 219, 220, 222, 225, 226 | 217 (structured builder, not a canvas), 223, 224, 221 (Task prep drafts the call/email for an automation task with AI on the lead page; agent approves, nothing auto-sends) | | |
 | 18 | Analytics | 227, 228, 229, 230, 231, 232, 233, 234, 235 | 236 (CSV per table) | | |
 | 19 | Security & Compliance | 237, 239, 240, 241, 242, 243, 244, 245 (AI use log on Account: who, what, when, vs daily cap), 246 (secrets stay in host env; Account shows connected or not, never values), 248 | 247 (Team page: calling hours inside the federal 8am–9pm, enforced on call/text buttons; all-party recording reminder; document templates per state), 238 (two-step sign-in with an authenticator app, enforced in the database: enrolled users get no team data until the code is entered) | 238 (SSO needs an identity provider) | |
-| 20 | Platform & Mobile | 260 (import) | 250 (responsive web), 257 (Account: each connection with its status and what it unlocks; API keys for anything else; no third-party app store), 259 (offices with their own time zone for due dates; analytics and pipeline per office), 256 (API v1: team API keys on the Team page, hashed; GET/POST leads, GET listings; usage notes in place of a developer portal), 253 (New lead: scan a business card with the AI vision model; fills name, email, phone; consent stays off), 252 (mic on the lead timeline: spoken voice note becomes a logged note), 258 (team accent color and hidden "Powered by" on forms, open house, booking, portal; no custom domain yet) | 249, 251, 254, 255 | |
+| 20 | Platform & Mobile | 260 (import) | 250 (responsive web), 257 (Account: each connection with its status and what it unlocks; API keys for anything else; no third-party app store), 259 (offices with their own time zone for due dates; analytics and pipeline per office), 256 (API v1: team API keys on the Team page, hashed; GET/POST leads, GET listings; usage notes in place of a developer portal), 253 (New lead: scan a business card with the AI vision model; fills name, email, phone; consent stays off), 252 (mic on the lead timeline: spoken voice note becomes a logged note), 258 (owner white-label on the Team page: logo upload, accent color and button shape across the whole CRM with live preview, modules switched off for the team (hidden from menu and search, pages closed), hidden "Powered by" on client pages; each person drags their Today sections into order or hides them; no custom domain yet) | 249, 251, 254, 255 | |
 
 ## What "needs account" means in practice
 

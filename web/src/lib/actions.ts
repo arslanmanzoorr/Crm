@@ -8,6 +8,8 @@ import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv"
 import * as mock from "./data";
 import { dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
 import { brandColorError } from "./brand";
+import { cleanFeatures, cleanSections, RADII, type Radius } from "./features";
+import { allow } from "./rate-limit";
 import { cleanTiers, defaultMilestones, type Tier } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
 import { DOCS, LOAN_STAGES } from "./readiness";
@@ -877,15 +879,79 @@ export async function revokeApiKey(id: string): Promise<FormState> {
   return { ok: "Revoked" };
 }
 
-export async function setBranding(color: string | null, hide: boolean): Promise<FormState> {
+export async function setBranding(color: string | null, hide: boolean, radius: Radius = "pill"): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   const c = color?.toLowerCase() ?? null;
   const bad = c && brandColorError(c);
   if (bad) return { error: bad };
+  if (!RADII.includes(radius)) return { error: "Pick a button shape." };
   const db = await authed();
-  const { data } = await db.from("organizations").update({ brand_color: c, hide_powered_by: hide === true }).eq("id", (await db.rpc("active_org")).data).select("id");
+  const { data } = await db.from("organizations").update({ brand_color: c, hide_powered_by: hide === true, button_radius: radius }).eq("id", (await db.rpc("active_org")).data).select("id");
   if (!data?.length) return { error: NOT_ALLOWED };
-  revalidatePath("/team");
+  revalidatePath("/", "layout");
+  return { ok: "Saved" };
+}
+
+/** Raster logo only, sniffed from the bytes (the browser's type label is not trusted). No SVG: it can carry script. */
+const LOGO_MAX = 512 * 1024;
+function logoType(b: Uint8Array): "png" | "jpg" | "webp" | null {
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "png";
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpg";
+  if (String.fromCharCode(...b.slice(0, 4)) === "RIFF" && String.fromCharCode(...b.slice(8, 12)) === "WEBP") return "webp";
+  return null;
+}
+
+export async function uploadLogo(form: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const file = form.get("logo");
+  if (!(file instanceof File) || file.size === 0) return { error: "Choose an image." };
+  if (file.size > LOGO_MAX) return { error: "Logos can be up to 512 KB." };
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const ext = logoType(bytes);
+  if (!ext) return { error: "Use a PNG, JPG or WebP image." };
+  const db = await authed();
+  const org = (await db.rpc("active_org")).data as string | null;
+  if (!org || !allow(`logo:${org}`, 10, 3_600_000)) return { error: "Too many uploads. Try again in an hour." };
+  const { data: before } = await db.from("organizations").select("logo_path").eq("id", org).single();
+  const path = `${org}/logo-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+  const { error } = await db.storage.from("brand-logos").upload(path, bytes, { contentType: ext === "jpg" ? "image/jpeg" : `image/${ext}`, cacheControl: "31536000" });
+  if (error) return { error: NOT_ALLOWED };
+  const { data } = await db.from("organizations").update({ logo_path: path }).eq("id", org).select("id");
+  if (!data?.length) { await db.storage.from("brand-logos").remove([path]); return { error: NOT_ALLOWED }; }
+  if (before?.logo_path) await db.storage.from("brand-logos").remove([before.logo_path]);
+  revalidatePath("/", "layout");
+  return { ok: "Logo updated" };
+}
+
+export async function removeLogo(): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const db = await authed();
+  const org = (await db.rpc("active_org")).data as string | null;
+  const { data: before } = await db.from("organizations").select("logo_path").eq("id", org).single();
+  const { data } = await db.from("organizations").update({ logo_path: null }).eq("id", org).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  if (before?.logo_path) await db.storage.from("brand-logos").remove([before.logo_path]);
+  revalidatePath("/", "layout");
+  return { ok: "Logo removed" };
+}
+
+/** Owners/admins switch whole modules off for the team; the database checks the role and the allowed keys. */
+export async function setFeatures(off: string[]): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const db = await authed();
+  const { data } = await db.from("organizations").update({ disabled_features: cleanFeatures(off) }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/", "layout");
+  return { ok: "Saved" };
+}
+
+/** Each person's own Today layout. */
+export async function setHomeLayout(order: string[], hidden: string[]): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const db = await authed();
+  const { error } = await db.from("user_prefs").upsert({ home_order: cleanSections(order), home_hidden: cleanSections(hidden), updated_at: new Date().toISOString() });
+  if (error) return { error: NOT_ALLOWED };
+  revalidatePath("/");
   return { ok: "Saved" };
 }
 

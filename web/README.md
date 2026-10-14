@@ -95,6 +95,8 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0069_column_grants.sql` | Security fix (pentest): users may update only `memberships.role` and the settings columns of `organizations` (blocks a cross-team takeover and plan tampering) |
 | `0070_rate_limits.sql` | Database rate limits on portal notes/hearts, coordinator ticks and API lead creation; API keys revoke-only; workflow field caps |
 | `0071_google_accounts.sql` | Per-user Google connection (refresh token AES-GCM encrypted with `GOOGLE_TOKEN_KEY`, own row only) and `showings.google_event_id` |
+| `0072_white_label.sql` | Owner white-label: `organizations.logo_path` / `button_radius` / `disabled_features` (allow-listed keys), public `brand-logos` bucket (PNG/JPG/WebP, 512 KB, owners/admins write their team folder), `app_brand()` for the app shell, per-user `user_prefs` (Today order and hidden sections) |
+| `0073_logo_delete_fix.sql` | Owners/admins can read their team's logo objects so Storage deletes (replace/remove) succeed |
 
 After `0010`, store the hash of your form key (per environment):
 

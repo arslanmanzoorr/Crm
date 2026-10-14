@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Fragment, Suspense, type ReactNode } from "react";
 import { PlanMyDay } from "@/components/plan-my-day";
 import { Reveal, Skeleton, LoadingCards } from "@/components/ui";
 import { Workspace } from "@/components/workspace";
+import { HomeCustomize } from "@/components/home-customize";
+import { TopLeads } from "@/components/leads";
+import { DayTasks } from "@/components/tasks";
+import { Today } from "@/components/today";
+import type { Section } from "@/lib/features";
 import { CircleAlert, Flame, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { daysBetween } from "@/lib/deals";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getBuyingSignals, getLeadOptions, getProperties, getMe, getSavedPriceDrops, getPastClients, getShowings, getSoonMovers, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
+import { dbEnabled, getAppBrand, getHomeLayout, getBuyingSignals, getLeadOptions, getProperties, getMe, getSavedPriceDrops, getPastClients, getShowings, getSoonMovers, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
 import { ShowingItem } from "@/components/showing-controls";
 import { agenda } from "@/lib/retention";
 import { money } from "@/lib/data";
@@ -23,21 +28,27 @@ export default function Home() {
 }
 
 async function Home_() {
-  const [me, top, tasks, options, soon] = await Promise.all([getMe(), getTopLeads(), getTasks(), getLeadOptions(), getSoonMovers()]);
+  const [me, top, tasks, options, soon, brand] = await Promise.all([getMe(), getTopLeads(), getTasks(), getLeadOptions(), getSoonMovers(), getAppBrand()]);
+  const layout = await getHomeLayout(brand?.off ?? []);
+  const db = (node: ReactNode) => (dbEnabled ? node : null);
+  const blocks: Record<Section, ReactNode> = {
+    today: <Today leads={[...top.leads, ...soon.filter((s) => !top.leads.some((l) => l.id === s.id))]} tasks={tasks} />,
+    plan: db(<Suspense fallback={null}><Plan /></Suspense>),
+    signals: db(<Suspense fallback={<Skeleton className="h-32" />}><Signals /></Suspense>),
+    drops: db(<Suspense fallback={null}><SavedDrops /></Suspense>),
+    showings: db(<Suspense fallback={<Skeleton className="h-32" />}><ShowingsSoon /></Suspense>),
+    deals: db(<Suspense fallback={<Skeleton className="h-32" />}><DealsAtRisk /></Suspense>),
+    expiring: db(<Suspense fallback={<Skeleton className="h-32" />}><ExpiringListings /></Suspense>),
+    keep: db(<Suspense fallback={<Skeleton className="h-32" />}><KeepInTouch /></Suspense>),
+    leads: <TopLeads leads={top.leads} total={top.total} />,
+    tasks: <DayTasks tasks={tasks} leads={options} />,
+  };
   return (
     <Reveal>
-      <Workspace name={me.name} leads={top.leads} soon={soon} total={top.total} tasks={tasks} options={options}
-        extra={dbEnabled && (
-          <>
-            <Suspense fallback={null}><Plan /></Suspense>
-            <Suspense fallback={<Skeleton className="h-32" />}><Signals /></Suspense>
-            <Suspense fallback={null}><SavedDrops /></Suspense>
-            <Suspense fallback={<Skeleton className="h-32" />}><ShowingsSoon /></Suspense>
-            <Suspense fallback={<Skeleton className="h-32" />}><DealsAtRisk /></Suspense>
-            <Suspense fallback={<Skeleton className="h-32" />}><ExpiringListings /></Suspense>
-            <Suspense fallback={<Skeleton className="h-32" />}><KeepInTouch /></Suspense>
-          </>
-        )} />
+      <Workspace name={me.name} tasks={tasks}>
+        {layout.order.filter((k) => !layout.hidden.includes(k)).map((k) => <Fragment key={k}>{blocks[k]}</Fragment>)}
+        {dbEnabled && <HomeCustomize order={layout.order} hidden={layout.hidden} />}
+      </Workspace>
     </Reveal>
   );
 }

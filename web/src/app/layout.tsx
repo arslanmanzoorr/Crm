@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Urbanist } from "next/font/google";
 import { Suspense } from "react";
 import { Sidebar } from "@/components/sidebar";
+import { getAppBrand } from "@/lib/db";
+import { themeCss } from "@/lib/theme";
 import "./globals.css";
 
 const urbanist = Urbanist({
@@ -26,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <div className="flex min-h-screen">
           <Suspense fallback={<div className="md:w-20" />}>
-            <Sidebar />
+            <Shell />
           </Suspense>
           <main id="main" className="min-w-0 flex-1 px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-8 md:pb-8">
             <div className="mx-auto max-w-[1400px]">{children}</div>
@@ -34,5 +36,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </div>
       </body>
     </html>
+  );
+}
+
+/** The team's theme (validated CSS variables), logo and switched-off modules around the navigation. */
+async function Shell() {
+  const b = await getAppBrand();
+  const css = b ? themeCss(b.color, b.radius) : "";
+  return (
+    <>
+      {css && <style>{css}</style>}
+      <Sidebar logo={b?.logo} team={b?.name} off={b?.off} />
+    </>
   );
 }
