@@ -54,6 +54,11 @@ const nextConfig: NextConfig = {
       { source: "/f/:path*", headers: embeddable },
       // Client portal URLs carry a secret: never leak it in a Referer, never index or cache the page.
       // (Later rules override earlier ones for the same header.)
+      { source: "/tc/:path*", headers: [
+        { key: "Referrer-Policy", value: "no-referrer" },
+        { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        { key: "Cache-Control", value: "private, no-store" },
+      ] },
       { source: "/p/:path*", headers: [
         { key: "Referrer-Policy", value: "no-referrer" },
         { key: "X-Robots-Tag", value: "noindex, nofollow" },

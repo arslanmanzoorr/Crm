@@ -9,7 +9,8 @@ import { Chip, Skeleton } from "@/components/ui";
 import { cash, money } from "@/lib/data";
 import { commission, daysBetween, riskFlags } from "@/lib/deals";
 import { DealRescue } from "@/components/deal-rescue";
-import { EXPENSE_CATEGORIES, getDeal, getDocuments, getExpenses, getFinancing, getMembers, teamToday } from "@/lib/db";
+import { EXPENSE_CATEGORIES, getDeal, getDealLink, getDocuments, getExpenses, getFinancing, getMembers, teamToday } from "@/lib/db";
+import { CoordinatorControls } from "@/components/coordinator-controls";
 import { Documents } from "@/components/documents";
 import { DeleteExpense, ExpenseForm, PayoutControls } from "@/components/money-controls";
 import { ReadinessList } from "@/components/readiness-card";
@@ -33,7 +34,7 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
   const today = await teamToday();
   const flags = riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
   const c = commission(d.price, d.commissionPct, d.agentSplitPct, d.referralPct);
-  const [costs, me, docs] = await Promise.all([getExpenses({ dealId: d.id }), getMembers(), getDocuments({ dealId: d.id })]);
+  const [costs, me, docs, tcLink] = await Promise.all([getExpenses({ dealId: d.id }), getMembers(), getDocuments({ dealId: d.id }), getDealLink(d.id)]);
   const spent = costs.reduce((n, e) => n + e.amount, 0);
   const isAdmin = me.members.some((m) => m.userId === me.me && (m.role === "owner" || m.role === "admin"));
   const fin = d.side === "buyer" && d.status === "active" ? readiness((await getFinancing(d.contact.id)) ?? EMPTY_FINANCING, { closeOn: d.closeOn, today }) : null;
@@ -98,6 +99,10 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
           <section aria-labelledby="docs" className="flex flex-col gap-3">
             <h2 id="docs" className="text-xl">Documents</h2>
             <Documents parent={{ deal_id: d.id }} docs={docs} />
+          </section>
+          <section aria-labelledby="tc" className="flex flex-col gap-3">
+            <h2 id="tc" className="text-xl">Transaction coordinator</h2>
+            <CoordinatorControls dealId={d.id} link={tcLink} />
           </section>
           <details className="rounded-card bg-surface-2 p-5">
             <summary className="min-h-11 cursor-pointer content-center text-lg">Edit terms and dates</summary>

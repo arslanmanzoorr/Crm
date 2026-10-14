@@ -807,6 +807,16 @@ export async function getAiLog() {
   return { recent: rows.slice(0, 15), byTask, last24h: rows.filter((r) => r.ts >= day).length, limit: AI_DAILY_LIMIT };
 }
 
+export type DealLinkInfo = { label: string; createdAt: string; lastSeenAt: string | null } | null;
+
+/** The deal's live coordinator link, if any. */
+export async function getDealLink(dealId: string): Promise<DealLinkInfo> {
+  if (!dbEnabled) return null;
+  const { data } = await (await supabase()).from("deal_links").select("label,created_at,last_seen_at")
+    .eq("deal_id", dealId).is("revoked_at", null).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  return data ? { label: data.label, createdAt: data.created_at, lastSeenAt: data.last_seen_at } : null;
+}
+
 export type PortalLinkInfo = { createdAt: string; lastSeenAt: string | null; expiresAt: string } | null;
 
 /** The client's live portal link, if any (the token itself is never stored). */

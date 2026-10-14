@@ -1488,6 +1488,35 @@ export async function createPortalLink(contactId: string): Promise<{ url?: strin
   return { url: `${process.env.SITE_URL ?? ""}/p/${token}` };
 }
 
+/** Coordinator link for one deal (replaces any earlier one). Returned once; only its hash is stored. */
+export async function createDealLink(dealId: string, label: string): Promise<{ url?: string; error?: string }> {
+  if (!dbEnabled) return { error: NO_DB.error };
+  const name = label.trim().slice(0, 80);
+  if (!UUID.test(dealId) || !name) return { error: "Add the coordinator's name." };
+  const db = await authed();
+  const token = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("base64url");
+  const hash = Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token))).toString("hex");
+  await db.from("deal_links").update({ revoked_at: new Date().toISOString() }).eq("deal_id", dealId).is("revoked_at", null);
+  const { error } = await db.from("deal_links").insert({ deal_id: dealId, label: name, token_hash: hash });
+  if (error) return { error: error.message };
+  revalidatePath(`/deals/${dealId}`);
+  return { url: `${process.env.SITE_URL ?? ""}/tc/${token}` };
+}
+
+export async function revokeDealLinks(dealId: string) {
+  if (!dbEnabled || !UUID.test(dealId)) return;
+  const { error } = await (await authed()).from("deal_links").update({ revoked_at: new Date().toISOString() }).eq("deal_id", dealId).is("revoked_at", null);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/deals/${dealId}`);
+}
+
+/** From the coordinator page (no login): tick a milestone. The token is checked in the database. */
+export async function tcToggleMilestone(token: string, milestoneId: string, done: boolean): Promise<boolean> {
+  if (!dbEnabled || !/^[A-Za-z0-9_-]{43}$/.test(token) || !UUID.test(milestoneId)) return false;
+  const { data } = await (await supabase()).rpc("tc_milestone", { p_token: token, p_milestone: milestoneId, p_done: done === true });
+  return data === true;
+}
+
 export async function revokePortalLinks(contactId: string) {
   if (!dbEnabled || !UUID.test(contactId)) return;
   const db = await authed();
