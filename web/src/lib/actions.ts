@@ -141,6 +141,19 @@ export async function authenticate(_: FormState, f: FormData): Promise<FormState
   return { ok: "Check your email for a confirmation link." };
 }
 
+/** "Continue with Google": Supabase Auth's Google sign-in (same Google Cloud client, enabled under Supabase Auth > Providers). */
+export async function googleSignIn(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.SITE_URL) return { error: "Google sign-in isn't set up yet. Use email and password." };
+  const next = safeNext(str(f, "next"));
+  const { data, error } = await (await supabase()).auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${process.env.SITE_URL.replace(/\/$/, "")}/auth/callback?next=${encodeURIComponent(next)}`, queryParams: { prompt: "select_account" } },
+  });
+  if (error || !data.url) return { error: "Couldn't start Google sign-in. Try again." };
+  redirect(data.url);
+}
+
 export async function signOut() {
   if (dbEnabled) await (await supabase()).auth.signOut();
   redirect("/login");
