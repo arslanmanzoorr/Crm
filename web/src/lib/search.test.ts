@@ -18,7 +18,7 @@ test("likeSafe caps length", () => {
 
 test("safeNext keeps same-site paths and rejects open redirects", () => {
   assert.equal(safeNext("/invite/abc?x=1"), "/invite/abc?x=1");
-  for (const bad of ["//evil.com", "/\\evil.com", "https://evil.com", "evil.com", "", null, "/ok\r\nSet-Cookie:x"]) assert.equal(safeNext(bad), "/");
+  for (const bad of ["//evil.com", "/\\evil.com", "https://evil.com", "evil.com", "", null, "/ok\r\nSet-Cookie:x", "/\t/evil.com", "/\u0000/evil.com", "/a\\b"]) assert.equal(safeNext(bad), "/");
 });
 
 test("normTag keeps simple words and drops filter/HTML syntax", () => {

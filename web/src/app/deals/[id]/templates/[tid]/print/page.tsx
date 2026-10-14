@@ -28,6 +28,7 @@ async function Doc({ params }: { params: PageProps<"/deals/[id]/templates/[tid]/
   });
   return (
     <div className="mx-auto flex max-w-[52rem] flex-col gap-4 print:max-w-none">
+      <h1 className="sr-only">{t.name}</h1>
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link href={`/deals/${d.id}`} className="text-sm text-muted hover:text-accent">← Back to the deal</Link>
         <PrintButton />

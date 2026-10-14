@@ -6,9 +6,12 @@
 export const likeSafe = (q: string) =>
   q.toLowerCase().replace(/[%_*\\,()"]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
 
-/** Only same-site paths survive as post-login destinations (blocks //evil.com and /\evil.com open redirects). */
+/**
+ * Only same-site paths survive as post-login destinations. Browsers drop tabs/newlines and read "\" as "/",
+ * so "/<tab>/evil.com" or "/\evil.com" would become "//evil.com": any control character or backslash is refused.
+ */
 export const safeNext = (n: unknown) =>
-  typeof n === "string" && n.startsWith("/") && !n.startsWith("//") && !n.startsWith("/\\") && !/[\r\n]/.test(n) ? n.slice(0, 300) : "/";
+  typeof n === "string" && n.startsWith("/") && !n.startsWith("//") && !/[\x00-\x1f\x7f\\]/.test(n) ? n.slice(0, 300) : "/";
 
 /** Tags are lowercase words: letters, digits, spaces and dashes, max 30 chars. Anything else is dropped. */
 export const normTag = (t: string) => t.toLowerCase().replace(/[^a-z0-9 -]/g, "").replace(/\s+/g, " ").trim().slice(0, 30);

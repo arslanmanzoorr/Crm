@@ -24,7 +24,7 @@ export function conflicts(slots: Slot[]): Set<string> {
 }
 
 const icsDate = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-const icsText = (s: string) => s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+const icsText = (s: string) => s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|[\r\n]/g, "\\n");
 
 /** Lines longer than 75 octets continue on the next line after a space (RFC 5545 §3.1), never splitting a character. */
 function fold(line: string) {

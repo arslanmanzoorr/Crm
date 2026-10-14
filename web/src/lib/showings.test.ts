@@ -63,3 +63,9 @@ test("followUpDraft matches the buyer's reaction", () => {
   assert.match(followUpDraft("offer", "14 Oak Ave"), /^Hi \{first_name\}, thanks for coming to see 14 Oak Ave. Let's move quickly/);
   assert.match(followUpDraft("not_interested", "14 Oak Ave"), /what would you change about it\?/);
 });
+
+test("ics: a lone carriage return can't start a new calendar property", () => {
+  const out = ics({ uid: "u", startsAt: "2026-10-14T15:00:00Z", endsAt: "2026-10-14T15:30:00Z", title: "Showing\rATTENDEE:mailto:x@evil.com", location: "a", description: "b", now: "2026-10-14T00:00:00Z" });
+  assert.ok(!/\r(?!\n)/.test(out));
+  assert.ok(!out.split("\r\n").some((l) => l.startsWith("ATTENDEE")));
+});
