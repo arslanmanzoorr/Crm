@@ -927,7 +927,7 @@ export async function portalNote(token: string, propertyId: string, text: string
   if (!dbEnabled) return NO_DB;
   if (!PORTAL_TOKEN.test(token) || !UUID.test(propertyId)) return { error: "This link isn't valid anymore." };
   const { data, error } = await (await supabase()).rpc("portal_note", { p_token: token, p_property: propertyId, p_text: text });
-  if (error || data !== "ok") return { error: data === "closed" ? "This link isn't valid anymore." : "Couldn't save that note." };
+  if (error || data !== "ok") return { error: data === "closed" ? "This link isn't valid anymore." : data === "limited" ? "That's a lot of notes for one hour. Try again a little later." : "Couldn't save that note." };
   return { ok: "Saved" };
 }
 

@@ -12,7 +12,8 @@ visitor, as a member of another team, and as a team owner; drove every page and 
 | 2 | High | Admins could change `organizations.plan` (billing tier) directly through the API. | Fixed in `0069`: organization updates are limited to the settings columns the app uses. |
 | 3 | Low | `safeNext` (post-login redirect) didn't reject tabs or backslashes. Next.js percent-encodes them in the `Location` header, so it wasn't exploitable here. | Hardened anyway: any control character or backslash is refused. Tests added. |
 | 4 | Low | Calendar (.ics) files escaped `\n` but not a lone `\r`; some calendar apps split lines on it, which would let a lead's name add fake calendar fields. | Fixed; test added. |
-| 5 | Info | The printed template page had no H1 (accessibility). | Fixed. |
+| 5 | Medium | Rate-limit gaps: portal notes and hearts, coordinator milestone ticks, and API lead creation (the app limit could be skipped by calling the database directly) had no database limit; a leaked link or key could flood an agent's timeline. API keys and two workflow fields could be edited without size limits. | Fixed in `0070_rate_limits.sql`: 30/hour per portal link, 120/hour per coordinator link, 300 leads/hour per API key; keys can only be revoked; workflow fields capped. Verified each limit trips. |
+| 6 | Info | The printed template page had no H1 (accessibility). | Fixed. |
 
 ## What was attacked and held
 
@@ -20,6 +21,9 @@ visitor, as a member of another team, and as a team owner; drove every page and 
 - **Anonymous REST:** the public key has no table access at all. Every SECURITY DEFINER function anon can call is gated by the server key, a 256-bit link token (stored only as a SHA-256 hash), or an API key (hash only).
 - **App routes:** `/api/ai`, `/api/export`, `/api/publish`, `.ics` and `/api/v1` refuse unauthenticated callers (401). Private pages redirect to sign-in. Malformed tokens get "not found" pages, never data.
 - **Two-step sign-in:** a password-only session of an enrolled user gets no team data at all (enforced in the database), and pages redirect to `/mfa`.
+- **Rate limits (database-enforced, so they can't be skipped):** web form 5 per visitor per hour and 60 per form; open house sign-in 60 per visitor per hour and 500 per event; privacy requests 5 per visitor per day; portal messages 10 per hour; portal notes and hearts 30 per hour; coordinator ticks 120 per hour; API leads 300 per key per hour. App-level: website chat 20 per visitor per hour and 300 per form per day; API 120 requests a minute; AI features a daily cap per team. Sign-in attempts are throttled by Supabase Auth.
+- **Field sizes:** every text, list and JSON field users can write has a database length limit (the only unbounded ones are written by the system itself).
+- **Secrets stay server-side:** the browser only sees the Supabase URL and publishable key (public by design, guarded by row rules) and uses them only to upload files. AI, the service key, the form key and the publishing webhook are server-only.
 - **Abuse:** web form limited to 5 per visitor per hour (verified); bots that submit in under 2.5 s are dropped silently (verified not saved); a booked showing slot disappears for everyone; website chat and API keys are rate-limited.
 - **Injection:** search input is neutralized before it reaches PostgREST filters; CSV exports prefix formula cells; no HTML from user or AI content is rendered (the only `dangerouslySetInnerHTML` is QR SVG built from our own URLs); uploads are size- and type-checked in the app and again by bucket limits, and served as attachments with `nosniff`.
 - **Headers:** CSP (`default-src 'self'`, no third-party scripts, `frame-ancestors 'none'` except embeddable `/f/` forms), HSTS with preload, nosniff, DENY framing, strict referrer; portal and coordinator links add `no-referrer`, `noindex` and `no-store`.

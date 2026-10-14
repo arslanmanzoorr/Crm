@@ -93,6 +93,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0067_doc_templates.sql` | Team document templates (owners/admins edit, members use), filled from a deal at `/deals/<id>/templates/<tid>/print` |
 | `0068_compliance.sql` | Calling hours per team (DB-enforced inside 8am–9pm) and the all-party recording reminder |
 | `0069_column_grants.sql` | Security fix (pentest): users may update only `memberships.role` and the settings columns of `organizations` (blocks a cross-team takeover and plan tampering) |
+| `0070_rate_limits.sql` | Database rate limits on portal notes/hearts, coordinator ticks and API lead creation; API keys revoke-only; workflow field caps |
 
 After `0010`, store the hash of your form key (per environment):
 
