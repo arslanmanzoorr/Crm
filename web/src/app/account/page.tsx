@@ -11,18 +11,29 @@ import { dbEnabled, getAiLog, getLeadForm, getMe, getPrivacyRequests, getSuppres
 import { PrivacyRequests } from "@/components/privacy-request";
 import { Suppressions } from "@/components/suppressions";
 import { TwoStep } from "@/components/two-step";
+import { GoogleConnect } from "@/components/google-connect";
+import { googleConnected, googleEnv } from "@/lib/google-server";
 
 export const metadata: Metadata = { title: "Account" };
 
 const row = "flex min-h-14 items-center gap-3 px-5 text-left hover:bg-surface-3";
 
-export default function AccountPage() {
+export default function AccountPage({ searchParams }: PageProps<"/account">) {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
       <h1 className="text-4xl font-light">Account</h1>
       <Suspense fallback={<div className="h-24 rounded-card bg-surface-2" />}>
         <Me />
       </Suspense>
+
+      {dbEnabled && (
+        <section aria-labelledby="google" className="flex flex-col gap-2">
+          <h2 id="google" className="text-sm text-muted">Google (Gmail and Calendar)</h2>
+          <Suspense fallback={<div className="h-24 rounded-card bg-surface-2" />}>
+            <Google searchParams={searchParams} />
+          </Suspense>
+        </section>
+      )}
 
       {dbEnabled && (
         <section aria-labelledby="security" className="flex flex-col gap-2">
@@ -193,4 +204,9 @@ async function AiLog() {
 async function Security() {
   const { data } = await (await supabase()).auth.mfa.listFactors();
   return <TwoStep factors={(data?.totp ?? []).filter((f) => f.status === "verified").map((f) => ({ id: f.id, name: f.friendly_name ?? "Authenticator app", created: f.created_at }))} />;
+}
+
+async function Google({ searchParams }: { searchParams: PageProps<"/account">["searchParams"] }) {
+  const [{ google }, email] = await Promise.all([searchParams, supabase().then(googleConnected)]);
+  return <GoogleConnect email={email} ready={!!googleEnv()} status={typeof google === "string" ? google : undefined} />;
 }

@@ -94,6 +94,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0068_compliance.sql` | Calling hours per team (DB-enforced inside 8am–9pm) and the all-party recording reminder |
 | `0069_column_grants.sql` | Security fix (pentest): users may update only `memberships.role` and the settings columns of `organizations` (blocks a cross-team takeover and plan tampering) |
 | `0070_rate_limits.sql` | Database rate limits on portal notes/hearts, coordinator ticks and API lead creation; API keys revoke-only; workflow field caps |
+| `0071_google_accounts.sql` | Per-user Google connection (refresh token AES-GCM encrypted with `GOOGLE_TOKEN_KEY`, own row only) and `showings.google_event_id` |
 
 After `0010`, store the hash of your form key (per environment):
 
@@ -113,6 +114,9 @@ SUPABASE_SERVICE_ROLE_KEY=...                 # server only; serves portal docum
 OPENROUTER_API_KEY=sk-or-...                  # AI features, via OpenRouter
 OPENROUTER_MODEL=deepseek/deepseek-v4-flash-0731  # optional; default anthropic/claude-haiku-5.5. Thinking is turned off per call
 OPENROUTER_VISION_MODEL=google/gemma-3-12b-it  # optional; reads business card photos (must accept images)
+GOOGLE_CLIENT_ID=...apps.googleusercontent.com  # Google Cloud OAuth client (Web). Redirect URI: <SITE_URL>/api/google/callback
+GOOGLE_CLIENT_SECRET=...                      # server only
+GOOGLE_TOKEN_KEY=<32 random bytes, base64>    # encrypts stored Google tokens; node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 AI_DAILY_LIMIT=200                            # AI calls per org per 24h (default 200)
 FORM_IP_SALT=<random 32+ bytes hex>           # salts visitor IP hashes on public lead forms
 FORM_RPC_KEY=<random 32+ bytes hex>           # server-only key for submit_lead (DB stores its SHA-256)

@@ -17,6 +17,8 @@ import { checkUpload, safeFileName } from "./docs";
 import { planTour, US_TIME_ZONES } from "./showings";
 import { isMoveBy, MOVE_BY } from "./timeline";
 import { unknownFields } from "./templates";
+import { deleteEvent, googleEnv, GoogleError, sendGmail, upsertEvent } from "./google-server";
+import { open as openToken } from "./google";
 import { checkSuggestions, type Change, type Suggestion } from "./profile-update";
 import { feesFromForm, HOME_TYPES, PARKING } from "./rental-feed";
 import { BUYING_TYPES, matchListing } from "./match";
@@ -1316,11 +1318,12 @@ export async function scheduleShowing(_: FormState, f: FormData): Promise<FormSt
   if (isNaN(+start)) return { error: "Pick a date and time." };
   if (!(minutes >= 10 && minutes <= 240)) return { error: "Length must be 10 minutes to 4 hours." };
   const db = await authed();
-  const { error } = await db.from("showings").insert({
+  const { data: made, error } = await db.from("showings").insert({
     contact_id, property_id: UUID.test(property_id) ? property_id : null, address: UUID.test(property_id) ? "" : address,
     starts_at: start.toISOString(), ends_at: new Date(+start + minutes * 60_000).toISOString(), notes: str(f, "notes").slice(0, 2000),
-  });
+  }).select("id").single();
   if (error) return { error: error.message };
+  await syncShowingToCalendar(db, made.id);
   await db.from("contacts").update({ stage: "Showing" }).eq("id", contact_id).in("stage", ["New", "Contacted", "Qualified"]);
   revalidatePath("/", "layout");
   return { ok: "Showing booked" };
@@ -1328,8 +1331,10 @@ export async function scheduleShowing(_: FormState, f: FormData): Promise<FormSt
 
 export async function setShowingStatus(id: string, status: (typeof SHOWING_STATUS)[number]) {
   if (!dbEnabled || !UUID.test(id) || !SHOWING_STATUS.includes(status)) return;
-  const { error } = await (await authed()).from("showings").update({ status }).eq("id", id);
+  const db = await authed();
+  const { error } = await db.from("showings").update({ status }).eq("id", id);
   if (error) throw new Error(error.message);
+  await syncShowingToCalendar(db, id);
   revalidatePath("/", "layout");
 }
 
@@ -1496,6 +1501,66 @@ export async function createPortalLink(contactId: string): Promise<{ url?: strin
   await db.from("activities").insert({ contact_id: contactId, channel: "Note", content: "Client portal link created" });
   revalidatePath(`/leads/${contactId}`);
   return { url: `${process.env.SITE_URL ?? ""}/p/${token}` };
+}
+
+/** Email a lead from the agent's own Gmail. Consent, do-not-contact and the team's suppression list are checked here. */
+export async function sendLeadEmail(contactId: string, subject: string, text: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const s = subject.trim().slice(0, 200), body = text.trim().slice(0, 20000);
+  if (!UUID.test(contactId) || !s || !body) return { error: "Add a subject and a message." };
+  const db = await authed();
+  const { data: c } = await db.from("contacts").select("name,email,consent_email,dnc").eq("id", contactId).maybeSingle();
+  if (!c) return { error: "Lead not found." };
+  if (c.dnc) return { error: "This lead is marked do not contact." };
+  if (!c.email) return { error: "This lead has no email address." };
+  if (!c.consent_email) return { error: "No email consent from this lead yet. Update consent on the lead first." };
+  const { data: blocked } = await db.from("suppressions").select("value").eq("kind", "email").eq("value", c.email.toLowerCase()).maybeSingle();
+  if (blocked) return { error: "This address is on your do-not-contact list." };
+  const limited = await meterAi("email"); // same daily cap as AI: stops a runaway script from mass-mailing
+  if (limited) return { error: limited };
+  const { data: me } = await db.auth.getUser();
+  try {
+    await sendGmail(db, { fromName: (me.user?.user_metadata?.name as string | undefined) ?? undefined, to: c.email, toName: c.name, subject: s, text: body });
+  } catch (e) {
+    if (e instanceof GoogleError) return { error: e.message };
+    throw e;
+  }
+  await db.from("activities").insert({ contact_id: contactId, channel: "Email", direction: "out", content: `${s}\n\n${body}`.slice(0, 10000) });
+  revalidatePath(`/leads/${contactId}`);
+  return { ok: "Sent from your Gmail." };
+}
+
+/** Remove the Google connection: revoke the token at Google, then forget it. */
+export async function disconnectGoogle() {
+  if (!dbEnabled) return;
+  const db = await authed();
+  const { data: { user } } = await db.auth.getUser();
+  const { data: row } = await db.from("google_accounts").select("token_enc").eq("user_id", user!.id).maybeSingle();
+  const env = googleEnv();
+  if (row && env) {
+    try { await fetch("https://oauth2.googleapis.com/revoke", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token: openToken(row.token_enc, env.key) }), signal: AbortSignal.timeout(10_000) }); } catch {}
+  }
+  await db.from("google_accounts").delete().eq("user_id", user!.id);
+  revalidatePath("/account");
+}
+
+/** Put a showing on the agent's Google Calendar (if connected). Never blocks the booking itself. */
+async function syncShowingToCalendar(db: Awaited<ReturnType<typeof authed>>, showingId: string) {
+  if (!googleEnv()) return;
+  const { data: s } = await db.from("showings").select("id,starts_at,ends_at,address,notes,status,google_event_id,contacts(name,phone),properties(address)").eq("id", showingId).maybeSingle();
+  if (!s) return;
+  const row = s as unknown as { starts_at: string; ends_at: string; address: string; notes: string; status: string; google_event_id: string | null; contacts: { name: string; phone: string } | null; properties: { address: string } | null };
+  try {
+    if (row.status === "cancelled" || row.status === "no_show") {
+      if (row.google_event_id) { await deleteEvent(db, row.google_event_id); await db.from("showings").update({ google_event_id: null }).eq("id", showingId); }
+      return;
+    }
+    const where = row.properties?.address || row.address;
+    const id = await upsertEvent(db, { title: `Showing: ${where} with ${row.contacts?.name ?? "buyer"}`, startsAt: row.starts_at, endsAt: row.ends_at, location: where, description: [row.contacts?.phone && `Buyer: ${row.contacts.name}, ${row.contacts.phone}`, row.notes].filter(Boolean).join("\n") }, row.google_event_id);
+    if (id && id !== row.google_event_id) await db.from("showings").update({ google_event_id: id }).eq("id", showingId);
+  } catch {
+    // ponytail: calendar sync is best-effort; the booking stands even if Google is down. Retry queue if it matters.
+  }
 }
 
 /** Calling hours (only ever narrower than 8am–9pm) and the all-party recording reminder. Owners and admins. */

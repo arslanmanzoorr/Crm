@@ -13,7 +13,7 @@ import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/com
 import { blockers, scrubbed } from "@/lib/consent";
 import { farmReport, homeUpdate } from "@/lib/farm";
 import { DncCheck } from "@/components/dnc-check";
-import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, getShortlist, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks, teamToday, getCompliance } from "@/lib/db";
+import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, getShortlist, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks, teamToday, getCompliance, supabase } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { TourPlanner } from "@/components/tour-planner";
 import { FinancingForm } from "@/components/financing-controls";
@@ -32,6 +32,8 @@ import { isMoveBy, MOVE_BY, movingSoon } from "@/lib/timeline";
 import { AddToShortlist, AgentShortlist } from "@/components/shortlist";
 import { TaskPrep } from "@/components/task-prep";
 import { ProfileUpdates } from "@/components/profile-updates";
+import { EmailComposer } from "@/components/email-composer";
+import { googleConnected } from "@/lib/google-server";
 import { fmtDuration } from "@/lib/search";
 import { OwnerSelect } from "@/components/owner-select";
 
@@ -61,7 +63,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
     .filter((x): x is { p: (typeof properties)[number]; m: Match } => x.m !== null)
     .sort((a, b) => b.m.score - a.m.score)
     .slice(0, 3);
-  const [today, rules] = await Promise.all([teamToday(), getCompliance()]);
+  const [today, rules, gmail] = await Promise.all([teamToday(), getCompliance(), supabase().then(googleConnected)]);
   const c = lead.consent ?? { sms: true, call: true, email: true, dnc: false };
   const b = blockers(c, lead.phone, lead.email, today, rules);
   const blockedReasons = [...new Set([b.call, b.sms, b.email].filter(Boolean))];
@@ -179,6 +181,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 </details>
               </section>
             )}
+            {gmail && !b.email && <EmailComposer contactId={lead.id} to={lead.email} from={gmail} />}
             <section aria-labelledby="tasks" className="rounded-card bg-surface-2 p-5 sm:p-6">
               <h2 id="tasks" className="mb-4 text-xl">Tasks</h2>
               <TaskForm contactId={lead.id} />
