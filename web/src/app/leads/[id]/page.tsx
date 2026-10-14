@@ -13,7 +13,7 @@ import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/com
 import { blockers, scrubbed } from "@/lib/consent";
 import { farmReport, homeUpdate } from "@/lib/farm";
 import { DncCheck } from "@/components/dnc-check";
-import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, getShortlist, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks, teamToday } from "@/lib/db";
+import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, getShortlist, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks, teamToday, getCompliance } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { TourPlanner } from "@/components/tour-planner";
 import { FinancingForm } from "@/components/financing-controls";
@@ -61,9 +61,9 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
     .filter((x): x is { p: (typeof properties)[number]; m: Match } => x.m !== null)
     .sort((a, b) => b.m.score - a.m.score)
     .slice(0, 3);
-  const today = await teamToday();
+  const [today, rules] = await Promise.all([teamToday(), getCompliance()]);
   const c = lead.consent ?? { sms: true, call: true, email: true, dnc: false };
-  const b = blockers(c, lead.phone, lead.email, today);
+  const b = blockers(c, lead.phone, lead.email, today, rules);
   const blockedReasons = [...new Set([b.call, b.sms, b.email].filter(Boolean))];
 
   const channels = [
@@ -118,9 +118,10 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
             {blockedReasons.length > 0 && (
               <p id="contact-blocked" className="text-sm text-muted">
                 Contact limited: {blockedReasons.join(", ")}.{" "}
-                <Link href={`/leads/${lead.id}/edit`} className="text-accent underline">Update consent</Link>
+                {blockedReasons.some((r) => !r!.startsWith("outside calling hours")) && <Link href={`/leads/${lead.id}/edit`} className="text-accent underline">Update consent</Link>}
               </p>
             )}
+            {rules.allParty && !b.call && <p className="text-sm text-muted">Recording a call? Get everyone&apos;s consent on the call first.</p>}
             {!c.dnc && !c.call && lead.phone && (scrubbed(c.dncCheckedOn, today)
               ? <p className="text-sm text-muted">Cold calls allowed: number checked against the Do Not Call Registry on {c.dncCheckedOn}. Dial by hand, 8am to 9pm their time, and stop if they ask.</p>
               : <DncCheck contactId={lead.id} lastChecked={c.dncCheckedOn ?? null} />)}

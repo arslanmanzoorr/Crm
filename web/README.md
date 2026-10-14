@@ -91,6 +91,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0065_coordinator_links.sql` | Transaction coordinator links: `deal_links` (hash only), `tc_view`, `tc_milestone` (logged), `tc_document`; one deal per link |
 | `0066_office_time_zone.sql` | `offices.time_zone`: members of an office in another market get their "today" in that zone |
 | `0067_doc_templates.sql` | Team document templates (owners/admins edit, members use), filled from a deal at `/deals/<id>/templates/<tid>/print` |
+| `0068_compliance.sql` | Calling hours per team (DB-enforced inside 8am–9pm) and the all-party recording reminder |
 
 After `0010`, store the hash of your form key (per environment):
 

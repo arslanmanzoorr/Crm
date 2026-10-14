@@ -813,6 +813,24 @@ export async function getAiLog() {
   return { recent: rows.slice(0, 15), byTask, last24h: rows.filter((r) => r.ts >= day).length, limit: AI_DAILY_LIMIT };
 }
 
+export type Compliance = { start: number; end: number; allParty: boolean; hour: number };
+
+/** The team's calling hours and recording rule, plus the hour now in the member's office or team time zone. */
+export async function getCompliance(): Promise<Compliance> {
+  const fallback = { start: 8, end: 21, allParty: false, hour: new Date().getUTCHours() };
+  if (!dbEnabled) return fallback;
+  const db = await supabase();
+  const [{ data: org }, { data: auth }] = await Promise.all([db.rpc("active_org"), db.auth.getUser()]);
+  const [{ data: o }, { data: mine }] = await Promise.all([
+    db.from("organizations").select("call_start,call_end,recording_all_party,time_zone").eq("id", org).maybeSingle(),
+    db.from("memberships").select("offices(time_zone)").eq("org_id", org).eq("user_id", auth.user?.id ?? "").maybeSingle(),
+  ]);
+  if (!o) return fallback;
+  const tz = (mine as unknown as { offices: { time_zone: string | null } | null } | null)?.offices?.time_zone ?? o.time_zone;
+  const hour = tz ? Number(new Date().toLocaleString("en-US", { timeZone: tz, hour: "numeric", hourCycle: "h23" })) : fallback.hour;
+  return { start: o.call_start, end: o.call_end, allParty: o.recording_all_party, hour };
+}
+
 export type DocTemplate = { id: string; name: string; state: string | null; body: string; updatedAt: string };
 
 /** The team's document templates, by name. */

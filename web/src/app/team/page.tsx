@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { TeamManager } from "@/components/team";
 import { Skeleton } from "@/components/ui";
-import { getCaps, getMembers, getOffices, getRentalFeed, getSplits, getTeam, getTerritories, getTiers, getBranding, getApiKeys } from "@/lib/db";
+import { getCaps, getMembers, getOffices, getRentalFeed, getSplits, getTeam, getTerritories, getTiers, getBranding, getApiKeys, getCompliance } from "@/lib/db";
+import { ComplianceSettings } from "@/components/compliance-settings";
 import { ApiKeys } from "@/components/api-keys";
 import { BrandSettings } from "@/components/brand-settings";
 import { tierSplit } from "@/lib/deals";
@@ -26,7 +27,7 @@ export default function TeamPage() {
 }
 
 async function TeamView() {
-  const [team, routing, territories, splits, feed, offices, caps, tiers, brand, apiKeys] = await Promise.all([getTeam(), getMembers(), getTerritories(), getSplits(), getRentalFeed(), getOffices(), getCaps(), getTiers(), getBranding(), getApiKeys()]);
+  const [team, routing, territories, splits, feed, offices, caps, tiers, brand, apiKeys, rules] = await Promise.all([getTeam(), getMembers(), getTerritories(), getSplits(), getRentalFeed(), getOffices(), getCaps(), getTiers(), getBranding(), getApiKeys(), getCompliance()]);
   if (!team) return <p className="text-muted">Teams need a connected database.</p>;
   const agents = team.members.filter((m) => m.role !== "assistant").map((m) => ({ id: m.userId, email: m.email }));
   return (
@@ -34,6 +35,12 @@ async function TeamView() {
       <TeamManager team={team} routing={routing} siteUrl={process.env.SITE_URL ?? ""} />
       <Offices offices={offices} members={routing.members.map((m) => ({ id: m.userId, email: m.email, officeId: m.officeId }))} canEdit={team.me.role === "owner" || team.me.role === "admin"} />
       <Territories territories={territories} agents={agents} canEdit={team.me.role === "owner" || team.me.role === "admin"} />
+      {(team.me.role === "owner" || team.me.role === "admin") && (
+        <section aria-labelledby="compliance" className="flex flex-col gap-3">
+          <h2 id="compliance" className="text-xl">Calling hours and recording</h2>
+          <ComplianceSettings start={rules.start} end={rules.end} allParty={rules.allParty} />
+        </section>
+      )}
       {(team.me.role === "owner" || team.me.role === "admin") && (
         <section aria-labelledby="branding" className="flex flex-col gap-3">
           <h2 id="branding" className="text-xl">Branding</h2>

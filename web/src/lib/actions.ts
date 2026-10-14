@@ -1498,6 +1498,18 @@ export async function createPortalLink(contactId: string): Promise<{ url?: strin
   return { url: `${process.env.SITE_URL ?? ""}/p/${token}` };
 }
 
+/** Calling hours (only ever narrower than 8am–9pm) and the all-party recording reminder. Owners and admins. */
+export async function setCompliance(start: number, end: number, allParty: boolean): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 8 || end > 21 || end <= start) return { error: "Calling hours must sit inside 8am–9pm." };
+  const db = await authed();
+  const { data, error } = await db.from("organizations").update({ call_start: start, call_end: end, recording_all_party: allParty === true }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (error) return { error: error.message };
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/", "layout");
+  return { ok: "Saved" };
+}
+
 /** Create or update a document template (owners and admins; the database checks). */
 export async function saveTemplate(_: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
