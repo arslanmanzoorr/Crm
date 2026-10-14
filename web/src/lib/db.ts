@@ -817,9 +817,9 @@ export type Compliance = { start: number; end: number; allParty: boolean; hour: 
 
 /** The team's calling hours and recording rule, plus the hour now in the member's office or team time zone. */
 export async function getCompliance(): Promise<Compliance> {
+  if (!dbEnabled) return { start: 8, end: 21, allParty: false, hour: 12 };
+  const db = await supabase(); // request-time from here on, so reading the clock is safe
   const fallback = { start: 8, end: 21, allParty: false, hour: new Date().getUTCHours() };
-  if (!dbEnabled) return fallback;
-  const db = await supabase();
   const [{ data: org }, { data: auth }] = await Promise.all([db.rpc("active_org"), db.auth.getUser()]);
   const [{ data: o }, { data: mine }] = await Promise.all([
     db.from("organizations").select("call_start,call_end,recording_all_party,time_zone").eq("id", org).maybeSingle(),
