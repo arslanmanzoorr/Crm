@@ -6,7 +6,7 @@ export const INTEGRATIONS = [
   { name: "Site address", keys: ["SITE_URL"], unlocks: "Sign-in email links, lead form, portal and feed links." },
   { name: "Public forms", keys: ["FORM_RPC_KEY", "FORM_IP_SALT"], unlocks: "Lead form, open house sign-in, privacy requests, home valuation, Zillow rentals feed." },
   { name: "Private file delivery", keys: ["SUPABASE_SERVICE_ROLE_KEY"], unlocks: "Clients downloading shared documents from their portal; photos in the Zillow rentals feed." },
-  { name: "AI (OpenRouter)", keys: ["OPENROUTER_API_KEY"], unlocks: "Lead analysis, reply drafts, captions." },
+  { name: "AI (OpenRouter)", keys: ["OPENROUTER_API_KEY"], unlocks: "Lead analysis, reply drafts, captions, website chat, business card scanning, profile updates." },
   { name: "Social publishing (n8n)", keys: ["N8N_PUBLISH_WEBHOOK_URL"], unlocks: "Posting to social platforms from Publish." },
 ] as const;
 
