@@ -385,17 +385,23 @@ export const teamToday = cache(async (): Promise<string> => {
   const utc = () => new Date().toISOString().slice(0, 10);
   if (!dbEnabled) return utc();
   const db = await supabase();
-  const { data: org } = await db.rpc("active_org");
-  const { data } = await db.from("organizations").select("time_zone").eq("id", org).maybeSingle();
-  return data?.time_zone ? new Date().toLocaleDateString("en-CA", { timeZone: data.time_zone }) : utc();
+  const [{ data: org }, { data: auth }] = await Promise.all([db.rpc("active_org"), db.auth.getUser()]);
+  const [{ data }, { data: mine }] = await Promise.all([
+    db.from("organizations").select("time_zone").eq("id", org).maybeSingle(),
+    db.from("memberships").select("offices(time_zone)").eq("org_id", org).eq("user_id", auth.user?.id ?? "").maybeSingle(),
+  ]);
+  // A member's office zone (multi-market brokerages) wins over the team's.
+  const tz = (mine as unknown as { offices: { time_zone: string | null } | null } | null)?.offices?.time_zone ?? data?.time_zone;
+  return tz ? new Date().toLocaleDateString("en-CA", { timeZone: tz }) : utc();
 });
 
-export type Office = { id: string; name: string };
+export type Office = { id: string; name: string; timeZone: string | null };
 
 /** The team's offices, by name. */
 export async function getOffices(): Promise<Office[]> {
   if (!dbEnabled) return [];
-  return must(await (await supabase()).from("offices").select("id,name").order("name")) as Office[];
+  const rows = must(await (await supabase()).from("offices").select("id,name,time_zone").order("name")) as { id: string; name: string; time_zone: string | null }[];
+  return rows.map((o) => ({ id: o.id, name: o.name, timeZone: o.time_zone }));
 }
 
 export type Member = { userId: string; email: string; role: Role; inRotation: boolean; officeId: string | null };

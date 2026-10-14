@@ -89,6 +89,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0063_mfa.sql` | Two-step sign-in: `private.mfa_ok()`; `my_org()`, `is_member()` and the organizations policy return nothing for a password-only (aal1) session of a user with a verified authenticator |
 | `0064_public_api.sql` | Public API v1: `api_keys` (SHA-256 hash only, admin-only RLS), `create_api_key`, key-gated `api_leads`, `api_listings`, `api_create_lead` (web-form rules) |
 | `0065_coordinator_links.sql` | Transaction coordinator links: `deal_links` (hash only), `tc_view`, `tc_milestone` (logged), `tc_document`; one deal per link |
+| `0066_office_time_zone.sql` | `offices.time_zone`: members of an office in another market get their "today" in that zone |
 
 After `0010`, store the hash of your form key (per environment):
 

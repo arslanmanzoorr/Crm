@@ -2,7 +2,8 @@
 
 import { X } from "lucide-react";
 import { useState, useTransition } from "react";
-import { createOffice, deleteOffice, setOffice } from "@/lib/actions";
+import { createOffice, deleteOffice, setOffice, setOfficeTimeZone } from "@/lib/actions";
+import { US_TIME_ZONES } from "@/lib/showings";
 import type { Office } from "@/lib/db";
 import { ActionForm, inputAuto, primaryBtn } from "./forms";
 
@@ -15,12 +16,18 @@ export function Offices({ offices, members, canEdit }: { offices: Office[]; memb
   return (
     <section aria-labelledby="offices" className="flex flex-col gap-3">
       <h2 id="offices" className="text-xl">Offices</h2>
-      <p className="-mt-2 text-sm text-muted">For brokerages with more than one office. Analytics and the team pipeline can then be read per office.</p>
+      <p className="-mt-2 text-sm text-muted">For brokerages with more than one office. Analytics and the team pipeline can then be read per office, and an office in another market can keep its own time zone for due dates.</p>
       {offices.length > 0 && (
         <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
           {offices.map((o) => (
             <li key={o.id} className="flex min-h-12 items-center gap-3 px-5 text-sm">
               <span className="flex-1 font-medium">{o.name}</span>
+              {canEdit ? (
+                <select aria-label={`Time zone for ${o.name}`} disabled={pending} defaultValue={o.timeZone ?? ""} onChange={(e) => run(() => setOfficeTimeZone(o.id, e.target.value || null))} className={`${inputAuto} min-w-0 max-w-44`}>
+                  <option value="">Team time zone</option>
+                  {Object.entries(US_TIME_ZONES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              ) : o.timeZone && <span className="text-muted">{US_TIME_ZONES[o.timeZone as keyof typeof US_TIME_ZONES] ?? o.timeZone}</span>}
               <span className="text-muted">{((n) => `${n} member${n === 1 ? "" : "s"}`)(members.filter((m) => m.officeId === o.id).length)}</span>
               {canEdit && (
                 <button type="button" disabled={pending} aria-label={`Delete ${o.name}`} onClick={() => run(() => deleteOffice(o.id))}

@@ -833,7 +833,15 @@ export async function setOffice(userId: string, officeId: string | null) {
   revalidatePath("/team");
 }
 
-/** Set or clear an agent's annual cap (owners and admins; the database checks). */
+/** An office's own time zone (null = use the team's). Owners and admins; the database checks. */
+export async function setOfficeTimeZone(id: string, tz: string | null) {
+  if (!dbEnabled || !UUID.test(id) || (tz !== null && !(tz in US_TIME_ZONES))) return;
+  const { data, error } = await (await authed()).from("offices").update({ time_zone: tz }).eq("id", id).select("id");
+  if (error) throw new Error(error.message);
+  if (!data?.length) throw new Error(NOT_ALLOWED);
+  revalidatePath("/", "layout");
+}
+
 /** New API key, returned once in plain text; only its hash is stored. */
 export async function createApiKey(name: string): Promise<{ key: string } | { error: string }> {
   if (!dbEnabled) return NO_DB as { error: string };
@@ -876,6 +884,7 @@ export async function setSplitTiers(raw: Tier[]): Promise<FormState> {
   return { ok: "Saved" };
 }
 
+/** Set or clear an agent's annual cap (owners and admins; the database checks). */
 export async function setAnnualCap(userId: string, cap: number | null): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   if (!UUID.test(userId) || (cap !== null && !(cap > 0 && cap < 1e9))) return { error: "Enter a positive amount, or leave it empty for no cap." };
