@@ -15,7 +15,7 @@ export function ReviewRequest({ dealId, firstName, side, address, reviewUrl }: {
   return (
     <span className="flex flex-wrap gap-2">
       <button type="button" className={pill} onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
-        {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />} {copied ? "Copied" : "Copy request"}
+        {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />} {copied ? "Copied" : "Copy request"}
       </button>
       <button type="button" disabled={pending} className={pill} onClick={() => start(() => markReviewAsked(dealId))}>{pending ? "…" : "Mark asked"}</button>
     </span>

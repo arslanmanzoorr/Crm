@@ -26,6 +26,8 @@ export function featureFor(path: string): Feature | null {
 }
 
 export const RADII = ["pill", "rounded", "square"] as const;
+export const THEMES = ["dark", "light", "system"] as const;
+export type Theme = (typeof THEMES)[number];
 export type Radius = (typeof RADII)[number];
 
 /** Today page sections, in default order. `needs` hides a section when its module is off. */

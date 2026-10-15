@@ -89,8 +89,8 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
 
       <section aria-labelledby="next" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5">
         <h2 id="next" className="text-xl">What&apos;s next for you</h2>
-        {todo.length === 0 ? <p className="flex items-center gap-2 text-sm text-ink/80"><CircleCheck aria-hidden className="size-4 text-accent" /> Nothing needed from you right now.</p> : (
-          <ul className="flex flex-col gap-2">{todo.map((t) => <li key={t} className="flex items-start gap-2 text-sm"><CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-accent" />{t}</li>)}</ul>
+        {todo.length === 0 ? <p className="flex items-center gap-2 text-sm text-ink/80"><CircleCheck aria-hidden className="size-4 text-accent-ink" /> Nothing needed from you right now.</p> : (
+          <ul className="flex flex-col gap-2">{todo.map((t) => <li key={t} className="flex items-start gap-2 text-sm"><CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-accent-ink" />{t}</li>)}</ul>
         )}
       </section>
 
@@ -101,7 +101,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
           <ol className="flex flex-col gap-0 rounded-card bg-surface-2 p-5">
             {activeDeal.milestones.map((m) => (
               <li key={m.title} className="flex items-center gap-3 py-1.5 text-sm">
-                {m.done ? <CircleCheck aria-hidden className="size-5 shrink-0 text-accent" /> : <Circle aria-hidden className="size-5 shrink-0 text-muted" />}
+                {m.done ? <CircleCheck aria-hidden className="size-5 shrink-0 text-accent-ink" /> : <Circle aria-hidden className="size-5 shrink-0 text-muted" />}
                 <span className={`flex-1 ${m.done ? "text-muted" : ""}`}>{m.title}<span className="sr-only">{m.done ? " (done)" : " (to do)"}</span></span>
                 {m.due_on && <span className={`text-xs ${!m.done && m.due_on < today ? "text-score-1" : "text-muted"}`}>{fmtDate(m.due_on)}</span>}
               </li>
@@ -114,11 +114,11 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
       {p.offers.length > 0 && (
         <section aria-labelledby="offers" className="flex flex-col gap-3">
           <h2 id="offers" className="text-xl">Your offers</h2>
-          <ul className="flex flex-col divide-y divide-white/5 rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 rounded-card bg-surface-2">
             {p.offers.map((o, i) => (
               <li key={i} className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
                 <span>{o.address} · {money(Number(o.amount))}</span>
-                <span className={`text-sm ${o.status === "accepted" ? "text-accent" : "text-muted"}`}>{OFFER_STATUS[o.status] ?? o.status}</span>
+                <span className={`text-sm ${o.status === "accepted" ? "text-accent-ink" : "text-muted"}`}>{OFFER_STATUS[o.status] ?? o.status}</span>
               </li>
             ))}
           </ul>
@@ -128,7 +128,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
       {p.showings.length > 0 && (
         <section aria-labelledby="showings" className="flex flex-col gap-3">
           <h2 id="showings" className="text-xl">Your showings</h2>
-          <ul className="flex flex-col divide-y divide-white/5 rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 rounded-card bg-surface-2">
             {p.showings.map((s, i) => (
               <li key={i} className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
                 <span>{s.address}</span>
@@ -150,8 +150,8 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
           {s.offers.length > 0 && (
             <div className="overflow-x-auto rounded-card bg-surface-2 px-5" tabIndex={0} role="region" aria-label="Offers on your home">
               <table className="w-full min-w-[34rem] text-sm">
-                <thead><tr className="border-b border-white/5 text-left text-muted"><th className="py-2.5 font-normal">Offer</th><th className="font-normal">Financing</th><th className="font-normal">Contingencies</th><th className="font-normal">Closing</th><th className="font-normal">Status</th></tr></thead>
-                <tbody className="divide-y divide-white/5">
+                <thead><tr className="border-b border-line/5 text-left text-muted"><th className="py-2.5 font-normal">Offer</th><th className="font-normal">Financing</th><th className="font-normal">Contingencies</th><th className="font-normal">Closing</th><th className="font-normal">Status</th></tr></thead>
+                <tbody className="divide-y divide-line/5">
                   {s.offers.map((o, i) => (
                     <tr key={i}><td className="py-2.5">{money(Number(o.amount))}{Number(o.seller_credit) > 0 && <span className="block text-xs text-muted">asks {money(Number(o.seller_credit))} credit</span>}</td><td>{FINANCING[o.financing]}</td><td>{o.contingencies}</td><td>{o.close_on ? fmtDate(o.close_on) : "–"}</td><td>{OFFER_STATUS[o.status] ?? o.status}</td></tr>
                   ))}
@@ -177,16 +177,16 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
           <div className="overflow-x-auto rounded-card bg-surface-2 px-5" tabIndex={0} role="region" aria-label="Saved homes side by side">
             <table className="w-full text-sm" style={{ minWidth: `${8 + saved.length * 9}rem` }}>
               <thead>
-                <tr className="border-b border-white/5 text-left align-bottom">
+                <tr className="border-b border-line/5 text-left align-bottom">
                   <td className="py-3 pr-4" />
                   {saved.map((l) => <th key={l.id} scope="col" className="px-3 py-3 font-medium">{l.address}{l.area && <span className="block text-xs font-normal text-muted">{l.area}</span>}</th>)}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-line/5">
                 {compareHomes(saved.map((l) => ({ price: Number(l.price), beds: l.beds, baths: Number(l.baths), sqft: l.sqft, est_rent: l.est_rent }))).map((r) => (
                   <tr key={r.label}>
                     <th scope="row" className="py-2.5 pr-4 text-left font-normal text-muted">{r.label}</th>
-                    {r.cells.map((c, i) => <td key={i} className={`relative px-3 py-2.5 tabular-nums ${c.best ? "font-medium text-accent" : ""}`}>{c.text}{c.best && <span className="sr-only"> (best)</span>}</td>)}
+                    {r.cells.map((c, i) => <td key={i} className={`relative px-3 py-2.5 tabular-nums ${c.best ? "font-medium text-accent-ink" : ""}`}>{c.text}{c.best && <span className="sr-only"> (best)</span>}</td>)}
                   </tr>
                 ))}
                 <tr>
@@ -215,11 +215,11 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
                   </div>
                   <FavoriteButton token={token} propertyId={l.id} on={p.favorites.includes(l.id)} address={l.address} />
                 </div>
-                {notes.get(l.id)?.added_by === "agent" && <p className="text-xs font-medium text-accent">Suggested by your agent</p>}
+                {notes.get(l.id)?.added_by === "agent" && <p className="text-xs font-medium text-accent-ink">Suggested by your agent</p>}
                 {notes.get(l.id)?.agent_note && <p className="text-sm"><span className="text-muted">Your agent: </span>{notes.get(l.id)!.agent_note}</p>}
                 {m && <MatchReasons m={m} fitsOnly />}
                 {p.favorites.includes(l.id) && <PortalNote token={token} propertyId={l.id} address={l.address} value={notes.get(l.id)?.client_note ?? ""} />}
-                {l.tour_url && <a href={l.tour_url} target="_blank" rel="noopener noreferrer" className="w-fit text-sm text-accent underline">Take the virtual tour</a>}
+                {l.tour_url && <a href={l.tour_url} target="_blank" rel="noopener noreferrer" className="w-fit text-sm text-accent-ink underline">Take the virtual tour</a>}
               </li>
             ))}
           </ul>
@@ -229,7 +229,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
       {docs.length > 0 && (
         <section aria-labelledby="docs" className="flex flex-col gap-3">
           <h2 id="docs" className="text-xl">Documents from your agent</h2>
-          <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
             {docs.map((d) => (
               <li key={d.id}>
                 <a href={`/p/${token}/doc/${d.id}`} className="flex min-h-14 items-center justify-between gap-3 px-5 py-2 hover:bg-surface-3">
@@ -244,7 +244,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
 
       <section aria-labelledby="contact" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5">
         <h2 id="contact" className="text-xl">Questions?</h2>
-        {p.agent_email && <p className="text-sm text-muted">Your agent: <a href={`mailto:${p.agent_email}`} className="text-ink hover:text-accent">{p.agent_email}</a></p>}
+        {p.agent_email && <p className="text-sm text-muted">Your agent: <a href={`mailto:${p.agent_email}`} className="text-ink hover:text-accent-ink">{p.agent_email}</a></p>}
         <MessageAgent token={token} />
       </section>
       <p className="text-center text-xs text-muted">{p.team}<span className="powered"> · Powered by EstateOS</span></p>

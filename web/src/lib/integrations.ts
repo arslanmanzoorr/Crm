@@ -8,6 +8,7 @@ export const INTEGRATIONS = [
   { name: "Private file delivery", keys: ["SUPABASE_SERVICE_ROLE_KEY"], unlocks: "Clients downloading shared documents from their portal; photos in the Zillow rentals feed." },
   { name: "AI (OpenRouter)", keys: ["OPENROUTER_API_KEY"], unlocks: "Lead analysis, reply drafts, captions, website chat, business card scanning, profile updates." },
   { name: "Google (Gmail and Calendar)", keys: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_TOKEN_KEY"], unlocks: "Each agent connects their own Google: email leads from Gmail, showings on Google Calendar." },
+  { name: "Custom domains (Vercel)", keys: ["VERCEL_TOKEN", "VERCEL_PROJECT_ID"], unlocks: "Teams' own domains connect to hosting automatically once verified. Without it, add each verified domain in the Vercel dashboard." },
   { name: "Social publishing (n8n)", keys: ["N8N_PUBLISH_WEBHOOK_URL"], unlocks: "Posting to social platforms from Publish." },
 ] as const;
 

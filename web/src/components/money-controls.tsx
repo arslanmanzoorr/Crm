@@ -59,7 +59,7 @@ export function PayoutControls({ dealId, status, canApprove }: { dealId: string;
   const go = (s: keyof typeof STEP) => start(async () => { const r = await setPayout(dealId, s); setErr(r?.error ?? null); });
   return (
     <div className="flex flex-col gap-2 text-sm">
-      <p>Payout: <span className={status === "paid" ? "text-accent" : ""}>{STEP[status]}</span></p>
+      <p>Payout: <span className={status === "paid" ? "text-accent-ink" : ""}>{STEP[status]}</span></p>
       {canApprove && (
         <div className="flex flex-wrap gap-2">
           {status === "pending" && <button type="button" disabled={pending} onClick={() => go("approved")} className={primaryBtn}>Approve payout</button>}

@@ -6,9 +6,12 @@ import { redirect } from "next/navigation";
 import { AI_KEY_MISSING, AiError, chat } from "./ai-server";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
-import { dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
+import { getAppBrand, dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
 import { brandColorError } from "./brand";
-import { cleanFeatures, cleanSections, RADII, type Radius } from "./features";
+import { cleanFeatures, cleanSections, RADII, THEMES, type Radius, type Theme } from "./features";
+import { cleanDomain, clientBase, domainToken } from "./domain";
+import { attachDomain, detachDomain, vercelConfigured } from "./vercel";
+import { resolveTxt } from "node:dns/promises";
 import { allow } from "./rate-limit";
 import { cleanTiers, defaultMilestones, type Tier } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
@@ -879,14 +882,15 @@ export async function revokeApiKey(id: string): Promise<FormState> {
   return { ok: "Revoked" };
 }
 
-export async function setBranding(color: string | null, hide: boolean, radius: Radius = "pill"): Promise<FormState> {
+export async function setBranding(color: string | null, hide: boolean, radius: Radius = "pill", theme: Theme = "dark"): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   const c = color?.toLowerCase() ?? null;
   const bad = c && brandColorError(c);
   if (bad) return { error: bad };
   if (!RADII.includes(radius)) return { error: "Pick a button shape." };
+  if (!THEMES.includes(theme)) return { error: "Pick a theme." };
   const db = await authed();
-  const { data } = await db.from("organizations").update({ brand_color: c, hide_powered_by: hide === true, button_radius: radius }).eq("id", (await db.rpc("active_org")).data).select("id");
+  const { data } = await db.from("organizations").update({ brand_color: c, hide_powered_by: hide === true, button_radius: radius, theme }).eq("id", (await db.rpc("active_org")).data).select("id");
   if (!data?.length) return { error: NOT_ALLOWED };
   revalidatePath("/", "layout");
   return { ok: "Saved" };
@@ -945,7 +949,27 @@ export async function setFeatures(off: string[]): Promise<FormState> {
   return { ok: "Saved" };
 }
 
-/** Each person's own Today layout. */
+/** Each person's light/dark choice; null follows the team's default. */
+export async function setMyTheme(theme: Theme | null): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (theme !== null && !THEMES.includes(theme)) return { error: "Pick a theme." };
+  const { error } = await (await authed()).from("user_prefs").upsert({ theme, updated_at: new Date().toISOString() });
+  if (error) return { error: NOT_ALLOWED };
+  revalidatePath("/", "layout");
+  return { ok: "Saved" };
+}
+
+/** Owners/admins: the Today layout everyone starts with until they arrange their own. */
+export async function setTeamHomeLayout(order: string[], hidden: string[]): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const db = await authed();
+  const { data } = await db.from("organizations").update({ home_order: cleanSections(order), home_hidden: cleanSections(hidden) }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (!data?.length) return { error: "Only owners and admins can set the team layout." };
+  revalidatePath("/");
+  return { ok: "Saved for the team" };
+}
+
+/** Each person's own Today layout. Empty lists mean "follow the team default". */
 export async function setHomeLayout(order: string[], hidden: string[]): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
   const db = await authed();
@@ -1579,7 +1603,7 @@ export async function createPortalLink(contactId: string): Promise<{ url?: strin
   if (error) return { error: error.message };
   await db.from("activities").insert({ contact_id: contactId, channel: "Note", content: "Client portal link created" });
   revalidatePath(`/leads/${contactId}`);
-  return { url: `${process.env.SITE_URL ?? ""}/p/${token}` };
+  return { url: `${clientBase((await getAppBrand())?.domain)}/p/${token}` };
 }
 
 /** Email a lead from the agent's own Gmail. Consent, do-not-contact and the team's suppression list are checked here. */
@@ -2114,4 +2138,47 @@ export async function scheduleTour(_: FormState, f: FormData): Promise<FormState
   await db.from("contacts").update({ stage: "Showing" }).eq("id", contact_id).in("stage", ["New", "Contacted", "Qualified"]);
   revalidatePath("/", "layout");
   return { ok: `Tour booked: ${ids.length} showings` };
+}
+
+/** Owners/admins claim a domain for client pages. It only goes live after verifyCustomDomain sees their TXT record. */
+export async function setCustomDomain(input: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const appHost = process.env.SITE_URL ? new URL(process.env.SITE_URL).host : "";
+  const domain = input.trim() ? cleanDomain(input, appHost) : null;
+  if (input.trim() && !domain) return { error: "Enter a domain you own, like homes.yourteam.com." };
+  const db = await authed();
+  const org = (await db.rpc("active_org")).data as string | null;
+  const { data: before } = await db.from("organizations").select("custom_domain,domain_verified").eq("id", org).single();
+  const { data } = await db.from("organizations").update({ custom_domain: domain }).eq("id", org).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  if (before?.domain_verified && before.custom_domain && before.custom_domain !== domain) await detachDomain(before.custom_domain);
+  revalidatePath("/", "layout");
+  return { ok: domain ? "Saved. Add the DNS records below, then verify." : "Domain removed" };
+}
+
+export async function verifyCustomDomain(): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return { error: "Set SUPABASE_SERVICE_ROLE_KEY on the server to verify domains." };
+  const db = await authed();
+  const org = (await db.rpc("active_org")).data as string | null;
+  const { data: row } = await db.from("organizations").select("custom_domain").eq("id", org).single();
+  if (!org || !row?.custom_domain) return { error: "Add a domain first." };
+  // Same role check the database applies to every other branding change (a no-op write that RLS must allow).
+  const { data: can } = await db.from("organizations").update({ custom_domain: row.custom_domain }).eq("id", org).select("id");
+  if (!can?.length) return { error: NOT_ALLOWED };
+  if (!allow(`dns:${org}`, 20, 3_600_000)) return { error: "Too many checks. Try again in an hour." };
+  const want = await domainToken(org);
+  const txt = await resolveTxt(`_estateos.${row.custom_domain}`).then((r) => r.map((parts) => parts.join("")), () => [] as string[]);
+  if (!txt.includes(want)) return { error: "We can't see the TXT record yet. DNS changes can take up to an hour; try again soon." };
+  // Users can't write domain_verified; only this server-side check can, with the service key.
+  const res = await fetch(`${url}/rest/v1/organizations?id=eq.${org}&custom_domain=eq.${encodeURIComponent(row.custom_domain)}`, {
+    method: "PATCH", headers: { apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json", prefer: "return=minimal" },
+    body: JSON.stringify({ domain_verified: true }),
+  });
+  if (res.status === 409) return { error: "Another team already uses this domain." };
+  if (!res.ok) return { error: "Couldn't save. Try again." };
+  const attached = vercelConfigured() ? await attachDomain(row.custom_domain) : false;
+  revalidatePath("/", "layout");
+  return { ok: attached || !vercelConfigured() ? "Verified" : "Verified. Connecting it to hosting failed; try Verify again in a minute." };
 }

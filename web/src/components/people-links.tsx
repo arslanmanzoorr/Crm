@@ -19,7 +19,7 @@ export function PeopleLinks({ contactId, links, people }: { contactId: string; l
         <ul className="flex flex-col gap-1">
           {links.map((l) => (
             <li key={l.id} className="flex min-h-10 items-center gap-2">
-              <Link href={`/leads/${l.id}`} className="font-medium hover:text-accent">{l.name}</Link>
+              <Link href={`/leads/${l.id}`} className="font-medium hover:text-accent-ink">{l.name}</Link>
               <span className="text-muted">{KINDS[l.kind]}{l.note && ` · ${l.note}`}{l.stage && ` · ${l.stage}`}</span>
               <button type="button" disabled={pending} aria-label={`Unlink ${l.name}`} onClick={() => start(() => unlinkContacts(contactId, l.id))}
                 className="ml-auto grid size-10 place-items-center rounded-full text-muted hover:bg-surface-3 hover:text-ink"><X aria-hidden className="size-4" /></button>

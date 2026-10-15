@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "New deal" };
 export default function NewDealPage({ searchParams }: PageProps<"/deals/new">) {
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <Link href="/deals" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← All deals</Link>
+      <Link href="/deals" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← All deals</Link>
       <h1 className="text-4xl font-light">New deal</h1>
       <Suspense fallback={<Skeleton className="h-[640px]" />}>
         <Form searchParams={searchParams} />

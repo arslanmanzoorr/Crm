@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { Suspense } from "react";
 import { PrintButton } from "@/components/print-button";
-import { supabase } from "@/lib/db";
+import { clientBase } from "@/lib/domain";
+import { getAppBrand, supabase } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Open house poster", robots: { index: false } };
 
@@ -22,7 +23,7 @@ async function Sheet({ params }: { params: PageProps<"/oh/[id]/poster">["params"
   const { data } = await (await supabase()).rpc("open_house_info", { p_id: id });
   const info = (data as { address: string; team: string }[] | null)?.[0];
   if (!info) notFound();
-  const qr = await QRCode.toString(`${process.env.SITE_URL ?? ""}/oh/${id}`, { type: "svg", margin: 0, errorCorrectionLevel: "M" });
+  const qr = await QRCode.toString(`${clientBase((await getAppBrand())?.domain)}/oh/${id}`, { type: "svg", margin: 0, errorCorrectionLevel: "M" });
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-8 rounded-card bg-white p-10 text-center text-neutral-950 print:max-w-none print:rounded-none print:p-0">
       <div>

@@ -32,7 +32,7 @@ async function Directory() {
         {kinds.map((k) => (
           <section key={k} aria-labelledby={`k-${k}`} className="flex flex-col gap-2">
             <h2 id={`k-${k}`} className="text-xl">{PARTNER_GROUPS[k]}</h2>
-            <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+            <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
               {partners.filter((p) => p.kind === k).map((p) => (
                 <li key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3">
                   <div className="min-w-0 flex-1 basis-48">

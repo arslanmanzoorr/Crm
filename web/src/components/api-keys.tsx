@@ -18,7 +18,7 @@ export function ApiKeys({ keys, base }: { keys: ApiKey[]; base: string }) {
   return (
     <div className="flex flex-col gap-4 rounded-card bg-surface-2 p-5 text-sm">
       {keys.length > 0 && (
-        <ul className="flex flex-col divide-y divide-white/5">
+        <ul className="flex flex-col divide-y divide-line/5">
           {keys.map((k) => (
             <li key={k.id} className="flex min-h-12 flex-wrap items-center justify-between gap-2 py-2">
               <span className="min-w-0"><span className="font-medium">{k.name}</span> <code className="text-muted">{k.prefix}…</code>
@@ -34,7 +34,7 @@ export function ApiKeys({ keys, base }: { keys: ApiKey[]; base: string }) {
           <code className="break-all select-all">{fresh}</code>
           <div className="flex gap-2">
             <button type="button" className={pill} onClick={() => navigator.clipboard.writeText(fresh).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
-              {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy key"}
+              {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy key"}
             </button>
             <button type="button" className={pill} onClick={() => setFresh(null)}>Done</button>
           </div>

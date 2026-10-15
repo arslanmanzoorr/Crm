@@ -7,11 +7,13 @@ import { LocalTime } from "@/components/local-time";
 import { Avatar, Reveal } from "@/components/ui";
 import { signOut } from "@/lib/actions";
 import { LeadFormSettings } from "@/components/lead-form-settings";
-import { dbEnabled, getAiLog, getLeadForm, getMe, getPrivacyRequests, getSuppressions, isOwnerOrAdmin, supabase } from "@/lib/db";
+import { getBranding, getMyTheme, getAppBrand, dbEnabled, getAiLog, getLeadForm, getMe, getPrivacyRequests, getSuppressions, isOwnerOrAdmin, supabase } from "@/lib/db";
 import { PrivacyRequests } from "@/components/privacy-request";
 import { Suppressions } from "@/components/suppressions";
 import { TwoStep } from "@/components/two-step";
 import { GoogleConnect } from "@/components/google-connect";
+import { clientBase } from "@/lib/domain";
+import { ThemePicker } from "@/components/theme-picker";
 import { googleConnected, googleEnv } from "@/lib/google-server";
 
 export const metadata: Metadata = { title: "Account" };
@@ -25,6 +27,15 @@ export default function AccountPage({ searchParams }: PageProps<"/account">) {
       <Suspense fallback={<div className="h-24 rounded-card bg-surface-2" />}>
         <Me />
       </Suspense>
+
+      {dbEnabled && (
+        <section aria-labelledby="appearance" className="flex flex-col gap-2">
+          <h2 id="appearance" className="text-sm text-muted">Appearance</h2>
+          <Suspense fallback={<div className="h-24 rounded-card bg-surface-2" />}>
+            <Appearance />
+          </Suspense>
+        </section>
+      )}
 
       {dbEnabled && (
         <section aria-labelledby="google" className="flex flex-col gap-2">
@@ -82,7 +93,7 @@ export default function AccountPage({ searchParams }: PageProps<"/account">) {
 
       <section aria-labelledby="tools" className="flex flex-col gap-2">
         <h2 id="tools" className="text-sm text-muted">Team and tools</h2>
-        <div className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <div className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           <Link href="/showings" className={`${row} md:hidden`}><CalendarDays aria-hidden className="size-5 text-muted" /><span className="flex-1">Showings</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/clients" className={`${row} md:hidden`}><HeartHandshake aria-hidden className="size-5 text-muted" /><span className="flex-1">Past clients</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/tools" className={`${row} md:hidden`}><Calculator aria-hidden className="size-5 text-muted" /><span className="flex-1">Calculators</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
@@ -117,7 +128,7 @@ export default function AccountPage({ searchParams }: PageProps<"/account">) {
 async function Capture() {
   const form = await getLeadForm();
   if (!form) return null;
-  const base = process.env.SITE_URL ?? "";
+  const base = clientBase((await getAppBrand())?.domain);
   return <LeadFormSettings form={form} url={`${base}/f/${form.id}`} />;
 }
 
@@ -149,7 +160,7 @@ async function Privacy() {
     <section aria-labelledby="privacy" className="flex flex-col gap-2">
       <h2 id="privacy" className="text-sm text-muted">Privacy requests</h2>
       <PrivacyRequests items={items} />
-      {form && <p className="text-xs text-muted">Public request page: <a href={`/f/${form.id}/privacy`} className="text-accent underline">/f/{form.id.slice(0, 8)}…/privacy</a>. It&apos;s linked from your lead form; link it from your website&apos;s privacy policy too.</p>}
+      {form && <p className="text-xs text-muted">Public request page: <a href={`/f/${form.id}/privacy`} className="text-accent-ink underline">/f/{form.id.slice(0, 8)}…/privacy</a>. It&apos;s linked from your lead form; link it from your website&apos;s privacy policy too.</p>}
     </section>
   );
 }
@@ -160,10 +171,10 @@ async function Integrations() {
   return (
     <section aria-labelledby="integrations" className="flex flex-col gap-2">
       <h2 id="integrations" className="text-sm text-muted">Integrations</h2>
-      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+      <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
         {integrationStatus(process.env).map((i) => (
           <li key={i.name} className="flex items-start gap-3 px-5 py-3">
-            {i.connected ? <CircleCheck aria-hidden className="mt-0.5 size-5 shrink-0 text-accent" /> : <CircleDashed aria-hidden className="mt-0.5 size-5 shrink-0 text-muted" />}
+            {i.connected ? <CircleCheck aria-hidden className="mt-0.5 size-5 shrink-0 text-accent-ink" /> : <CircleDashed aria-hidden className="mt-0.5 size-5 shrink-0 text-muted" />}
             <span className="min-w-0 text-sm">
               <span className="font-medium">{i.name}</span> <span className="text-muted">· {i.connected ? "Connected" : "Not connected"}</span>
               <span className="block text-muted">{i.unlocks}</span>
@@ -188,7 +199,7 @@ async function AiLog() {
       <h2 id="ai-log" className="text-sm text-muted">AI use</h2>
       <div className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 text-sm">
         <p>{log.last24h} of {log.limit} AI uses in the last 24 hours (team cap). Last 30 days: {Object.entries(log.byTask).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${AI_TASKS[t] ?? t} ${n}`).join(" · ")}.</p>
-        <ul className="flex flex-col divide-y divide-white/5">
+        <ul className="flex flex-col divide-y divide-line/5">
           {log.recent.map((r, i) => (
             <li key={i} className="flex flex-wrap justify-between gap-x-3 py-2">
               <span>{AI_TASKS[r.task] ?? r.task} <span className="text-muted">· {r.who}</span></span>
@@ -209,4 +220,9 @@ async function Security() {
 async function Google({ searchParams }: { searchParams: PageProps<"/account">["searchParams"] }) {
   const [{ google }, email] = await Promise.all([searchParams, supabase().then(googleConnected)]);
   return <GoogleConnect email={email} ready={!!googleEnv()} status={typeof google === "string" ? google : undefined} />;
+}
+
+async function Appearance() {
+  const [mine, team] = await Promise.all([getMyTheme(), getBranding()]);
+  return <ThemePicker mine={mine} team={team.theme} />;
 }

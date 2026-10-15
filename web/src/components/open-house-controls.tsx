@@ -45,7 +45,7 @@ export function CopyLink({ url, label = "Copy sign-in link" }: { url: string; la
   return (
     <button type="button" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:bg-surface-1"
       onClick={() => navigator.clipboard.writeText(url).then(() => { setDone(true); setTimeout(() => setDone(false), 2000); })}>
-      {done ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}
+      {done ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}
       {done ? "Copied" : label}
     </button>
   );

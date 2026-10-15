@@ -80,7 +80,7 @@ export function PipelineBoard({ columns }: { columns: BoardColumn[] }) {
                       <div className="flex items-center gap-3">
                         <Avatar name={c.name} size={32} />
                         <div className="min-w-0 flex-1">
-                          <Link href={`/leads/${c.id}`} className="block truncate text-sm font-medium hover:text-accent">{c.name}</Link>
+                          <Link href={`/leads/${c.id}`} className="block truncate text-sm font-medium hover:text-accent-ink">{c.name}</Link>
                           <p className="truncate text-xs text-muted">{[c.type[0].toUpperCase() + c.type.slice(1), c.budget].filter(Boolean).join(" · ")}</p>
                         </div>
                       </div>
@@ -108,9 +108,9 @@ export function PipelineBoard({ columns }: { columns: BoardColumn[] }) {
                     </li>
                   );
                 })}
-                {col.cards.length === 0 && <li className="rounded-2xl border border-dashed border-white/10 px-3 py-6 text-center text-xs text-muted">Drop a lead here</li>}
+                {col.cards.length === 0 && <li className="rounded-2xl border border-dashed border-line/10 px-3 py-6 text-center text-xs text-muted">Drop a lead here</li>}
                 {col.count > col.cards.length && (
-                  <li><Link href="/leads" className="block px-2 py-2 text-xs text-muted hover:text-accent">+{col.count - col.cards.length} more in Leads</Link></li>
+                  <li><Link href="/leads" className="block px-2 py-2 text-xs text-muted hover:text-accent-ink">+{col.count - col.cards.length} more in Leads</Link></li>
                 )}
               </ol>
             </section>

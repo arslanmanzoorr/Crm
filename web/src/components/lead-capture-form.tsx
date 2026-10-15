@@ -22,7 +22,7 @@ export function LeadCaptureForm({ formId, who, open, source }: { formId: string;
   if (sent)
     return (
       <div className="flex animate-rise flex-col items-center gap-3 rounded-card bg-surface-2 p-10 text-center">
-        <CircleCheck aria-hidden className="size-10 text-accent" />
+        <CircleCheck aria-hidden className="size-10 text-accent-ink" />
         <h1 className="text-2xl">Thanks, we got it</h1>
         <p className="text-muted">Someone from {who} will reach out soon.</p>
       </div>

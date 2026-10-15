@@ -79,7 +79,7 @@ export function LeadImport() {
   if (result)
     return (
       <div className="flex animate-rise flex-col items-start gap-3 rounded-card bg-surface-2 p-6">
-        <CircleCheck aria-hidden className="size-8 text-accent" />
+        <CircleCheck aria-hidden className="size-8 text-accent-ink" />
         <h2 className="text-2xl">Imported {result.created.toLocaleString()} lead{result.created === 1 ? "" : "s"}</h2>
         <p className="text-sm text-muted">
           {result.duplicates > 0 && `${result.duplicates} skipped as duplicates (same email or phone). `}
@@ -94,7 +94,7 @@ export function LeadImport() {
 
   return (
     <div className="flex flex-col gap-6">
-      <label className="flex cursor-pointer flex-col items-center gap-2 rounded-card border-2 border-dashed border-white/10 p-8 text-center text-sm text-muted transition hover:border-accent hover:text-accent has-[:focus-visible]:border-accent">
+      <label className="flex cursor-pointer flex-col items-center gap-2 rounded-card border-2 border-dashed border-line/10 p-8 text-center text-sm text-muted transition hover:border-accent hover:text-accent-ink has-[:focus-visible]:border-accent">
         <FileUp aria-hidden className="size-8" />
         <span>{file ? `${file.name} · ${file.body.length.toLocaleString()} rows` : "Choose a CSV file"}</span>
         <span className="text-xs">Exports from Follow Up Boss, kvCORE, Zillow, Google Contacts or a spreadsheet work. Up to 10,000 rows.</span>
@@ -132,13 +132,13 @@ export function LeadImport() {
                 </thead>
                 <tbody>
                   {checked.slice(0, 8).map((r, i) => (
-                    <tr key={i} className="border-t border-white/5">
+                    <tr key={i} className="border-t border-line/5">
                       {"error" in r ? (
                         <><td colSpan={5} className="px-4 py-2.5 text-muted">{file.body[i].slice(0, 3).join(", ")}</td><td className="px-4 py-2.5 text-score-1">{r.error}</td></>
                       ) : (
                         <>
                           <td className="px-4 py-2.5">{r.name}</td><td className="px-4 py-2.5">{r.email}</td><td className="px-4 py-2.5">{r.phone}</td>
-                          <td className="px-4 py-2.5">{r.type}</td><td className="px-4 py-2.5">{r.source}</td><td className="px-4 py-2.5 text-accent">Ready</td>
+                          <td className="px-4 py-2.5">{r.type}</td><td className="px-4 py-2.5">{r.source}</td><td className="px-4 py-2.5 text-accent-ink">Ready</td>
                         </>
                       )}
                     </tr>

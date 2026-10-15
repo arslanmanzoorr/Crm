@@ -77,7 +77,7 @@ export function ShowingActions({ s }: { s: Showing }) {
   return (
     <div className="flex flex-wrap gap-2">
       {s.status === "requested" && <button type="button" disabled={pending} onClick={() => go("confirmed")} className={pill}>Mark confirmed</button>}
-      {upcoming && <button type="button" onClick={copy} className={pill}>{copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy confirmation"}</button>}
+      {upcoming && <button type="button" onClick={copy} className={pill}>{copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy confirmation"}</button>}
       {upcoming && <a href={`/api/showings/${s.id}/ics`} className={pill}><CalendarPlus aria-hidden className="size-4" /> Add to calendar</a>}
       {upcoming && <button type="button" disabled={pending} onClick={() => go("no_show")} className={pill}>No-show</button>}
       {upcoming && <button type="button" disabled={pending} onClick={() => go("cancelled")} className={`${pill} text-score-1`}>Cancel</button>}
@@ -128,7 +128,7 @@ export function ShowingItem({ s, conflict, showBuyer = true }: { s: Showing; con
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
         <div className="min-w-0">
           <p className="font-medium"><LocalTime ts={s.startsAt} opts={{ weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} /> · {s.address}</p>
-          {showBuyer && <p className="text-sm text-muted">with <a href={`/leads/${s.contact.id}`} className="text-ink hover:text-accent">{s.contact.name}</a>{s.contact.phone && <> · <a href={`tel:${s.contact.phone}`} className="hover:text-accent">{s.contact.phone}</a></>}</p>}
+          {showBuyer && <p className="text-sm text-muted">with <a href={`/leads/${s.contact.id}`} className="text-ink hover:text-accent-ink">{s.contact.name}</a>{s.contact.phone && <> · <a href={`tel:${s.contact.phone}`} className="hover:text-accent-ink">{s.contact.phone}</a></>}</p>}
           {s.showingNotes && (s.status === "requested" || s.status === "confirmed") && <p className="text-sm text-ink/80">Instructions: {s.showingNotes}</p>}
           {s.notes && <p className="text-sm text-muted">{s.notes}</p>}
           {conflict && <p className="text-sm text-score-1">Overlaps another showing for the same agent</p>}
@@ -138,7 +138,7 @@ export function ShowingItem({ s, conflict, showBuyer = true }: { s: Showing; con
       {needsFeedback || (s.status === "done" && s.interest) ? <ShowingFeedback s={s} /> : <ShowingActions s={s} />}
       {s.status === "done" && s.interest && (
         <details>
-          <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Draft a follow-up</summary>
+          <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">Draft a follow-up</summary>
           <FarmNote label="Showing follow-up" draft={followUpDraft(s.interest, s.address)} due={[{ id: s.contact.id, name: s.contact.name }]} />
         </details>
       )}

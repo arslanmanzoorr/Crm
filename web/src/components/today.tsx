@@ -50,7 +50,7 @@ export function Today({ leads, tasks }: { leads: Lead[]; tasks: Task[] }) {
           You&apos;re clear. Add a task below, or open a lead and run <span className="text-ink">Analyze with AI</span> to plan the next step.
         </p>
       ) : (
-        <ol className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <ol className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           {items.map((it, i) => (
             <li key={it.kind === "task" ? it.task.id : it.lead.id} style={{ animationDelay: `${i * 40}ms` }} className="flex animate-rise items-center gap-3 px-4 py-3 sm:px-5">
               {it.kind === "task" ? <TaskRow {...it} /> : <LeadRow lead={it.lead} />}

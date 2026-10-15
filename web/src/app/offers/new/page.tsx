@@ -29,7 +29,7 @@ async function Form({ searchParams }: { searchParams: PageProps<"/offers/new">["
     if (!lead) notFound();
     return (
       <>
-        <Link href={`/leads/${lead.id}`} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← {lead.name}</Link>
+        <Link href={`/leads/${lead.id}`} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← {lead.name}</Link>
         <h1 className="text-4xl font-light">Offer for {lead.name}</h1>
         <OfferForm side="buyer" contactId={lead.id} propertyId={property} listings={listings.filter((p) => p.status !== "Sold").map(({ id, address }) => ({ id, address }))} />
       </>
@@ -39,7 +39,7 @@ async function Form({ searchParams }: { searchParams: PageProps<"/offers/new">["
   if (!listing) notFound();
   return (
     <>
-      <Link href={`/properties/${listing.id}`} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← {listing.address}</Link>
+      <Link href={`/properties/${listing.id}`} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← {listing.address}</Link>
       <h1 className="text-4xl font-light">Offer received</h1>
       <p className="-mt-4 text-muted">On {listing.address}, listed at {listing.price.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })}</p>
       <OfferForm side="seller" propertyId={listing.id} />

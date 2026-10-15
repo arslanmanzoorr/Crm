@@ -36,7 +36,7 @@ async function Accept({ params }: { params: PageProps<"/invite/[token]">["params
     <>
       <h1 className="text-2xl">Couldn&apos;t join the team</h1>
       <p className="text-muted">{MESSAGES[result] ?? MESSAGES.invalid}</p>
-      <Link href="/" className="w-fit text-sm text-accent underline">Go to your workspace</Link>
+      <Link href="/" className="w-fit text-sm text-accent-ink underline">Go to your workspace</Link>
     </>
   );
 }

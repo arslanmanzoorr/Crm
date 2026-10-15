@@ -122,7 +122,7 @@ export function Studio({ defaults }: { defaults: { title: string; subtitle: stri
       <h1 className="text-4xl font-light">Video Studio</h1>
       <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
         <div className="flex flex-col gap-4">
-          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-card border-2 border-dashed border-white/10 p-8 text-muted transition hover:border-accent hover:text-accent has-[:focus-visible]:border-accent has-[:focus-visible]:text-accent">
+          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-card border-2 border-dashed border-line/10 p-8 text-muted transition hover:border-accent hover:text-accent-ink has-[:focus-visible]:border-accent has-[:focus-visible]:text-accent-ink">
             <ImagePlus aria-hidden className="size-8" />
             <span className="text-sm">Add listing photos · they play in the order you add them</span>
             <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => addFiles(e.target.files)} />
@@ -138,7 +138,7 @@ export function Studio({ defaults }: { defaults: { title: string; subtitle: stri
                     type="button"
                     aria-label={`Remove photo ${i + 1}`}
                     onClick={() => setPhotos(photos.filter((x) => x !== p))}
-                    className="absolute top-1 right-1 grid size-7 place-items-center rounded-full bg-bg/80 hover:text-accent"
+                    className="absolute top-1 right-1 grid size-7 place-items-center rounded-full bg-bg/80 hover:text-accent-ink"
                   >
                     <X className="size-4" />
                   </button>
@@ -155,7 +155,7 @@ export function Studio({ defaults }: { defaults: { title: string; subtitle: stri
                 role="radio"
                 aria-checked={aspect === a}
                 onClick={() => setAspect(a)}
-                className={`min-h-11 rounded-full px-4 text-sm ${aspect === a ? "bg-surface-light text-on-light" : "bg-surface-2 hover:text-accent"}`}
+                className={`min-h-11 rounded-full px-4 text-sm ${aspect === a ? "bg-surface-light text-on-light" : "bg-surface-2 hover:text-accent-ink"}`}
               >
                 {a}
               </button>

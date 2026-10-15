@@ -4,7 +4,8 @@ import QRCode from "qrcode";
 import { Suspense } from "react";
 import { PrintButton } from "@/components/print-button";
 import { money } from "@/lib/data";
-import { getLeadForm, getMe, getProperty } from "@/lib/db";
+import { clientBase } from "@/lib/domain";
+import { getAppBrand, getLeadForm, getMe, getProperty } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Listing flyer", robots: { index: false } };
 
@@ -16,7 +17,7 @@ export default function Flyer({ params }: PageProps<"/properties/[id]/flyer">) {
 async function Sheet({ params }: { params: PageProps<"/properties/[id]/flyer">["params"] }) {
   const [p, form, me] = await Promise.all([params.then(({ id }) => getProperty(id)), getLeadForm(), getMe()]);
   if (!p) notFound();
-  const contactUrl = form ? `${process.env.SITE_URL ?? ""}/f/${form.id}?source=Flyer` : null;
+  const contactUrl = form ? `${clientBase((await getAppBrand())?.domain)}/f/${form.id}?source=Flyer` : null;
   const qr = contactUrl ? await QRCode.toString(contactUrl, { type: "svg", margin: 0, errorCorrectionLevel: "M" }) : null;
   const cover = p.photos?.[0]?.url ?? p.cover;
   return (

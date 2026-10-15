@@ -81,7 +81,7 @@ export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: {
 
       <section aria-labelledby="members" className="flex flex-col gap-3">
         <h2 id="members" className="text-xl">Members <span className="text-sm text-muted">{team.members.length}</span></h2>
-        <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           {team.members.map((m) => {
             const me = m.userId === team.me.userId;
             return (
@@ -112,7 +112,7 @@ export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: {
       {isAdmin && team.members.length > 1 && (
         <section aria-labelledby="routing" className="flex flex-col gap-3">
           <h2 id="routing" className="text-xl">Lead routing</h2>
-          <fieldset className="flex min-w-0 flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2 text-sm">
+          <fieldset className="flex min-w-0 flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2 text-sm">
             <legend className="sr-only">How new leads without an owner are assigned</legend>
             {([
               ["off", "Don't assign", "New web-form leads stay unassigned until someone takes them."],
@@ -128,7 +128,7 @@ export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: {
           </fieldset>
           <p className="text-xs text-muted">Territories always win first. Assistants are never assigned.</p>
           {routing.routing !== "off" && (
-            <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+            <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
               {routing.members.filter((m) => m.role !== "assistant").map((m) => (
                 <li key={m.userId}>
                   <label className="flex min-h-12 items-center gap-3 px-4 text-sm">
@@ -165,15 +165,15 @@ export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: {
             )}
           </ActionForm>
           {team.invites.length > 0 && (
-            <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+            <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
               {team.invites.map((i) => (
                 <li key={i.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{i.email} <span className="text-muted capitalize">· {i.role}</span></p>
                     <p className="text-xs text-muted">Pending · expires <LocalTime ts={i.expires} opts={{ month: "short", day: "numeric" }} /> · only works for this email</p>
                   </div>
-                  <button type="button" onClick={() => copy(i.id)} className="flex min-h-11 items-center gap-1.5 rounded-full bg-surface-3 px-3 text-sm hover:text-accent">
-                    {copied === i.id ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}
+                  <button type="button" onClick={() => copy(i.id)} className="flex min-h-11 items-center gap-1.5 rounded-full bg-surface-3 px-3 text-sm hover:text-accent-ink">
+                    {copied === i.id ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}
                     <span aria-live="polite">{copied === i.id ? "Copied" : "Copy invite link"}</span>
                   </button>
                   <Armed label="Revoke" confirm="Revoke?" icon={<X aria-hidden className="size-4" />} onConfirm={() => run(() => revokeInvite(i.id))} />

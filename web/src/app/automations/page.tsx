@@ -66,11 +66,11 @@ async function Playbooks() {
       {failed.length > 0 && (
         <section aria-labelledby="failed" className="flex flex-col gap-3">
           <h2 id="failed" className="text-xl text-score-1">Steps that failed</h2>
-          <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
             {failed.map((f) => (
               <li key={f.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-sm">
                 <CircleAlert aria-hidden className="size-4 shrink-0 text-score-1" />
-                <span className="min-w-0 flex-1 basis-56"><span className="font-medium">{f.workflow}</span> for <Link href={`/leads/${f.contactId}`} className="hover:text-accent">{f.contact}</Link><span className="block text-muted">{f.error} · <LocalTime ts={f.at} /></span></span>
+                <span className="min-w-0 flex-1 basis-56"><span className="font-medium">{f.workflow}</span> for <Link href={`/leads/${f.contactId}`} className="hover:text-accent-ink">{f.contact}</Link><span className="block text-muted">{f.error} · <LocalTime ts={f.at} /></span></span>
                 {isAdmin && <RetryRun id={f.id} />}
               </li>
             ))}

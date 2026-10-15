@@ -7,7 +7,7 @@ const LABEL = { ready: "Ready", gaps: "Some gaps", blocked: "Needs attention" } 
 export function ReadinessList({ r }: { r: Readiness }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <p className={`flex items-center gap-1.5 text-sm font-medium ${r.level === "blocked" ? "text-score-1" : r.level === "ready" ? "text-accent" : ""}`}>
+      <p className={`flex items-center gap-1.5 text-sm font-medium ${r.level === "blocked" ? "text-score-1" : r.level === "ready" ? "text-accent-ink" : ""}`}>
         {r.level === "ready" ? <CircleCheck aria-hidden className="size-4" /> : <CircleAlert aria-hidden className="size-4" />}
         Financing: {LABEL[r.level]}
       </p>

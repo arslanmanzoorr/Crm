@@ -23,7 +23,7 @@ async function Edit({ params }: { params: PageProps<"/leads/[id]/edit">["params"
   if (!lead) notFound();
   return (
     <>
-      <Link href={`/leads/${lead.id}`} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← {lead.name}</Link>
+      <Link href={`/leads/${lead.id}`} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← {lead.name}</Link>
       <h1 className="text-4xl font-light">Edit lead</h1>
       <LeadForm lead={lead} />
     </>

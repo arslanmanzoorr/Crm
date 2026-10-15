@@ -20,7 +20,7 @@ export function PrivacyRequestForm({ formId, who }: { formId: string; who: strin
   if (sent)
     return (
       <div role="status" className="flex flex-col items-center gap-3 rounded-card bg-surface-2 p-10 text-center">
-        <CircleCheck aria-hidden className="size-10 text-accent" />
+        <CircleCheck aria-hidden className="size-10 text-accent-ink" />
         <h1 className="text-2xl">Request received</h1>
         <p className="text-muted">{who.charAt(0).toUpperCase() + who.slice(1)} will confirm it&apos;s you, then respond within 45 days.</p>
       </div>
@@ -74,7 +74,7 @@ const LABEL = { access: "See my data", delete: "Delete", correct: "Correct", opt
 export function PrivacyRequests({ items }: { items: PrivacyRequest[] }) {
   if (items.length === 0) return <p className="rounded-card bg-surface-2 p-5 text-sm text-muted">No requests. The public page is linked from your lead form.</p>;
   return (
-    <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+    <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
       {items.map((r) => <Row key={r.id} r={r} />)}
     </ul>
   );
@@ -102,7 +102,7 @@ function Row({ r }: { r: PrivacyRequest }) {
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} placeholder="What you did (kept as a record)" aria-label="Resolution" className={`${inputAuto} min-w-48 flex-1`} />
         <button type="button" disabled={pending} onClick={() => start(async () => { const x = await updatePrivacyRequest(r.id, status, note); setMsg(x?.ok ?? x?.error ?? null); })} className={primaryBtn}>{pending ? "…" : "Save"}</button>
       </div>
-      {msg && <p aria-live="polite" className="text-accent">{msg}</p>}
+      {msg && <p aria-live="polite" className="text-accent-ink">{msg}</p>}
       {r.kind === "delete" && open && <p className="text-xs text-muted">After verifying, delete the lead from their page: their activity, tasks, deals, documents and audit history are erased with it.</p>}
     </li>
   );

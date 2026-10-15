@@ -25,7 +25,7 @@ export function OwnedHomes({ contactId, homes, updates, lead }: { contactId: str
         </dl>
       )}
       {homes.length > 0 && (
-        <ul className="flex flex-col divide-y divide-white/5">
+        <ul className="flex flex-col divide-y divide-line/5">
           {homes.map((h) => (
             <li key={h.id} className="flex flex-col gap-1 py-3">
               <div className="flex items-start justify-between gap-2">
@@ -41,12 +41,12 @@ export function OwnedHomes({ contactId, homes, updates, lead }: { contactId: str
               {h.notes && <p className="text-sm">{h.notes}</p>}
               {updates?.[h.id] && lead && (
                 <details>
-                  <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Send a home update</summary>
+                  <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">Send a home update</summary>
                   <div className="mt-2"><FarmNote label="Home update" draft={updates[h.id]} due={[lead]} /></div>
                 </details>
               )}
               <details>
-                <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Update</summary>
+                <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">Update</summary>
                 <HomeForm contactId={contactId} h={h} />
               </details>
             </li>
@@ -54,7 +54,7 @@ export function OwnedHomes({ contactId, homes, updates, lead }: { contactId: str
         </ul>
       )}
       <details>
-        <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Add a home they own</summary>
+        <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">Add a home they own</summary>
         <HomeForm contactId={contactId} />
       </details>
     </div>

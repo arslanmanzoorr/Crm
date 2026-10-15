@@ -3,15 +3,16 @@
 import { ArrowDown, ArrowUp, Eye, EyeOff, GripVertical, SlidersHorizontal } from "lucide-react";
 import { Reorder, useDragControls, useReducedMotion } from "motion/react";
 import { useState, useTransition } from "react";
-import { setHomeLayout } from "@/lib/actions";
+import { setHomeLayout, setTeamHomeLayout } from "@/lib/actions";
 import { SECTIONS, type Section } from "@/lib/features";
 import { primaryBtn } from "./forms";
 
 const label = (k: Section) => SECTIONS.find((s) => s.key === k)?.label ?? k;
 const iconBtn = "grid size-10 place-items-center rounded-full text-muted hover:bg-surface-3 hover:text-ink disabled:opacity-30";
 
-/** Drag sections into your own order (or use the arrows), hide the ones you don't need. Saved per person. */
-export function HomeCustomize({ order, hidden }: { order: Section[]; hidden: Section[] }) {
+/** Drag sections into your own order (or use the arrows), hide the ones you don't need. Saved per person; owners and
+ *  admins can also save it as the layout everyone on the team starts with. */
+export function HomeCustomize({ order, hidden, own, canTeam }: { order: Section[]; hidden: Section[]; own: boolean; canTeam: boolean }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState(order);
   const [off, setOff] = useState(new Set(hidden));
@@ -29,7 +30,7 @@ export function HomeCustomize({ order, hidden }: { order: Section[]; hidden: Sec
     <section aria-labelledby="customize" className="flex flex-col gap-4 rounded-card bg-surface-2 p-5">
       <div>
         <h2 id="customize" className="text-xl">Customize this page</h2>
-        <p className="mt-1 text-sm text-muted">Drag to reorder, or use the arrows. Only you see this layout.</p>
+        <p className="mt-1 text-sm text-muted">Drag to reorder, or use the arrows. {own ? "This is your own layout." : "You're using the team layout until you save your own."}</p>
       </div>
       <Reorder.Group axis="y" values={items} onReorder={setItems} className="flex flex-col gap-2">
         {items.map((k, i) => <Row key={k} k={k} i={i} last={i === items.length - 1} hidden={off.has(k)} move={move} flip={flip} />)}
@@ -37,9 +38,19 @@ export function HomeCustomize({ order, hidden }: { order: Section[]; hidden: Sec
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" disabled={pending} className={primaryBtn}
           onClick={() => start(async () => { const r = await setHomeLayout(items, [...off]); setMsg(r ?? null); if (r?.ok) setOpen(false); })}>{pending ? "Saving…" : "Save layout"}</button>
-        <button type="button" onClick={() => { setItems(SECTIONS.map((s) => s.key).filter((k) => order.includes(k))); setOff(new Set()); }} className="min-h-11 rounded-full px-4 text-sm text-muted hover:text-ink">Reset</button>
+        {canTeam && (
+          <button type="button" disabled={pending} className="min-h-11 rounded-full bg-surface-3 px-4 text-sm font-medium hover:bg-surface-light hover:text-on-light"
+            onClick={() => start(async () => { const r = await setTeamHomeLayout(items, [...off]); setMsg(r ?? null); })}>Save as team default</button>
+        )}
+        {own ? (
+          <button type="button" disabled={pending} className="min-h-11 rounded-full px-4 text-sm text-muted hover:text-ink"
+            onClick={() => start(async () => { const r = await setHomeLayout([], []); setMsg(r ?? null); if (r?.ok) setOpen(false); })}>Use team layout</button>
+        ) : (
+          <button type="button" onClick={() => { setItems(SECTIONS.map((s) => s.key).filter((k) => order.includes(k))); setOff(new Set()); }} className="min-h-11 rounded-full px-4 text-sm text-muted hover:text-ink">Reset</button>
+        )}
         <button type="button" onClick={() => { setItems(order); setOff(new Set(hidden)); setOpen(false); }} className="min-h-11 rounded-full px-4 text-sm text-muted hover:text-ink">Cancel</button>
         {msg?.error && <span role="alert" className="text-sm text-score-1">{msg.error}</span>}
+        {msg?.ok && <span role="status" className="text-sm text-muted">{msg.ok}</span>}
       </div>
     </section>
   );
@@ -55,7 +66,7 @@ function Row({ k, i, last, hidden, move, flip }: { k: Section; i: number; last: 
       <span aria-hidden onPointerDown={(e) => drag.start(e)} className="grid size-10 cursor-grab touch-none place-items-center text-muted active:cursor-grabbing">
         <GripVertical className="size-5" />
       </span>
-      <span className={`min-w-0 flex-1 truncate ${hidden ? "line-through decoration-white/30" : ""}`}>{label(k)}</span>
+      <span className={`min-w-0 flex-1 truncate ${hidden ? "line-through decoration-line/30" : ""}`}>{label(k)}</span>
       <button type="button" className={iconBtn} disabled={i === 0} onClick={() => move(i, -1)} aria-label={`Move ${label(k)} up`}><ArrowUp aria-hidden className="size-4" /></button>
       <button type="button" className={iconBtn} disabled={last} onClick={() => move(i, 1)} aria-label={`Move ${label(k)} down`}><ArrowDown aria-hidden className="size-4" /></button>
       <button type="button" className={iconBtn} onClick={() => flip(k)} aria-pressed={!hidden} aria-label={`${hidden ? "Show" : "Hide"} ${label(k)}`}>

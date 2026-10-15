@@ -25,7 +25,7 @@ async function List({ searchParams }: { searchParams: PageProps<"/templates">["s
   return (
     <>
       {templates.length > 0 && (
-        <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           {templates.map((t) => (
             <li key={t.id} className="flex min-h-12 flex-wrap items-center justify-between gap-2 px-5 py-2 text-sm">
               <span className="font-medium">{t.name} {t.state && <span className="font-normal text-muted">· {t.state}</span>}</span>

@@ -23,7 +23,7 @@ async function Edit({ params }: { params: PageProps<"/properties/[id]/edit">["pa
   if (!p) notFound();
   return (
     <>
-      <Link href={`/properties/${p.id}`} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← {p.address}</Link>
+      <Link href={`/properties/${p.id}`} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← {p.address}</Link>
       <h1 className="text-4xl font-light">Edit listing</h1>
       <PropertyForm p={p} clients={clients} />
     </>

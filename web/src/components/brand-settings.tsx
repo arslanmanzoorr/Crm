@@ -1,11 +1,11 @@
 "use client";
 
 import { ImageUp, Trash2 } from "lucide-react";
-import { useRef, useState, useTransition, type CSSProperties } from "react";
+import { useRef, useState, useSyncExternalStore, useTransition, type CSSProperties } from "react";
 import { removeLogo, setBranding, setFeatures, uploadLogo } from "@/lib/actions";
 import { brandColorError } from "@/lib/brand";
-import { FEATURES, RADII, type Radius } from "@/lib/features";
-import { RADIUS } from "@/lib/theme";
+import { FEATURES, RADII, THEMES, type Radius, type Theme } from "@/lib/features";
+import { DARK_VARS, LIGHT_VARS, RADIUS } from "@/lib/theme";
 import { primaryBtn } from "./forms";
 
 const DEFAULT = "#c5f36a";
@@ -13,21 +13,27 @@ const PRESETS = ["#c5f36a", "#7dd3fc", "#5eead4", "#fcd34d", "#fdba74", "#fda4af
 const SHAPES: Record<Radius, string> = { pill: "Pill", rounded: "Rounded", square: "Square" };
 const ICON: Record<Radius, string> = { pill: "9999px", rounded: "6px", square: "1px" };
 
+export const THEME_LABEL: Record<Theme, string> = { dark: "Dark", light: "Light", system: "Match device" };
+const subscribeScheme = (cb: () => void) => { const m = matchMedia("(prefers-color-scheme: light)"); m.addEventListener("change", cb); return () => m.removeEventListener("change", cb); };
+
 type Msg = { error?: string; ok?: string } | null;
 const Note = ({ msg }: { msg: Msg }) => (msg?.error ? <span role="alert" className="text-score-1">{msg.error}</span> : msg?.ok ? <span role="status" className="text-muted">{msg.ok}</span> : null);
 
 /** The team's look across the whole CRM and its client-facing pages: logo, accent, button shape, "Powered by". */
-export function BrandSettings({ color, hide, radius, logo, team }: { color: string | null; hide: boolean; radius: Radius; logo: string | null; team: string }) {
+export function BrandSettings({ color, hide, radius, logo, team, theme }: { color: string | null; hide: boolean; radius: Radius; logo: string | null; team: string; theme: Theme }) {
   const [c, setC] = useState(color ?? DEFAULT);
   const [h, setH] = useState(hide);
   const [r, setR] = useState<Radius>(radius);
+  const [t, setT] = useState<Theme>(theme);
+  const prefersLight = useSyncExternalStore(subscribeScheme, () => matchMedia("(prefers-color-scheme: light)").matches, () => false);
+  const lightPreview = t === "light" || (t === "system" && prefersLight);
   const [msg, setMsg] = useState<Msg>(null);
   const [logoMsg, setLogoMsg] = useState<Msg>(null);
   const [pending, start] = useTransition();
   const [uploading, startUpload] = useTransition();
   const file = useRef<HTMLInputElement>(null);
   const warn = brandColorError(c);
-  const preview = { "--color-accent": warn ? DEFAULT : c, "--radius-btn": RADIUS[r].btn, "--radius-card": RADIUS[r].card } as CSSProperties;
+  const preview = { ...(lightPreview ? LIGHT_VARS : DARK_VARS), "--color-accent": warn ? DEFAULT : c, "--radius-btn": RADIUS[r].btn, "--radius-card": RADIUS[r].card, colorScheme: lightPreview ? "light" : "dark" } as CSSProperties;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -80,10 +86,23 @@ export function BrandSettings({ color, hide, radius, logo, team }: { color: stri
           <legend className="mb-3 font-medium">Button shape</legend>
           <div className="flex flex-wrap gap-2">
             {RADII.map((k) => (
-              <label key={k} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 ${r === k ? "border-ink" : "border-white/10 hover:border-white/30"}`}>
+              <label key={k} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 ${r === k ? "border-ink" : "border-line/10 hover:border-line/30"}`}>
                 <input type="radio" name="radius" value={k} checked={r === k} onChange={() => setR(k)} className="accent-[var(--color-accent)]" />
                 <span aria-hidden className="h-5 w-9 border-2 border-current" style={{ borderRadius: ICON[k] }} />
                 {SHAPES[k]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="flex flex-col gap-3">
+          <legend className="mb-1 font-medium">Theme</legend>
+          <p className="text-muted">The team default. Each person can still pick their own under Account.</p>
+          <div className="flex flex-wrap gap-2">
+            {THEMES.map((k) => (
+              <label key={k} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 ${t === k ? "border-ink" : "border-line/10 hover:border-line/30"}`}>
+                <input type="radio" name="theme" value={k} checked={t === k} onChange={() => setT(k)} className="accent-[var(--color-accent)]" />
+                {THEME_LABEL[k]}
               </label>
             ))}
           </div>
@@ -96,12 +115,12 @@ export function BrandSettings({ color, hide, radius, logo, team }: { color: stri
 
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" disabled={pending || !!warn} className={`${primaryBtn} w-fit`}
-            onClick={() => start(async () => setMsg((await setBranding(c === DEFAULT ? null : c, h, r)) ?? null))}>{pending ? "Saving…" : "Save branding"}</button>
+            onClick={() => start(async () => setMsg((await setBranding(c === DEFAULT ? null : c, h, r, t)) ?? null))}>{pending ? "Saving…" : "Save branding"}</button>
           <Note msg={msg} />
         </div>
       </div>
 
-      <figure style={preview} aria-label="Preview" className="flex flex-col gap-3 self-start rounded-card bg-bg p-5 ring-1 ring-white/10">
+      <figure style={preview} aria-label="Preview" className="flex flex-col gap-3 self-start rounded-card bg-bg p-5 text-ink ring-1 ring-line/10">
         <figcaption className="text-xs font-medium tracking-wide text-muted uppercase">Preview</figcaption>
         <div className="flex items-center gap-3">
           <span className={`grid size-10 place-items-center overflow-hidden rounded-full font-semibold text-on-light ${logo ? "bg-surface-light" : "bg-accent"}`}>
@@ -118,7 +137,7 @@ export function BrandSettings({ color, hide, radius, logo, team }: { color: stri
             <button type="button" tabIndex={-1} className="min-h-10 rounded-full bg-surface-3 px-4 text-sm">Text</button>
           </div>
         </div>
-        <span className="text-sm text-accent">Accent text and links</span>
+        <span className="text-sm text-accent-ink">Accent text and links</span>
       </figure>
     </div>
   );

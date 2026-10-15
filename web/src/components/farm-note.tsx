@@ -20,18 +20,18 @@ export function FarmNote({ draft, due, label = "Market note" }: { draft: string;
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={7} aria-label={label} className={`${input} resize-y`} />
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" className={pill} onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
-            {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
+            {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
           </button>
           {due.length > 0 && <span className="text-xs text-muted">{"{first_name}"} is filled in for each lead you log it on.</span>}
         </div>
       </div>
       {due.length > 0 && (
-        <ul className="flex flex-col divide-y divide-white/5">
+        <ul className="flex flex-col divide-y divide-line/5">
           {due.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-              <a href={`/leads/${p.id}`} className="min-w-0 break-words hover:text-accent">{p.name}{p.email === false && <span className="text-xs text-muted"> · no email consent</span>}</a>
+              <a href={`/leads/${p.id}`} className="min-w-0 break-words hover:text-accent-ink">{p.name}{p.email === false && <span className="text-xs text-muted"> · no email consent</span>}</a>
               {logged.has(p.id)
-                ? <span className="flex min-h-10 items-center gap-1.5 text-sm text-accent"><Check aria-hidden className="size-4" />Logged</span>
+                ? <span className="flex min-h-10 items-center gap-1.5 text-sm text-accent-ink"><Check aria-hidden className="size-4" />Logged</span>
                 : <button type="button" disabled={pending} className={pill}
                     onClick={() => start(async () => {
                       const r = await saveNoteToLead(p.id, `${label} sent:\n${text.replaceAll("{first_name}", first(p.name))}`);

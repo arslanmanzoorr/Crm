@@ -24,7 +24,7 @@ export function VideoScript({ facts }: { facts: Record<string, unknown> }) {
         <>
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={12} aria-label="Video script" className={`${input} resize-y`} />
           <button type="button" className={`${pill} w-fit`} onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
-            {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
+            {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
           </button>
         </>
       ) : !busy && <p className="text-sm text-muted">A 30–45 second reel: hook, scenes with on-screen text and voiceover, and your call to action. Built from the listing&apos;s facts only.</p>}

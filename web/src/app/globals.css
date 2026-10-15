@@ -11,6 +11,8 @@
   --color-on-light: #111111;
   --color-accent: #c5f36a;
   --color-accent-strong: #a9e33f;
+  --color-accent-ink: var(--color-accent); /* accent used as text; darkened in the light theme */
+  --color-line: #ffffff; /* hairlines and hover washes: white on dark, black on light */
   --color-score-1: #f2766b;
   --color-score-2: #f5a25d;
   --color-score-3: #f5d35d;

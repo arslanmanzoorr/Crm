@@ -129,8 +129,8 @@ export function CmaEditor({ cma }: { cma: Cma }) {
         {(scenarios.length > 0 || lp > 0) && (
           <div className="overflow-x-auto rounded-card bg-surface-2 px-5" tabIndex={0} role="region" aria-label="Net at different prices">
             <table className="w-full min-w-[36rem] text-sm">
-              <thead><tr className="border-b border-white/5 text-left text-muted"><th className="py-2.5 font-normal">Sale price</th><th className="px-3 text-right font-normal">Commission</th><th className="px-3 text-right font-normal">Closing</th><th className="px-3 text-right font-normal">Payoff + other</th><th className="text-right font-normal">Seller nets</th></tr></thead>
-              <tbody className="divide-y divide-white/5">
+              <thead><tr className="border-b border-line/5 text-left text-muted"><th className="py-2.5 font-normal">Sale price</th><th className="px-3 text-right font-normal">Commission</th><th className="px-3 text-right font-normal">Closing</th><th className="px-3 text-right font-normal">Payoff + other</th><th className="text-right font-normal">Seller nets</th></tr></thead>
+              <tbody className="divide-y divide-line/5">
                 {[...scenarios, ...(lp > 0 ? [["Recommended", lp] as const] : [])].map(([label, price]) => {
                   const s = sellerNet(price, net);
                   return (
@@ -155,7 +155,7 @@ export function CmaEditor({ cma }: { cma: Cma }) {
           {pending ? "Saving…" : "Save"}
         </button>
         <a href={`/cma/${cma.id}/print`} target="_blank" rel="noopener" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-5 text-sm hover:bg-surface-3"><Printer aria-hidden className="size-4" /> Presentation</a>
-        <span aria-live="polite" className={`text-sm ${msg?.error ? "text-score-1" : "text-accent"}`}>{msg?.error ?? msg?.ok}</span>
+        <span aria-live="polite" className={`text-sm ${msg?.error ? "text-score-1" : "text-accent-ink"}`}>{msg?.error ?? msg?.ok}</span>
       </div>
     </div>
   );

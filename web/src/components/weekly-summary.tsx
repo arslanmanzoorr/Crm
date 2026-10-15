@@ -18,7 +18,7 @@ export function WeeklySummary({ metrics, scope }: { metrics: Metric[]; scope: st
         </div>
         <button type="button" className="flex min-h-10 items-center gap-1.5 rounded-full bg-surface-3 px-3.5 text-sm hover:bg-surface-1"
           onClick={() => navigator.clipboard.writeText(summaryText(metrics, scope)).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
-          {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />} {copied ? "Copied" : "Copy summary"}
+          {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />} {copied ? "Copied" : "Copy summary"}
         </button>
       </div>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

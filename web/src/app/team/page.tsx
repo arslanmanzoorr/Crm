@@ -6,6 +6,9 @@ import { getCaps, getMembers, getOffices, getRentalFeed, getSplits, getTeam, get
 import { ComplianceSettings } from "@/components/compliance-settings";
 import { ApiKeys } from "@/components/api-keys";
 import { BrandSettings, FeatureSettings } from "@/components/brand-settings";
+import { DomainSettings } from "@/components/domain-settings";
+import { domainToken } from "@/lib/domain";
+import { domainDns } from "@/lib/vercel";
 import { tierSplit } from "@/lib/deals";
 import { money } from "@/lib/data";
 import { Offices } from "@/components/offices";
@@ -45,7 +48,15 @@ async function TeamView() {
         <section aria-labelledby="branding" className="flex flex-col gap-3">
           <h2 id="branding" className="text-xl">Branding</h2>
           <p className="-mt-2 text-sm text-muted">Your logo, color and button shape across the CRM for everyone on the team, and on lead forms, open house sign-in, showing booking and the client portal.</p>
-          <BrandSettings color={brand.color} hide={brand.hide} radius={brand.radius} logo={brand.logo} team={team.org.name} />
+          <BrandSettings color={brand.color} hide={brand.hide} radius={brand.radius} logo={brand.logo} team={team.org.name} theme={brand.theme} />
+        </section>
+      )}
+      {(team.me.role === "owner" || team.me.role === "admin") && (
+        <section aria-labelledby="domain" className="flex flex-col gap-3">
+          <h2 id="domain" className="text-xl">Custom domain</h2>
+          <p className="-mt-2 text-sm text-muted">Serve your lead forms, open house sign-in, showing booking and client portal from your own address. Your team still signs in here.</p>
+          <DomainSettings key={brand.domain ?? ""} domain={brand.domain} verified={brand.domainVerified} token={brand.orgId ? await domainToken(brand.orgId) : ""}
+            dns={brand.domain && brand.domainVerified ? await domainDns(brand.domain) : null} />
         </section>
       )}
       {(team.me.role === "owner" || team.me.role === "admin") && (
@@ -70,14 +81,14 @@ async function TeamView() {
       <section aria-labelledby="splits" className="flex flex-col gap-3">
         <h2 id="splits" className="text-xl">Commission splits</h2>
         <p className="-mt-2 text-sm text-muted">Each agent&apos;s share of the commission after referral fees. New deals start with it; it can still be changed per deal. With an annual cap, once an agent has paid the brokerage that much this year, new deals suggest 100%. Tiers raise the split for everyone once their gross commission closed this year passes a threshold.</p>
-        <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           {agents.map((a) => (
             <li key={a.id} className="flex min-h-12 flex-wrap items-center justify-between gap-2 px-5 py-2 text-sm">
               <span>{a.email}</span>
               <span className="flex flex-wrap items-center gap-3">
                 {team.me.role === "owner" || team.me.role === "admin" ? <><SplitInput userId={a.id} value={splits[a.id] ?? 70} label={a.email} /><CapInput userId={a.id} value={caps[a.id]?.cap ?? null} label={a.email} /></> : <span>{splits[a.id] ?? 70}%{caps[a.id]?.cap ? `, cap ${money(caps[a.id].cap!)}` : ""}</span>}
                 {caps[a.id]?.cap && <span className="text-xs text-muted">{money(caps[a.id].paid)} paid this year{caps[a.id].paid >= caps[a.id].cap! ? " · capped" : ""}</span>}
-                {tierSplit(tiers, caps[a.id]?.gci ?? 0, splits[a.id] ?? 70) > (splits[a.id] ?? 70) && <span className="text-xs text-accent">tier: {tierSplit(tiers, caps[a.id]?.gci ?? 0, splits[a.id] ?? 70)}% ({money(caps[a.id].gci)} GCI this year)</span>}
+                {tierSplit(tiers, caps[a.id]?.gci ?? 0, splits[a.id] ?? 70) > (splits[a.id] ?? 70) && <span className="text-xs text-accent-ink">tier: {tierSplit(tiers, caps[a.id]?.gci ?? 0, splits[a.id] ?? 70)}% ({money(caps[a.id].gci)} GCI this year)</span>}
               </span>
             </li>
           ))}

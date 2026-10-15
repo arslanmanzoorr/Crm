@@ -64,7 +64,7 @@ export function BrandPosts({ facts }: { facts: BrandFacts }) {
         <>
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={9} aria-label="Brand post" className={`${input} resize-y`} />
           <button type="button" className={`${pill} w-fit`} onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
-            {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
+            {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
           </button>
         </>
       )}

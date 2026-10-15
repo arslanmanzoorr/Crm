@@ -17,7 +17,7 @@ export function TwoStep({ factors }: { factors: { id: string; name: string; crea
     <div className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 text-sm">
       {factors.length > 0 ? (
         <>
-          <p><span className="font-medium text-accent">On.</span> Signing in asks for a code from your authenticator app.</p>
+          <p><span className="font-medium text-accent-ink">On.</span> Signing in asks for a code from your authenticator app.</p>
           {factors.map((f) => (
             <div key={f.id} className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-muted">{f.name} · added {f.created.slice(0, 10)}</span>

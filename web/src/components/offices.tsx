@@ -18,7 +18,7 @@ export function Offices({ offices, members, canEdit }: { offices: Office[]; memb
       <h2 id="offices" className="text-xl">Offices</h2>
       <p className="-mt-2 text-sm text-muted">For brokerages with more than one office. Analytics and the team pipeline can then be read per office, and an office in another market can keep its own time zone for due dates.</p>
       {offices.length > 0 && (
-        <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           {offices.map((o) => (
             <li key={o.id} className="flex min-h-12 items-center gap-3 px-5 text-sm">
               <span className="flex-1 font-medium">{o.name}</span>
@@ -38,7 +38,7 @@ export function Offices({ offices, members, canEdit }: { offices: Office[]; memb
         </ul>
       )}
       {canEdit && offices.length > 0 && (
-        <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           {members.map((m) => (
             <li key={m.id} className="flex min-h-12 flex-wrap items-center justify-between gap-2 px-5 py-2 text-sm">
               <span className="min-w-0 break-words">{m.email}</span>

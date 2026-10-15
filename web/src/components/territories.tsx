@@ -14,7 +14,7 @@ export function Territories({ territories, agents, canEdit }: { territories: { a
       <h2 id="territories" className="text-xl">Territories</h2>
       <p className="-mt-2 text-sm text-muted">New leads from your form or imports that name one of these areas go straight to its agent. Others follow lead routing.</p>
       {territories.length > 0 && (
-        <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           {territories.map((t) => (
             <li key={t.area} className="flex min-h-12 items-center gap-3 px-5 text-sm">
               <span className="flex-1 font-medium">{t.area}</span>

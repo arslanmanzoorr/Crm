@@ -14,11 +14,11 @@ export function AgentShortlist({ contactId, items }: { contactId: string; items:
   const [pending, start] = useTransition();
   if (items.length === 0) return <p className="text-sm text-muted">Nothing yet. Homes they save in their portal, and homes you add from &ldquo;Listings that fit&rdquo;, show here.</p>;
   return (
-    <ul className="flex flex-col divide-y divide-white/5">
+    <ul className="flex flex-col divide-y divide-line/5">
       {items.map((i) => (
         <li key={i.propertyId} className="flex flex-col gap-2 py-3">
           <div className="flex items-start justify-between gap-2">
-            <a href={`/properties/${i.propertyId}`} className="min-w-0 break-words font-medium hover:text-accent">{i.address}</a>
+            <a href={`/properties/${i.propertyId}`} className="min-w-0 break-words font-medium hover:text-accent-ink">{i.address}</a>
             <button type="button" disabled={pending} aria-label={`Remove ${i.address} from their shortlist`} onClick={() => start(() => removeFromShortlist(contactId, i.propertyId))}
               className="grid size-10 shrink-0 place-items-center rounded-full text-muted hover:bg-surface-3 hover:text-ink"><X aria-hidden className="size-4" /></button>
           </div>
@@ -34,7 +34,7 @@ export function AgentShortlist({ contactId, items }: { contactId: string; items:
 export function AddToShortlist({ contactId, propertyId, on }: { contactId: string; propertyId: string; on: boolean }) {
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
-  if (on) return <span className="flex min-h-10 items-center gap-1.5 text-sm text-accent"><Check aria-hidden className="size-4" />On their shortlist</span>;
+  if (on) return <span className="flex min-h-10 items-center gap-1.5 text-sm text-accent-ink"><Check aria-hidden className="size-4" />On their shortlist</span>;
   return (
     <span className="flex flex-wrap items-center gap-2">
       <button type="button" disabled={pending} onClick={() => start(async () => { const r = await addToShortlist(contactId, propertyId); setErr(r?.error ?? null); })} className={pill}>

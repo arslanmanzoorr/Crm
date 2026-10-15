@@ -24,7 +24,7 @@ export function ValuationForm({ formId, who, open }: { formId: string; who: stri
   if (sent)
     return (
       <div role="status" className="flex flex-col items-center gap-3 rounded-card bg-surface-2 p-10 text-center">
-        <CircleCheck aria-hidden className="size-10 text-accent" />
+        <CircleCheck aria-hidden className="size-10 text-accent-ink" />
         <h1 className="text-2xl">Thanks, we&apos;re on it</h1>
         <p className="text-muted">{who.charAt(0).toUpperCase() + who.slice(1)} will prepare a market analysis for {home.address || "your home"} from recent nearby sales and get in touch.</p>
       </div>

@@ -13,7 +13,7 @@ export function GoogleConnect({ email, ready, status }: { email: string | null; 
   const [pending, start] = useTransition();
   return (
     <div className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 text-sm">
-      {status && MSG[status] && <p role="status" className={status === "connected" ? "text-accent" : "text-score-1"}>{MSG[status]}</p>}
+      {status && MSG[status] && <p role="status" className={status === "connected" ? "text-accent-ink" : "text-score-1"}>{MSG[status]}</p>}
       {email ? (
         <>
           <p>Connected as <span className="font-medium">{email}</span>. Emails to leads go from your Gmail, and showings you book appear on your Google Calendar.</p>

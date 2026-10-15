@@ -42,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 /** The team's theme (validated CSS variables), logo and switched-off modules around the navigation. */
 async function Shell() {
   const b = await getAppBrand();
-  const css = b ? themeCss(b.color, b.radius) : "";
+  const css = b ? themeCss(b.color, b.radius, b.theme) : "";
   return (
     <>
       {css && <style>{css}</style>}

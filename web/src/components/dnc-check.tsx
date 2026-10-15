@@ -13,7 +13,7 @@ export function DncCheck({ contactId, lastChecked }: { contactId: string; lastCh
   return (
     <div className="flex flex-col gap-2 text-sm">
       <p className="text-muted">
-        To cold-call, check the number at <a href="https://telemarketing.donotcall.gov" target="_blank" rel="noreferrer" className="text-accent underline">the National Do Not Call Registry</a> (and your state list, if it has one)
+        To cold-call, check the number at <a href="https://telemarketing.donotcall.gov" target="_blank" rel="noreferrer" className="text-accent-ink underline">the National Do Not Call Registry</a> (and your state list, if it has one)
         {lastChecked ? ` (last checked ${lastChecked}, older than 31 days)` : ""}, then record the result.
       </p>
       <div className="flex flex-wrap gap-2">

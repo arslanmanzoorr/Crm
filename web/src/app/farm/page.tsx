@@ -69,7 +69,7 @@ async function Farm({ searchParams }: { searchParams: PageProps<"/farm">["search
             <table className="w-full min-w-[28rem] text-sm">
               <caption className="sr-only">Sales by month, last 12 months</caption>
               <thead><tr className="text-left text-muted"><th scope="col" className="py-1.5 pr-4 font-normal">Month</th><th scope="col" className="px-3 text-right font-normal">Sold</th><th scope="col" className="px-3 text-right font-normal">Median price</th></tr></thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-line/5">
                 {trend.filter((t) => t.sold).map((t) => (
                   <tr key={t.month}>
                     <th scope="row" className="py-1.5 pr-4 text-left font-normal">{new Date(`${t.month}-15T00:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })}</th>

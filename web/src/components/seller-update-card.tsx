@@ -18,14 +18,14 @@ export function SellerUpdateCard({ draft, sellerId }: { draft: string; sellerId:
       <textarea value={text} onChange={(e) => setText(e.target.value)} rows={7} aria-label="Weekly update" className={`${input} resize-y`} />
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className={pill} onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
-          {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
+          {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
         </button>
         {sellerId && (
           <button type="button" disabled={pending} className={pill} onClick={() => start(async () => { const r = await saveNoteToLead(sellerId, `Weekly update sent:\n${text}`); setMsg(r?.ok ?? r?.error ?? null); })}>
             {pending ? "Logging…" : "Log as sent"}
           </button>
         )}
-        <span aria-live="polite" className="text-sm text-accent">{msg}</span>
+        <span aria-live="polite" className="text-sm text-accent-ink">{msg}</span>
       </div>
       {!sellerId && <p className="text-xs text-muted">Set the seller on this listing (Edit) to log updates on their timeline.</p>}
     </div>

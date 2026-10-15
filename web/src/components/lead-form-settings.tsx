@@ -11,9 +11,9 @@ function CopyButton({ text, label }: { text: string; label: string }) {
     <button
       type="button"
       onClick={async () => { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1800); }}
-      className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:text-accent"
+      className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:text-accent-ink"
     >
-      {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}
+      {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}
       <span aria-live="polite">{copied ? "Copied" : label}</span>
     </button>
   );
@@ -30,7 +30,7 @@ export function LeadFormSettings({ form, url }: { form: { id: string; public_nam
       <div className="flex flex-wrap items-center gap-2">
         <code className="min-w-0 flex-1 truncate rounded-2xl bg-surface-1 px-4 py-3 text-xs">{url}</code>
         <CopyButton text={url} label="Copy link" />
-        <a href={url} target="_blank" rel="noopener" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:text-accent">
+        <a href={url} target="_blank" rel="noopener" className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:text-accent-ink">
           <ExternalLink aria-hidden className="size-4" /> Open
         </a>
       </div>

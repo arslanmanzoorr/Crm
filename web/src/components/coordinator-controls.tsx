@@ -28,7 +28,7 @@ export function CoordinatorControls({ dealId, link }: { dealId: string; link: De
           <div className="flex flex-wrap items-center gap-2">
             <code className="min-w-0 flex-1 truncate text-xs">{url}</code>
             <button type="button" className={pill} onClick={() => navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
-              {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
+              {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy"}
             </button>
           </div>
         </div>

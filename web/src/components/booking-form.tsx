@@ -26,7 +26,7 @@ export function BookingForm({ formId, team, listings, initial, tz }: { formId: s
   if (sent)
     return (
       <div role="status" className="flex flex-col items-center gap-3 rounded-card bg-surface-2 p-10 text-center">
-        <CircleCheck aria-hidden className="size-10 text-accent" />
+        <CircleCheck aria-hidden className="size-10 text-accent-ink" />
         <h1 className="text-2xl">Showing requested</h1>
         <p className="text-muted">{sent.address}, {sent.when}. {Team} will confirm with you shortly.</p>
       </div>

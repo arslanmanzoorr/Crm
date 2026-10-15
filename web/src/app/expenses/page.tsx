@@ -42,7 +42,7 @@ async function Ledger() {
       {bySource.length > 0 && (
         <section aria-labelledby="sources" className="flex flex-col gap-2">
           <h2 id="sources" className="text-xl">Marketing by lead source</h2>
-          <p className="-mt-1 text-sm text-muted">Cost per lead and per closing are on <Link href="/analytics?days=365" className="text-accent">Analytics</Link>.</p>
+          <p className="-mt-1 text-sm text-muted">Cost per lead and per closing are on <Link href="/analytics?days=365" className="text-accent-ink">Analytics</Link>.</p>
           <ul className="flex flex-wrap gap-2">{bySource.map((s) => <li key={s.source} className="rounded-card bg-surface-2 px-4 py-2.5 text-sm"><span className="text-muted">{s.source}</span> {money(s.sum)}</li>)}</ul>
         </section>
       )}
@@ -59,11 +59,11 @@ async function Ledger() {
             rows={items.map((e) => [e.spentOn, EXPENSE_CATEGORIES[e.category], e.amount, e.vendor, e.source ?? "", e.deal?.address ?? "", e.note])} />}
         </div>
         {items.length === 0 ? <p className="rounded-card bg-surface-2 p-5 text-sm text-muted">Nothing logged yet this year.</p> : (
-          <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
             {items.map((e) => (
               <li key={e.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-2.5 text-sm">
                 <span className="w-16 text-muted">{date(e.spentOn)}</span>
-                <span className="min-w-0 flex-1 basis-40">{EXPENSE_CATEGORIES[e.category]}{e.vendor && <span className="text-muted"> · {e.vendor}</span>}{e.source && <span className="text-muted"> · for {e.source}</span>}{e.deal && <> · <Link href={`/deals/${e.deal.id}`} className="text-accent">{e.deal.address}</Link></>}</span>
+                <span className="min-w-0 flex-1 basis-40">{EXPENSE_CATEGORIES[e.category]}{e.vendor && <span className="text-muted"> · {e.vendor}</span>}{e.source && <span className="text-muted"> · for {e.source}</span>}{e.deal && <> · <Link href={`/deals/${e.deal.id}`} className="text-accent-ink">{e.deal.address}</Link></>}</span>
                 <span className="font-medium tabular-nums">{money(e.amount)}</span>
                 <DeleteExpense id={e.id} />
               </li>

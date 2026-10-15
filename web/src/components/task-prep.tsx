@@ -11,9 +11,9 @@ export function TaskPrep({ task, lead, data, blocked }: { task: { title: string;
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const go = async () => { setBusy(true); setErr(null); try { setText((await askAi("prep", data)).replace(/\*\*/g, "")); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); } };
-  if (blocked) return <p className="mt-3 border-t border-white/5 pt-3 text-sm text-muted">Next task: {task.title}. No prep drafted: {blocked}.</p>;
+  if (blocked) return <p className="mt-3 border-t border-line/5 pt-3 text-sm text-muted">Next task: {task.title}. No prep drafted: {blocked}.</p>;
   return (
-    <div className="mt-3 flex flex-col gap-2 border-t border-white/5 pt-3">
+    <div className="mt-3 flex flex-col gap-2 border-t border-line/5 pt-3">
       <button type="button" onClick={go} disabled={busy} className="flex min-h-10 w-fit items-center gap-1.5 rounded-full bg-surface-3 px-3.5 text-sm hover:bg-surface-1 disabled:opacity-60">
         <Sparkles aria-hidden className="size-4" />{busy ? "Preparing…" : `${task.kind === "call" ? "Prep this call" : "Draft this email"}: ${task.title}`}
       </button>

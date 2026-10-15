@@ -21,11 +21,11 @@ async function Editor({ params }: { params: PageProps<"/cma/[id]">["params"] }) 
   if (!cma) notFound();
   return (
     <>
-      <Link href="/cma" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← All CMAs</Link>
+      <Link href="/cma" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← All CMAs</Link>
       <header>
         <p className="text-sm text-muted">Comparative market analysis</p>
         <h1 className="text-4xl font-light">{cma.address}</h1>
-        {cma.propertyId && <Link href={`/properties/${cma.propertyId}`} className="text-sm text-accent">View listing</Link>}
+        {cma.propertyId && <Link href={`/properties/${cma.propertyId}`} className="text-sm text-accent-ink">View listing</Link>}
       </header>
       <CmaEditor cma={cma} />
     </>

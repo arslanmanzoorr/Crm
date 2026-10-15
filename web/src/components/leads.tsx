@@ -14,7 +14,7 @@ export type Filter = (typeof filters)[number];
 const PAGE = 30; // keep in sync with db.ts PAGE
 
 export const pill = (on: boolean) =>
-  `flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm transition duration-150 ${on ? "bg-surface-light text-on-light" : "bg-surface-2 text-ink/80 hover:text-accent"}`;
+  `flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm transition duration-150 ${on ? "bg-surface-light text-on-light" : "bg-surface-2 text-ink/80 hover:text-accent-ink"}`;
 
 export function LeadCard({ lead, selected, onToggle, owner }: { lead: Lead; selected?: boolean; onToggle?: () => void; owner?: string }) {
   return (
@@ -39,7 +39,7 @@ export function LeadCard({ lead, selected, onToggle, owner }: { lead: Lead; sele
       <p className="line-clamp-2 text-sm text-muted">{lead.headline}</p>
 
       <p className="mt-3 rounded-2xl bg-surface-1 px-3 py-2 text-xs text-ink/80">
-        <span className="text-accent">AI ·</span> {lead.nextAction || lead.intent}
+        <span className="text-accent-ink">AI ·</span> {lead.nextAction || lead.intent}
         <br />
         <span className="line-clamp-1 text-muted">Last: {lead.lastTouch}</span>
       </p>
@@ -70,12 +70,12 @@ export function TopLeads({ leads, total }: { leads: Lead[]; total: number }) {
     <section aria-labelledby="top-leads" className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="top-leads" className="text-xl">Hottest leads</h2>
-        <Link href="/leads" className="text-sm text-muted hover:text-accent">All {total} leads →</Link>
+        <Link href="/leads" className="text-sm text-muted hover:text-accent-ink">All {total} leads →</Link>
       </div>
       {top.length ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{top.map((l) => <LeadCard key={l.id} lead={l} />)}</div>
       ) : (
-        <p className="rounded-card bg-surface-2 p-6 text-sm text-muted">No leads yet. <Link href="/leads/new" className="text-accent underline">Add your first lead</Link>.</p>
+        <p className="rounded-card bg-surface-2 p-6 text-sm text-muted">No leads yet. <Link href="/leads/new" className="text-accent-ink underline">Add your first lead</Link>.</p>
       )}
     </section>
   );
@@ -192,7 +192,7 @@ export function LeadList({ leads, total, counts, q, temp, limit, owner = "", tag
       </div>
 
       <p className="sr-only" aria-live="polite">{pending ? "Working" : `${total} leads found`}</p>
-      {bulkMsg && <p role="status" className={`flex animate-rise items-center gap-1.5 text-sm ${bulkMsg.error ? "text-score-1" : "text-accent"}`}>{!bulkMsg.error && <Check aria-hidden className="size-4" />}{bulkMsg.text}</p>}
+      {bulkMsg && <p role="status" className={`flex animate-rise items-center gap-1.5 text-sm ${bulkMsg.error ? "text-score-1" : "text-accent-ink"}`}>{!bulkMsg.error && <Check aria-hidden className="size-4" />}{bulkMsg.text}</p>}
 
       {selecting && (
         <div role="toolbar" aria-label="Bulk actions" className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-30 mx-auto flex max-w-2xl animate-rise flex-wrap items-center gap-2 rounded-card bg-surface-light p-2 pl-4 text-on-light shadow-[0_16px_48px_-12px_rgba(0,0,0,0.6)] md:bottom-6">
@@ -204,7 +204,7 @@ export function LeadList({ leads, total, counts, q, temp, limit, owner = "", tag
               value=""
               disabled={!picked.size || pending}
               onChange={(e) => { const st = e.target.value as Stage; runBulk(async () => { const { moved } = await bulkSetStage([...picked], st); return `Moved ${moved} lead${moved === 1 ? "" : "s"} to ${st}.`; }); }}
-              className="min-h-11 rounded-full bg-on-light px-4 text-sm text-ink outline-none disabled:opacity-40"
+              className="min-h-11 rounded-full bg-on-light px-4 text-sm text-surface-light outline-none disabled:opacity-40"
             >
               <option value="" disabled>Move to…</option>
               {STAGES.map((st) => <option key={st} value={st}>{st}</option>)}
@@ -220,7 +220,7 @@ export function LeadList({ leads, total, counts, q, temp, limit, owner = "", tag
                   const v = e.target.value === "none" ? null : e.target.value;
                   runBulk(async () => { const { assigned } = await bulkSetOwner([...picked], v); return `${v ? `Assigned ${assigned} to ${nameOf(v)}` : `Unassigned ${assigned}`} lead${assigned === 1 ? "" : "s"}.`; });
                 }}
-                className="min-h-11 rounded-full bg-on-light px-4 text-sm text-ink outline-none disabled:opacity-40"
+                className="min-h-11 rounded-full bg-on-light px-4 text-sm text-surface-light outline-none disabled:opacity-40"
               >
                 <option value="" disabled>Assign to…</option>
                 {members.map((m) => <option key={m.userId} value={m.userId}>{m.email.split("@")[0]}</option>)}

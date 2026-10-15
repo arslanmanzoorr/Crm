@@ -99,7 +99,7 @@ export function IconButton({
   onClick?: () => void;
 }) {
   const styles = {
-    dark: "bg-surface-3 text-ink hover:bg-surface-2 hover:text-accent",
+    dark: "bg-surface-3 text-ink hover:bg-surface-2 hover:text-accent-ink",
     light: "bg-surface-light text-on-light hover:bg-white",
     accent: "bg-accent text-on-light hover:bg-accent-strong",
     danger: "bg-score-1 text-white hover:brightness-110",
@@ -160,7 +160,7 @@ export function NotchCard({
       {href && <Link
         href={href}
         aria-label={label}
-        className="absolute top-1.5 right-1.5 z-10 grid size-12 place-items-center rounded-full bg-surface-2 text-ink ring-1 ring-white/5 transition duration-150 group-hover:bg-accent group-hover:text-on-light"
+        className="absolute top-1.5 right-1.5 z-10 grid size-12 place-items-center rounded-full bg-surface-2 text-ink ring-1 ring-line/5 transition duration-150 group-hover:bg-accent group-hover:text-on-light"
       >
         <ArrowUpRight className="size-5" />
       </Link>}

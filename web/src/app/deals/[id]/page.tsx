@@ -42,17 +42,17 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/deals" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← All deals</Link>
+      <Link href="/deals" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← All deals</Link>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap gap-2"><Chip tone={d.status === "active" ? "accent" : "dark"}>{STATUS[d.status]}</Chip><Chip>{d.side === "buyer" ? "Buyer side" : "Seller side"}</Chip></div>
           <h1 className="mt-3 text-4xl font-light">{d.address}</h1>
           <p className="text-muted">
-            Client <Link href={`/leads/${d.contact.id}`} className="text-ink hover:text-accent">{d.contact.name}</Link>
-            {d.property && <> · <Link href={`/properties/${d.property.id}`} className="text-ink hover:text-accent">view listing</Link></>}
+            Client <Link href={`/leads/${d.contact.id}`} className="text-ink hover:text-accent-ink">{d.contact.name}</Link>
+            {d.property && <> · <Link href={`/properties/${d.property.id}`} className="text-ink hover:text-accent-ink">view listing</Link></>}
           </p>
         </div>
-        <span className="text-4xl font-light text-accent">{money(d.price)}</span>
+        <span className="text-4xl font-light text-accent-ink">{money(d.price)}</span>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
@@ -60,7 +60,7 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
           <section aria-labelledby="risk" className={`flex flex-col gap-2 rounded-card p-5 ${flags.some((f) => f.level === "high") ? "bg-score-1/10" : "bg-surface-2"}`}>
             <h2 id="risk" className="text-lg">What could slip</h2>
             {flags.length === 0 ? (
-              <p className="flex items-center gap-2 text-sm text-ink/80"><CircleCheck aria-hidden className="size-4 text-accent" /> {d.status === "active" ? "On track. Nothing overdue or due in the next two days." : "This deal is " + STATUS[d.status].toLowerCase() + "."}</p>
+              <p className="flex items-center gap-2 text-sm text-ink/80"><CircleCheck aria-hidden className="size-4 text-accent-ink" /> {d.status === "active" ? "On track. Nothing overdue or due in the next two days." : "This deal is " + STATUS[d.status].toLowerCase() + "."}</p>
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {flags.map((f) => (
@@ -81,7 +81,7 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
           {fin && (
             <section aria-label="Financing readiness" className="rounded-card bg-surface-2 p-5">
               <ReadinessList r={fin} />
-              <Link href={`/leads/${d.contact.id}#financing`} className="mt-2 inline-block text-sm text-accent">Update financing</Link>
+              <Link href={`/leads/${d.contact.id}#financing`} className="mt-2 inline-block text-sm text-accent-ink">Update financing</Link>
             </section>
           )}
           <section aria-labelledby="steps" className="flex flex-col gap-3">
@@ -89,7 +89,7 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
               <h2 id="steps" className="text-xl">Milestones</h2>
               <span className="text-sm text-muted">{done} of {d.milestones.length} done</span>
             </div>
-            <ul className="flex flex-col divide-y divide-white/5 rounded-card bg-surface-2 px-5">
+            <ul className="flex flex-col divide-y divide-line/5 rounded-card bg-surface-2 px-5">
               {d.milestones.map((m) => <MilestoneRow key={m.id} m={m} overdue={!!m.dueOn && daysBetween(today, m.dueOn) < 0} />)}
               {d.milestones.length === 0 && <li className="py-4 text-sm text-muted">No steps yet.</li>}
             </ul>
@@ -135,7 +135,7 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
                 {costs.map((e) => <li key={e.id} className="flex items-center gap-2"><span className="flex-1">{EXPENSE_CATEGORIES[e.category]}{e.vendor && <span className="text-muted"> · {e.vendor}</span>}</span><span className="tabular-nums">{cash(e.amount)}</span><DeleteExpense id={e.id} /></li>)}
               </ul>
             )}
-            <p className="text-sm">Your profit: <span className="font-medium text-accent">{cash(c.agent - spent)}</span> <span className="text-muted">({cash(c.agent)} share − {cash(spent)} costs)</span></p>
+            <p className="text-sm">Your profit: <span className="font-medium text-accent-ink">{cash(c.agent - spent)}</span> <span className="text-muted">({cash(c.agent)} share − {cash(spent)} costs)</span></p>
             <ExpenseForm dealId={d.id} />
           </section>
           {d.notes && <section aria-labelledby="notes" className="rounded-card bg-surface-2 p-5"><h2 id="notes" className="text-lg">Notes</h2><p className="mt-2 whitespace-pre-wrap text-sm text-ink/80">{d.notes}</p></section>}

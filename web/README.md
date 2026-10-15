@@ -97,6 +97,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0071_google_accounts.sql` | Per-user Google connection (refresh token AES-GCM encrypted with `GOOGLE_TOKEN_KEY`, own row only) and `showings.google_event_id` |
 | `0072_white_label.sql` | Owner white-label: `organizations.logo_path` / `button_radius` / `disabled_features` (allow-listed keys), public `brand-logos` bucket (PNG/JPG/WebP, 512 KB, owners/admins write their team folder), `app_brand()` for the app shell, per-user `user_prefs` (Today order and hidden sections) |
 | `0073_logo_delete_fix.sql` | Owners/admins can read their team's logo objects so Storage deletes (replace/remove) succeed |
+| `0074_theme_domain_default_layout.sql` | Team theme (dark/light/match device) + per-person override in `user_prefs.theme`; team default Today layout; `custom_domain` + `domain_verified` (set only server-side after the TXT check; unique once verified; changing the domain resets it); anon `domain_allows(host, kind, id)` for the proxy |
 
 After `0010`, store the hash of your form key (per environment):
 
@@ -123,6 +124,8 @@ AI_DAILY_LIMIT=200                            # AI calls per org per 24h (defaul
 FORM_IP_SALT=<random 32+ bytes hex>           # salts visitor IP hashes on public lead forms
 FORM_RPC_KEY=<random 32+ bytes hex>           # server-only key for submit_lead (DB stores its SHA-256)
 N8N_PUBLISH_WEBHOOK_URL=https://your-n8n/webhook/estateos-publish   # Publish button
+VERCEL_TOKEN=<token scoped to the project's team>   # optional: verified team domains attach to hosting automatically
+VERCEL_PROJECT_ID=prj_...                           # with VERCEL_TOKEN; VERCEL_TEAM_ID too if the project is under a team
 ```
 
 In Supabase → Authentication: set **Site URL** to `SITE_URL`, add `SITE_URL/auth/callback` to the redirect allow-list, and turn on **leaked password protection**.

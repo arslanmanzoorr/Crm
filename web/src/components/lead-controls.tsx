@@ -38,7 +38,7 @@ export function StageSelect({ id, stage }: { id: string; stage: Stage }) {
         {STAGES.map((s) => <option key={s}>{s}</option>)}
       </select>
       <span role="status" className="min-w-14 text-xs">
-        {pending ? <span className="text-muted">Saving…</span> : saved ? <span className="inline-flex animate-rise items-center gap-1 text-accent"><Check aria-hidden className="size-3.5" />Saved</span> : null}
+        {pending ? <span className="text-muted">Saving…</span> : saved ? <span className="inline-flex animate-rise items-center gap-1 text-accent-ink"><Check aria-hidden className="size-3.5" />Saved</span> : null}
         {err && <span className="text-score-1">{err}</span>}
       </span>
     </label>

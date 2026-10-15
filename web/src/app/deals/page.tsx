@@ -82,8 +82,8 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
           <h2 id="by-agent" className="text-xl">By agent</h2>
           <div className="overflow-x-auto rounded-card bg-surface-2 px-5" tabIndex={0} role="region" aria-label="Pipeline by agent">
             <table className="w-full min-w-[36rem] text-sm">
-              <thead><tr className="border-b border-white/5 text-left text-muted">{["Agent", "Under contract", "Volume", "GCI", "Closing ≤30d", `Closed ${today.slice(0, 4)}`, "Brokerage share"].map((h, i) => <th key={h} scope="col" className={`py-2.5 font-normal ${i ? "px-3 text-right" : "pr-4"}`}>{h}</th>)}</tr></thead>
-              <tbody className="divide-y divide-white/5">
+              <thead><tr className="border-b border-line/5 text-left text-muted">{["Agent", "Under contract", "Volume", "GCI", "Closing ≤30d", `Closed ${today.slice(0, 4)}`, "Brokerage share"].map((h, i) => <th key={h} scope="col" className={`py-2.5 font-normal ${i ? "px-3 text-right" : "pr-4"}`}>{h}</th>)}</tr></thead>
+              <tbody className="divide-y divide-line/5">
                 {pipelineByAgent(all, today).map((r) => (
                   <tr key={r.ownerId ?? "none"}>
                     <th scope="row" className="max-w-56 truncate py-2.5 pr-4 text-left font-normal">{r.ownerId ? email.get(r.ownerId) ?? "Former member" : "Unassigned"}</th>
@@ -115,7 +115,7 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
       {closed.length > 0 && (
         <section aria-labelledby="closed" className="flex flex-col gap-3">
           <h2 id="closed" className="text-xl">Closed this year</h2>
-          <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
             {closed.map((d) => (
               <li key={d.id}>
                 <Link href={`/deals/${d.id}`} className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 px-5 py-3 hover:bg-surface-3">
@@ -132,7 +132,7 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
 }
 
 const flagsOf = (d: Deal, today: string) => riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
-const TONE = ["text-accent", "text-ink", "text-score-1"] as const;
+const TONE = ["text-accent-ink", "text-ink", "text-score-1"] as const;
 
 /** Deals set to close this calendar month, most likely first, each with the reason. */
 function ThisMonth({ deals, today }: { deals: Deal[]; today: string }) {
@@ -148,7 +148,7 @@ function ThisMonth({ deals, today }: { deals: Deal[]; today: string }) {
         <h2 id="this-month" className="text-xl">Closing in {month}</h2>
         <p className="text-sm text-muted">Most likely to close on time first, from overdue items, the closing date and client contact.</p>
       </div>
-      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+      <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
         {rows.map(({ d, o }) => (
           <li key={d.id}>
             <Link href={`/deals/${d.id}`} className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3 hover:bg-surface-3">
@@ -169,7 +169,7 @@ function Stat({ label, value, sub, accent }: { label: string; value: string; sub
   return (
     <div className="rounded-card bg-surface-2 p-4">
       <dt className="text-sm text-muted">{label}</dt>
-      <dd className={`mt-1 text-2xl font-light ${accent ? "text-accent" : ""}`}>{value}</dd>
+      <dd className={`mt-1 text-2xl font-light ${accent ? "text-accent-ink" : ""}`}>{value}</dd>
       {sub && <dd className="text-xs text-muted">{sub}</dd>}
     </div>
   );

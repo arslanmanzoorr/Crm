@@ -51,7 +51,7 @@ async function Listings({ searchParams }: { searchParams: PageProps<"/properties
         <input name="beds" type="number" min={0} step={1} inputMode="numeric" defaultValue={f.minBeds} placeholder="Min beds" aria-label="Minimum bedrooms" className={`${inputAuto} w-28`} />
         <input name="cap" type="number" min={0} step="any" inputMode="decimal" defaultValue={f.minCap} placeholder="Min cap %" aria-label="Minimum cap rate, percent" title="Estimated, from each listing's estimated rent" className={`${inputAuto} w-28`} />
         <button className="min-h-11 rounded-full bg-surface-3 px-4 text-sm hover:bg-surface-1">Filter</button>
-        {active && <Link href="/properties" className="min-h-11 content-center px-2 text-sm text-muted hover:text-accent">Clear</Link>}
+        {active && <Link href="/properties" className="min-h-11 content-center px-2 text-sm text-muted hover:text-accent-ink">Clear</Link>}
       </form>
       {active && <p className="text-sm text-muted">{shown.length} of {properties.length} listings{f.minCap && " · cap rate estimated from each listing's estimated rent"}</p>}
       {shown.length === 0 ? <p className="rounded-card bg-surface-2 p-8 text-center text-muted">No listings match. Try loosening a filter.</p> : (

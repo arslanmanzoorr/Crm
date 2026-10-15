@@ -14,7 +14,7 @@ import type { Property } from "@/lib/data";
 import QRCode from "qrcode";
 import { LocalTime } from "@/components/local-time";
 import { CopyLink, DeleteOpenHouse, ScheduleOpenHouse } from "@/components/open-house-controls";
-import { dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getFarmData, getMe, getLeadForm, promoSentFor, getShowings, type OpenHouse } from "@/lib/db";
+import { getAppBrand, dbEnabled, getDocuments, isOwnerOrAdmin, getLead, getLeadOptions, getPropertyHistory, getOffers, getOpenBuyers, getOpenHouses, getProperty, getFarmData, getMe, getLeadForm, promoSentFor, getShowings, type OpenHouse } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { SellerUpdateCard } from "@/components/seller-update-card";
 import { ListingPromo } from "@/components/listing-promo";
@@ -26,6 +26,7 @@ import { launchChecklist } from "@/lib/launch";
 import { Documents } from "@/components/documents";
 import { sellerUpdate } from "@/lib/seller-update";
 import { compareOffers, CONTINGENCIES, FINANCING, netOf, STATUS_LABEL } from "@/lib/offers";
+import { clientBase } from "@/lib/domain";
 import { matchListing, quickCapRate } from "@/lib/match";
 
 export const metadata: Metadata = { title: "Listing" };
@@ -44,13 +45,13 @@ async function Listing({ params }: { params: PageProps<"/properties/[id]">["para
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/properties" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← All listings</Link>
+      <Link href="/properties" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← All listings</Link>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-light">{p.address}</h1>
           <p className="text-muted">{p.area} · {p.status}</p>
         </div>
-        <span className="text-4xl font-light text-accent sm:text-5xl">{money(p.price)}{p.listingKind === "rent" && <span className="text-xl">/mo</span>}</span>
+        <span className="text-4xl font-light text-accent-ink sm:text-5xl">{money(p.price)}{p.listingKind === "rent" && <span className="text-xl">/mo</span>}</span>
       </header>
       {!p.approved && <ApprovalBanner id={p.id} />}
       <div className="flex flex-wrap gap-2">
@@ -155,8 +156,8 @@ async function Launch({ p }: { p: Property }) {
       <ul className="flex flex-col gap-2 text-sm">
         {steps.map((s) => (
           <li key={s.key} className="flex items-start gap-2">
-            {s.done ? <CircleCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-accent" /> : <Circle aria-hidden className="mt-0.5 size-4 shrink-0 text-muted" />}
-            <span className={s.done ? "text-muted line-through decoration-white/20" : ""}>{s.label}{!s.done && s.hint && <span className="text-muted"> · {s.hint}</span>}<span className="sr-only">{s.done ? " (done)" : " (to do)"}</span></span>
+            {s.done ? <CircleCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-accent-ink" /> : <Circle aria-hidden className="mt-0.5 size-4 shrink-0 text-muted" />}
+            <span className={s.done ? "text-muted line-through decoration-line/20" : ""}>{s.label}{!s.done && s.hint && <span className="text-muted"> · {s.hint}</span>}<span className="sr-only">{s.done ? " (done)" : " (to do)"}</span></span>
           </li>
         ))}
       </ul>
@@ -176,7 +177,7 @@ async function Buyers({ p }: { p: Property }) {
       {ranked.length === 0 ? (
         <p className="text-sm text-muted">No open {p.listingKind === "rent" ? "renter" : "buyer"} has this area and price in their search yet.</p>
       ) : (
-        <ol className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <ol className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           {ranked.slice(0, 8).map(({ b, m }) => (
             <li key={b.id}>
               <Link href={`/leads/${b.id}`} className="flex min-h-14 flex-col gap-1.5 px-5 py-3 hover:bg-surface-3">
@@ -231,7 +232,7 @@ function Marketplaces({ p }: { p: Property }) {
         <div className="flex flex-col gap-1 rounded-card bg-surface-2 p-5 text-sm">
           <p className="font-medium">Zillow, Trulia and HotPads (Zillow rentals feed)</p>
           <p className="text-muted">{gaps.length === 0 ? "In your team's rentals feed. Zillow picks up changes on its next read." : `Not in the feed yet. Needs: ${gaps.join(", ")}.`}</p>
-          <Link href="/team#rental-feed" className="mt-1 w-fit text-accent underline">Feed settings</Link>
+          <Link href="/team#rental-feed" className="mt-1 w-fit text-accent-ink underline">Feed settings</Link>
         </div>
         {gaps.length === 0 && (
           <a href={checkUrl("zillow.com", p.rental?.street ?? p.address, p.rental?.city ?? p.area)} target="_blank" rel="noreferrer" className="flex min-h-10 w-fit items-center rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3">Check it&apos;s live on Zillow</a>
@@ -249,7 +250,7 @@ function Marketplaces({ p }: { p: Property }) {
           {steps.map((s) => <li key={s} className="flex gap-2"><span aria-hidden className="text-score-2">•</span>{s}</li>)}
         </ul>
       )}
-      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+      <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
         {PORTALS.map((x) => (
           <li key={x.name} className="flex items-center justify-between gap-3 px-5 py-3">
             <span className="min-w-0"><span className="font-medium">{x.name}</span> <span className="block text-sm text-muted">{x.note}</span></span>
@@ -276,7 +277,7 @@ async function OpenHouses({ propertyId }: { propertyId: string }) {
 }
 
 async function OpenHouseCard({ o, propertyId }: { o: OpenHouse; propertyId: string }) {
-  const url = `${process.env.SITE_URL ?? ""}/oh/${o.id}`;
+  const url = `${clientBase((await getAppBrand())?.domain)}/oh/${o.id}`;
   const qr = await QRCode.toString(url, { type: "svg", margin: 1, color: { dark: "#0a0a0a", light: "#ffffff" } });
   const rated = o.visits.filter((v) => v.rating !== null);
   const avg = rated.length ? (rated.reduce((n, v) => n + v.rating!, 0) / rated.length).toFixed(1) : null;
@@ -305,12 +306,12 @@ async function OpenHouseCard({ o, propertyId }: { o: OpenHouse; propertyId: stri
       </div>
       {o.visits.length > 0 && (
         <details className="group">
-          <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Seller report: who came and what they said</summary>
-          <ul className="mt-2 flex flex-col divide-y divide-white/5 text-sm">
+          <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">Seller report: who came and what they said</summary>
+          <ul className="mt-2 flex flex-col divide-y divide-line/5 text-sm">
             {o.visits.map((v, i) => (
               <li key={`${v.contactId}-${i}`} className="flex flex-col gap-1 py-2">
                 <span className="flex flex-wrap items-baseline justify-between gap-2">
-                  <Link href={`/leads/${v.contactId}`} className="font-medium hover:text-accent">{v.name}</Link>
+                  <Link href={`/leads/${v.contactId}`} className="font-medium hover:text-accent-ink">{v.name}</Link>
                   <span className="text-muted">{v.hasAgent ? "Has an agent" : "No agent"}{v.rating !== null && ` · ${v.rating}/5`}</span>
                 </span>
                 {v.feedback && <q className="text-ink/80">{v.feedback}</q>}
@@ -386,21 +387,21 @@ async function Showings({ p }: { p: Property }) {
       {p.showingNotes && <p className="text-sm text-ink/80">Instructions: {p.showingNotes}</p>}
       {form && p.approved && p.status !== "Under contract" && p.status !== "Sold" && (
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
-          <CopyLink url={`${process.env.SITE_URL ?? ""}/f/${form.id}/book?listing=${p.id}`} label="Copy booking link" />
+          <CopyLink url={`${clientBase((await getAppBrand())?.domain)}/f/${form.id}/book?listing=${p.id}`} label="Copy booking link" />
           Buyers pick a time online; it lands here as a request.
         </div>
       )}
       {upcoming.length > 0 && (
-        <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+        <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           {upcoming.map((s) => <ShowingItem key={s.id} s={s} />)}
         </ul>
       )}
       {heard.length > 0 && (
         <details className="rounded-card bg-surface-2 p-5">
-          <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">
+          <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">
             Seller report: {heard.length} buyer{heard.length === 1 ? "" : "s"} gave feedback ({(Object.keys(INTEREST_WORD) as (keyof typeof INTEREST_WORD)[]).filter((k) => tally[k]).map((k) => `${tally[k]} ${INTEREST_WORD[k].toLowerCase()}`).join(", ")})
           </summary>
-          <ul className="mt-2 flex flex-col divide-y divide-white/5 text-sm">
+          <ul className="mt-2 flex flex-col divide-y divide-line/5 text-sm">
             {heard.map((s) => (
               <li key={s.id} className="flex flex-col gap-1 py-2">
                 <span className="flex flex-wrap justify-between gap-2"><span>{INTEREST_WORD[s.interest!]}{s.rating && ` · ${s.rating}/5`}</span><span className="text-muted"><LocalTime ts={s.startsAt} opts={{ month: "short", day: "numeric" }} /></span></span>
@@ -412,7 +413,7 @@ async function Showings({ p }: { p: Property }) {
         </details>
       )}
       <details className="rounded-card bg-surface-2 p-5">
-        <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Book a showing here</summary>
+        <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">Book a showing here</summary>
         <div className="mt-3"><ScheduleShowing buyers={buyers} listings={[]} propertyId={p.id} /></div>
       </details>
     </section>
@@ -462,10 +463,10 @@ async function History({ p }: { p: Property }) {
         {left !== null && <span className={left <= 30 ? "text-score-1" : ""}> · listing agreement {left < 0 ? `expired ${-left} days ago` : left === 0 ? "ends today" : `ends in ${left} days`}</span>}
       </p>
       {events.length > 0 && (
-        <ol className="flex flex-col gap-0 border-l border-white/10 pl-5">
+        <ol className="flex flex-col gap-0 border-l border-line/10 pl-5">
           {events.map((e, i) => (
             <li key={i} className="relative pb-3 text-sm last:pb-0">
-              <span aria-hidden className={`absolute top-1.5 -left-[25px] size-2.5 rounded-full ${e.kind === "price" && Number(e.new) < Number(e.old) ? "bg-accent" : "bg-white/40"}`} />
+              <span aria-hidden className={`absolute top-1.5 -left-[25px] size-2.5 rounded-full ${e.kind === "price" && Number(e.new) < Number(e.old) ? "bg-accent" : "bg-line/40"}`} />
               <p>{line(e)}</p>
               <p className="text-xs text-muted"><LocalTime ts={e.ts} opts={{ month: "short", day: "numeric", year: "numeric" }} /></p>
             </li>

@@ -70,7 +70,7 @@ export function Publisher({ properties, initialPropertyId }: { properties: Prope
               type="button"
               aria-pressed={selected.includes(p)}
               onClick={() => toggle(p)}
-              className={`rounded-full px-4 py-2 text-sm ${selected.includes(p) ? "bg-accent text-on-light" : "bg-surface-2 hover:text-accent"}`}
+              className={`rounded-full px-4 py-2 text-sm ${selected.includes(p) ? "bg-accent text-on-light" : "bg-surface-2 hover:text-accent-ink"}`}
             >
               {p}
             </button>
@@ -103,7 +103,7 @@ export function Publisher({ properties, initialPropertyId }: { properties: Prope
         <button type="button" onClick={publish} disabled={busy || !selected.length} className="flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 font-medium text-on-light hover:bg-accent-strong disabled:opacity-50">
           <Send aria-hidden className="size-4" /> {when ? "Schedule" : "Publish now"} to {plural(selected.length)}
         </button>
-        <p role="status" className={`text-sm ${status?.error ? "text-score-1" : "text-accent"}`}>{status?.text}</p>
+        <p role="status" className={`text-sm ${status?.error ? "text-score-1" : "text-accent-ink"}`}>{status?.text}</p>
       </div>
     </div>
   );

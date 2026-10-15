@@ -28,13 +28,13 @@ export function RentalFeedSettings({ feed, canEdit }: { feed: RentalFeedInfo; ca
       )}
       {url ? (
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-accent">{state?.ok}</p>
+          <p className="text-sm text-accent-ink">{state?.ok}</p>
           <code className="break-all rounded-2xl bg-surface-1 p-3 text-sm">{url}</code>
           <button type="button" className={`${pill} w-fit`} onClick={() => navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}>
-            {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy feed URL"}
+            {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy feed URL"}
           </button>
           <p className="text-sm text-muted">
-            Send this URL to Zillow Rentals for approval through their <a href="https://www.zillow.com/rentals-network/" target="_blank" rel="noreferrer" className="text-accent underline">Rental Network</a> feed program (rentalfeeds@zillow.com). Approved feeds also reach Trulia and HotPads.
+            Send this URL to Zillow Rentals for approval through their <a href="https://www.zillow.com/rentals-network/" target="_blank" rel="noreferrer" className="text-accent-ink underline">Rental Network</a> feed program (rentalfeeds@zillow.com). Approved feeds also reach Trulia and HotPads.
           </p>
         </div>
       ) : (

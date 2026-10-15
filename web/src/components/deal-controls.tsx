@@ -14,7 +14,7 @@ export function MilestoneRow({ m, overdue }: { m: DealMilestone; overdue: boolea
     <li className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 py-2">
       <button type="button" role="checkbox" aria-checked={done} aria-label={`${m.title} done`}
         onClick={() => start(async () => { setDone(!done); await setMilestoneDone(m.id, !done); })}
-        className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition duration-200 ${done ? "border-accent bg-accent text-on-light" : "border-white/25 hover:border-accent"}`}>
+        className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition duration-200 ${done ? "border-accent bg-accent text-on-light" : "border-line/25 hover:border-accent"}`}>
         {done && <Check aria-hidden className="size-4" strokeWidth={3} />}
       </button>
       <span className={`min-w-0 flex-1 basis-[calc(100%-2.5rem)] sm:basis-0 ${done ? "text-muted line-through" : ""}`}>{m.title}</span>

@@ -70,7 +70,7 @@ export function Header({ name, tasks }: { name: string; tasks: Task[] }) {
     <header className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <ScheduleTimeline tasks={tasks} />
-        <button type="button" onClick={openPalette} aria-label="Search (⌘K)" className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-2 hover:text-accent md:hidden">
+        <button type="button" onClick={openPalette} aria-label="Search (⌘K)" className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-2 hover:text-accent-ink md:hidden">
           <Search aria-hidden className="size-5" />
         </button>
         <Link href="/account" aria-label="Account" className="shrink-0 rounded-full">
@@ -80,7 +80,7 @@ export function Header({ name, tasks }: { name: string; tasks: Task[] }) {
       <div>
         <p className="text-sm text-muted">{now ? greeting(now.getHours()) : "Hello"}, {name.split(" ")[0]}</p>
         <h1 className="text-4xl font-light tracking-[0.2em] uppercase sm:text-5xl">
-          W<span className="text-accent">o</span>rkspace
+          W<span className="text-accent-ink">o</span>rkspace
         </h1>
       </div>
     </header>

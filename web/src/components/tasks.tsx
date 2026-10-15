@@ -47,7 +47,7 @@ function StartLink({ task, onAccent }: { task: Task; onAccent: boolean }) {
   return (
     <a
       href={href}
-      className={`relative z-10 flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium transition ${onAccent ? "bg-on-light text-ink hover:bg-black" : "bg-surface-light text-on-light hover:bg-white"}`}
+      className={`relative z-10 flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-medium transition ${onAccent ? "bg-on-light text-surface-light hover:bg-black" : "bg-surface-light text-on-light hover:bg-white"}`}
     >
       <Icon aria-hidden className="size-4" /> {task.kind === "email" ? "Email" : "Call"}
     </a>
@@ -73,7 +73,7 @@ function TaskCard({ task }: { task: Task }) {
         <h3 className={`min-w-0 truncate text-2xl font-medium ${task.done ? "text-muted line-through" : ""}`}>{task.title}</h3>
       </div>
       <p className={`mt-1 text-sm ${sub}`}>
-        {late && <span className={`mr-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${tone === "accent" ? "bg-on-light text-score-1" : "bg-score-1/15 text-score-1"}`}>Overdue</span>}
+        {late && <span className={`mr-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${tone === "accent" ? "bg-on-light text-[#f2766b]" : "bg-score-1/15 text-score-1"}`}>Overdue</span>}
         {task.dueAt ? <LocalTime ts={task.dueAt} opts={{ weekday: "short", hour: "numeric", minute: "2-digit" }} /> : task.when}
       </p>
       {task.note && <p className={`mt-4 line-clamp-3 rounded-2xl px-3 py-2 text-xs ${tone === "accent" ? "bg-on-light/10" : "bg-surface-1 text-ink/80"}`}>{task.note}</p>}
@@ -98,7 +98,7 @@ export function TaskList({ tasks }: { tasks: Task[] }) {
           <DoneToggle task={t} />
           <span className={`flex-1 text-sm ${t.done ? "text-muted line-through" : ""}`}>
             {t.title}
-            {t.priority && <span className="text-accent"> · AI</span>}
+            {t.priority && <span className="text-accent-ink"> · AI</span>}
           </span>
           <span className={`text-xs ${overdue(t) ? "text-score-1" : "text-muted"}`}>
             {overdue(t) && "Overdue · "}

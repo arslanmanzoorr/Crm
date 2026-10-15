@@ -111,7 +111,7 @@ export function PhotoManager({ propertyId, photos }: { propertyId: string; photo
               {i === 0 && <span className="absolute top-2 left-2 rounded-full bg-bg/80 px-2.5 py-1 text-xs backdrop-blur">Cover</span>}
               <figcaption className="absolute inset-x-2 bottom-2 flex justify-end gap-1.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                 {i > 0 && (
-                  <button type="button" disabled={busy} onClick={() => start(() => setCoverPhoto(ph.id))} className="flex min-h-11 items-center gap-1.5 rounded-full bg-bg/85 px-3 text-xs backdrop-blur hover:text-accent">
+                  <button type="button" disabled={busy} onClick={() => start(() => setCoverPhoto(ph.id))} className="flex min-h-11 items-center gap-1.5 rounded-full bg-bg/85 px-3 text-xs backdrop-blur hover:text-accent-ink">
                     <Star aria-hidden className="size-3.5" /> Make cover
                   </button>
                 )}
@@ -134,7 +134,7 @@ export function PhotoManager({ propertyId, photos }: { propertyId: string; photo
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); upload(e.dataTransfer.files); }}
-        className={`flex cursor-pointer flex-col items-center gap-2 rounded-card border-2 border-dashed p-6 text-center text-sm transition has-[:focus-visible]:border-accent ${dragging ? "border-accent bg-accent/10 text-accent" : "border-white/10 text-muted hover:border-accent hover:text-accent"} ${busy ? "pointer-events-none opacity-60" : ""}`}
+        className={`flex cursor-pointer flex-col items-center gap-2 rounded-card border-2 border-dashed p-6 text-center text-sm transition has-[:focus-visible]:border-accent ${dragging ? "border-accent bg-accent/10 text-accent-ink" : "border-line/10 text-muted hover:border-accent hover:text-accent-ink"} ${busy ? "pointer-events-none opacity-60" : ""}`}
       >
         <ImagePlus aria-hidden className="size-7" />
         {progress
@@ -147,7 +147,7 @@ export function PhotoManager({ propertyId, photos }: { propertyId: string; photo
           </span>
         )}
       </label>
-      {msg && <p role="status" className={`animate-rise text-sm ${msg.error ? "text-score-1" : "text-accent"}`}>{msg.text}</p>}
+      {msg && <p role="status" className={`animate-rise text-sm ${msg.error ? "text-score-1" : "text-accent-ink"}`}>{msg.text}</p>}
     </section>
   );
 }

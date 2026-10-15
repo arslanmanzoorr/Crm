@@ -21,7 +21,7 @@ export function Suppressions({ items }: { items: { kind: "email" | "phone"; valu
         )}
       </ActionForm>
       {items.length > 0 && (
-        <ul className="flex max-h-72 flex-col divide-y divide-white/5 overflow-y-auto text-sm">
+        <ul className="flex max-h-72 flex-col divide-y divide-line/5 overflow-y-auto text-sm">
           {items.map((s) => (
             <li key={`${s.kind}:${s.value}`} className="flex min-h-11 items-center gap-2">
               <span className="min-w-0 flex-1 truncate">{s.value}{s.reason && <span className="text-muted"> · {s.reason}</span>}</span>

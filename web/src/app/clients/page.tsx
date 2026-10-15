@@ -48,15 +48,15 @@ async function Clients() {
       <section aria-labelledby="todo" className="flex flex-col gap-3">
         <h2 id="todo" className="text-xl">Next two weeks <span className="text-muted">({todo.length})</span></h2>
         {todo.length === 0 ? <p className="rounded-card bg-surface-2 p-5 text-sm text-muted">Everyone&apos;s in touch. Nothing due in the next two weeks.</p> : (
-          <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
             {todo.map((r) => {
               const Icon = ICON[r.kind];
               const c = byId.get(r.contactId)!;
               return (
                 <li key={`${r.kind}-${r.contactId}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
-                  <Icon aria-hidden className="size-5 shrink-0 text-accent" />
+                  <Icon aria-hidden className="size-5 shrink-0 text-accent-ink" />
                   <div className="min-w-0 flex-1 basis-56">
-                    <Link href={`/leads/${r.contactId}`} className="font-medium hover:text-accent">{r.name}</Link>
+                    <Link href={`/leads/${r.contactId}`} className="font-medium hover:text-accent-ink">{r.name}</Link>
                     <p className="text-sm text-ink/80">{r.text}</p>
                     <p className="text-xs text-muted">{r.dueOn === today ? "Today" : fmt(r.dueOn)}</p>
                   </div>
@@ -109,10 +109,10 @@ async function Clients() {
             <ul className="flex flex-col gap-3">
               {testimonials.map((t) => (
                 <li key={t.id} className="rounded-card bg-surface-2 p-5">
-                  <MessageCircleHeart aria-hidden className="mb-2 size-5 text-accent" />
+                  <MessageCircleHeart aria-hidden className="mb-2 size-5 text-accent-ink" />
                   <blockquote className="text-ink/90">{t.body}</blockquote>
                   <p className="mt-2 text-sm text-muted">
-                    {t.name}{t.rating && <> · <span role="img" aria-label={`${t.rating} out of 5 stars`}>{"★".repeat(t.rating)}</span></>} · {fmt(t.receivedOn)} · {t.publishOk ? <span className="text-accent">OK to publish</span> : "Private, no consent to publish"}
+                    {t.name}{t.rating && <> · <span role="img" aria-label={`${t.rating} out of 5 stars`}>{"★".repeat(t.rating)}</span></>} · {fmt(t.receivedOn)} · {t.publishOk ? <span className="text-accent-ink">OK to publish</span> : "Private, no consent to publish"}
                   </p>
                 </li>
               ))}

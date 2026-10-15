@@ -44,14 +44,14 @@ async function OfferView({ params }: { params: PageProps<"/offers/[id]">["params
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href={back.href} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">{back.label}</Link>
+      <Link href={back.href} className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">{back.label}</Link>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap gap-2"><Chip tone={live ? "accent" : "dark"}>{STATUS_LABEL[o.status]}</Chip><Chip>{o.side === "seller" ? "Received on our listing" : "Our buyer's offer"}</Chip></div>
           <h1 className="mt-3 text-4xl font-light">{o.address}</h1>
-          <p className="text-muted">{o.side === "seller" ? `From ${o.buyerName || "an unnamed buyer"}` : <>For <Link href={`/leads/${o.contact!.id}`} className="text-ink hover:text-accent">{o.contact!.name}</Link></>}</p>
+          <p className="text-muted">{o.side === "seller" ? `From ${o.buyerName || "an unnamed buyer"}` : <>For <Link href={`/leads/${o.contact!.id}`} className="text-ink hover:text-accent-ink">{o.contact!.name}</Link></>}</p>
         </div>
-        <span className="text-4xl font-light text-accent">{money(o.amount)}</span>
+        <span className="text-4xl font-light text-accent-ink">{money(o.amount)}</span>
       </header>
 
       {o.status === "accepted" && !o.dealId && (
@@ -59,14 +59,14 @@ async function OfferView({ params }: { params: PageProps<"/offers/[id]">["params
           <Handshake aria-hidden className="size-5" /> Accepted. Open the deal to start the milestone checklist
         </Link>
       )}
-      {o.dealId && <Link href={`/deals/${o.dealId}`} className="w-fit text-sm text-accent underline">View the deal</Link>}
+      {o.dealId && <Link href={`/deals/${o.dealId}`} className="w-fit text-sm text-accent-ink underline">View the deal</Link>}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-6">
           {fin && ["draft", "submitted", "countered"].includes(o.status) && (
             <section aria-label="Financing readiness" className={`rounded-card p-5 ${fin.level === "blocked" ? "bg-score-1/10" : "bg-surface-2"}`}>
               <ReadinessList r={fin} />
-              {o.contact && <Link href={`/leads/${o.contact.id}#financing`} className="mt-2 inline-block text-sm text-accent">Update financing</Link>}
+              {o.contact && <Link href={`/leads/${o.contact.id}#financing`} className="mt-2 inline-block text-sm text-accent-ink">Update financing</Link>}
             </section>
           )}
           <section aria-labelledby="terms" className="rounded-card bg-surface-2 p-5">
@@ -86,10 +86,10 @@ async function OfferView({ params }: { params: PageProps<"/offers/[id]">["params
 
           <section aria-labelledby="history" className="flex flex-col gap-3">
             <h2 id="history" className="text-xl">Negotiation</h2>
-            <ol className="flex flex-col gap-0 border-l border-white/10 pl-5">
+            <ol className="flex flex-col gap-0 border-l border-line/10 pl-5">
               {o.events.map((e, i) => (
                 <li key={i} className="relative pb-4 last:pb-0">
-                  <span aria-hidden className={`absolute top-1.5 -left-[25px] size-2.5 rounded-full ${e.kind === "accepted" ? "bg-accent" : e.kind === "rejected" || e.kind === "withdrawn" ? "bg-score-1" : "bg-white/40"}`} />
+                  <span aria-hidden className={`absolute top-1.5 -left-[25px] size-2.5 rounded-full ${e.kind === "accepted" ? "bg-accent" : e.kind === "rejected" || e.kind === "withdrawn" ? "bg-score-1" : "bg-line/40"}`} />
                   <p className="text-sm"><span className="font-medium">{EVENT[e.kind]?.(o.side) ?? e.kind}</span>{e.amount !== null && <span> at {money(e.amount)}</span>}</p>
                   {e.note && <p className="text-sm text-ink/80">{e.note}</p>}
                   <p className="text-xs text-muted"><LocalTime ts={e.ts} /></p>

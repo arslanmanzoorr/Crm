@@ -30,7 +30,7 @@ async function List() {
       <section aria-labelledby="saved" className="flex flex-col gap-3">
         <h2 id="saved" className="text-xl">Saved</h2>
         {cmas.length === 0 ? <p className="rounded-card bg-surface-2 p-5 text-sm text-muted">No CMAs yet. Start one for your next listing appointment.</p> : (
-          <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
             {cmas.map((c) => {
               const o = opinion(c.subject, c.comps, c.rates, today);
               return (

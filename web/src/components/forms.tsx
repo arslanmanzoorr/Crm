@@ -13,7 +13,7 @@ export const primaryBtn = "min-h-11 rounded-full bg-accent px-5 text-sm font-med
 
 // Status colors per surface; each ≥4.5:1 on its background.
 const tones = {
-  dark: { error: "text-score-1", ok: "text-accent" },
+  dark: { error: "text-score-1", ok: "text-accent-ink" },
   light: { error: "text-[#b42318]", ok: "text-[#3f6212]" },
 };
 

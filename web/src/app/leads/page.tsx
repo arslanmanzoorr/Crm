@@ -55,7 +55,7 @@ async function Leads({ searchParams }: { searchParams: PageProps<"/leads">["sear
         {(narrowed.length > 0 || asked) && (
           <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
             <span>{summary.length ? `Showing ${summary.join(" · ")}` : "No filters matched that question."}</span>
-            <Link href="/leads" className="text-accent underline">Clear</Link>
+            <Link href="/leads" className="text-accent-ink underline">Clear</Link>
           </p>
         )}
       </div>

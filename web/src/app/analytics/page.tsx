@@ -95,7 +95,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
               <tr key={s.source}>
                 <th scope="row" className="py-2.5 pr-4 text-left font-normal">{s.source}</th>
                 <Td>{s.leads}</Td><Td>{s.reached} <Dim>{pct(s.reached, s.leads)}</Dim></Td><Td>{s.qualified}</Td><Td>{s.contracted}</Td><Td>{s.closed}</Td>
-                <Td><span className={s.closed ? "text-accent" : ""}>{pct(s.closed, s.leads)}</span></Td><Td>{mins(s.median_response_min)}</Td><Td>{Number(s.spend) ? money(Number(s.spend)) : "–"}</Td><Td>{Number(s.spend) && s.leads ? money(Number(s.spend) / s.leads) : "–"}</Td><Td>{Number(s.spend) && s.closed ? money(Number(s.spend) / s.closed) : "–"}</Td>
+                <Td><span className={s.closed ? "text-accent-ink" : ""}>{pct(s.closed, s.leads)}</span></Td><Td>{mins(s.median_response_min)}</Td><Td>{Number(s.spend) ? money(Number(s.spend)) : "–"}</Td><Td>{Number(s.spend) && s.leads ? money(Number(s.spend) / s.leads) : "–"}</Td><Td>{Number(s.spend) && s.closed ? money(Number(s.spend) / s.closed) : "–"}</Td>
               </tr>
             ))}
           </Table>
@@ -146,7 +146,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
               <tr key={x.user_id}>
                 <th scope="row" className="max-w-56 truncate py-2.5 pr-4 text-left font-normal">{x.email}</th>
                 <Td>{x.leads}</Td><Td>{x.reached} <Dim>{pct(x.reached, x.leads)}</Dim></Td><Td>{x.qualified} <Dim>{pct(x.qualified, x.leads)}</Dim></Td>
-                <Td><span className={x.contracted ? "text-accent" : ""}>{x.contracted} <Dim>{pct(x.contracted, x.leads)}</Dim></span></Td>
+                <Td><span className={x.contracted ? "text-accent-ink" : ""}>{x.contracted} <Dim>{pct(x.contracted, x.leads)}</Dim></span></Td>
               </tr>
             ))}
           </Table>
@@ -158,7 +158,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
           <Table label="Listings" head={["Listing", "Status", "Days on market", "Open house visitors", "Showings", "Offers", "Best offer vs. price"]}>
             {a.listings.map((l) => (
               <tr key={l.id}>
-                <th scope="row" className="max-w-64 truncate py-2.5 pr-4 text-left font-normal"><Link href={`/properties/${l.id}`} className="hover:text-accent">{l.address}</Link></th>
+                <th scope="row" className="max-w-64 truncate py-2.5 pr-4 text-left font-normal"><Link href={`/properties/${l.id}`} className="hover:text-accent-ink">{l.address}</Link></th>
                 <Td>{l.status}</Td><Td>{l.days_on_market}</Td><Td>{l.visitors}</Td><Td>{l.showings}</Td><Td>{l.offers}{l.showings > 0 && <Dim> {pct(l.offers, l.showings)}</Dim>}</Td>
                 <Td>{l.best_offer === null ? "–" : <>{money(Number(l.best_offer))} <Dim>{Number(l.best_offer) >= Number(l.price) ? "+" : "−"}{money(Math.abs(Number(l.best_offer) - Number(l.price)))}</Dim></>}</Td>
               </tr>
@@ -174,7 +174,7 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
               <tr key={k.month}>
                 <th scope="row" className="py-2.5 pr-4 text-left font-normal">{monthName(k.month)}</th>
                 <Td>{k.leads}</Td><Td>{k.reached} <Dim>{pct(k.reached, k.leads)}</Dim></Td><Td>{k.qualified} <Dim>{pct(k.qualified, k.leads)}</Dim></Td>
-                <Td>{k.contracted} <Dim>{pct(k.contracted, k.leads)}</Dim></Td><Td><span className={k.closed ? "text-accent" : ""}>{k.closed} <Dim>{pct(k.closed, k.leads)}</Dim></span></Td>
+                <Td>{k.contracted} <Dim>{pct(k.contracted, k.leads)}</Dim></Td><Td><span className={k.closed ? "text-accent-ink" : ""}>{k.closed} <Dim>{pct(k.closed, k.leads)}</Dim></span></Td>
               </tr>
             ))}
           </Table>
@@ -271,8 +271,8 @@ function Table({ head, label, children }: { head: string[]; label: string; child
   return (
     <div className="overflow-x-auto rounded-card bg-surface-2 px-5" tabIndex={0} role="region" aria-label={`${label} table`}>
       <table className="w-full min-w-[40rem] text-sm">
-        <thead><tr className="border-b border-white/5 text-left text-muted">{head.map((h, i) => <th key={h} scope="col" className={`py-2.5 font-normal ${i ? "px-3 text-right" : "pr-4"}`}>{h}</th>)}</tr></thead>
-        <tbody className="divide-y divide-white/5">{children}</tbody>
+        <thead><tr className="border-b border-line/5 text-left text-muted">{head.map((h, i) => <th key={h} scope="col" className={`py-2.5 font-normal ${i ? "px-3 text-right" : "pr-4"}`}>{h}</th>)}</tr></thead>
+        <tbody className="divide-y divide-line/5">{children}</tbody>
       </table>
     </div>
   );
@@ -286,7 +286,7 @@ function Stat({ label, value, sub, accent, warn }: { label: string; value: strin
   return (
     <div className="rounded-card bg-surface-2 p-4">
       <dt className="text-sm text-muted">{label}</dt>
-      <dd className={`mt-1 text-2xl font-light tabular-nums ${accent ? "text-accent" : ""}`}>{value}</dd>
+      <dd className={`mt-1 text-2xl font-light tabular-nums ${accent ? "text-accent-ink" : ""}`}>{value}</dd>
       {sub && <dd className={`text-xs ${warn ? "text-score-1" : "text-muted"}`}>{sub}</dd>}
     </div>
   );

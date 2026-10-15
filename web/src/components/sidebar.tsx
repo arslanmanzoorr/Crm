@@ -20,7 +20,7 @@ const nav = [
 
 function Item({ href, label, icon: Icon, active, className = "" }: { href: string; label: string; icon: typeof Home; active: boolean; className?: string }) {
   return (
-    <Link href={href} aria-current={active ? "page" : undefined} className={`group flex min-w-14 flex-col items-center gap-1 rounded-2xl py-1 text-[11px] font-medium ${active ? "text-ink" : "text-muted hover:text-ink"} ${className}`}>
+    <Link href={href} aria-current={active ? "page" : undefined} className={`group flex min-w-14 shrink-0 flex-col items-center gap-1 rounded-2xl py-1 text-[11px] font-medium ${active ? "text-ink" : "text-muted hover:text-ink"} ${className}`}>
       <span className={`grid h-8 w-12 place-items-center rounded-full transition duration-200 ${active ? "bg-surface-light text-on-light" : "group-hover:bg-surface-2"}`}>
         <Icon aria-hidden className="size-5" />
       </span>
@@ -40,13 +40,13 @@ export function Sidebar({ logo = null, team = "EstateOS", off = [] }: { logo?: s
     <CommandPalette off={off} />
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-white/5 bg-bg/95 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur md:sticky md:top-0 md:h-screen md:w-24 md:overflow-y-auto md:flex-col md:justify-start md:gap-2 md:border-0 md:bg-transparent md:py-6"
+      className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-line/5 bg-bg/95 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur md:sticky md:top-0 md:h-screen md:w-24 md:overflow-y-auto md:flex-col md:justify-start md:gap-2 md:border-0 md:bg-transparent md:py-6"
     >
-      <Link href="/" aria-label={`${team} home`} className={`mx-auto mb-6 hidden size-11 place-items-center overflow-hidden rounded-full text-lg font-semibold text-on-light md:grid ${logo ? "bg-surface-light" : "bg-accent"}`}>
+      <Link href="/" aria-label={`${team} home`} className={`mx-auto mb-6 hidden size-11 shrink-0 place-items-center overflow-hidden rounded-full text-lg font-semibold text-on-light md:grid ${logo ? "bg-surface-light" : "bg-accent"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- team logo from public Storage; next/image would need the host allow-listed */}
         {logo ? <img src={logo} alt="" className="size-full object-contain p-1" /> : (team[0] ?? "E").toUpperCase()}
       </Link>
-      <button type="button" onClick={openPalette} title="Search (⌘K or /)" className="group mb-2 hidden min-w-14 flex-col items-center gap-1 rounded-2xl py-1 text-[11px] font-medium text-muted hover:text-ink md:flex">
+      <button type="button" onClick={openPalette} title="Search (⌘K or /)" className="group mb-2 hidden min-w-14 shrink-0 flex-col items-center gap-1 rounded-2xl py-1 text-[11px] font-medium text-muted hover:text-ink md:flex">
         <span className="grid h-8 w-12 place-items-center rounded-full bg-surface-2 transition duration-200 group-hover:bg-surface-3">
           <Search aria-hidden className="size-5" />
         </span>

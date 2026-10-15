@@ -46,7 +46,7 @@ async function Deal({ params }: { params: PageProps<"/tc/[token]">["params"] }) 
       <section aria-labelledby="files" className="flex flex-col gap-3">
         <h2 id="files" className="text-xl">Documents</h2>
         {v.documents.length === 0 ? <p className="text-sm text-muted">No documents on this deal yet.</p> : (
-          <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
             {v.documents.map((d) => (
               <li key={d.id}>
                 <a href={`/tc/${token}/doc/${d.id}`} className="flex min-h-12 items-center justify-between gap-3 px-5 py-2 text-sm hover:bg-surface-3">

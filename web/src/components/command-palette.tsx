@@ -111,10 +111,10 @@ export function CommandPalette({ off = [] }: { off?: readonly string[] }) {
       ref={dialog}
       aria-label="Search and commands"
       onClick={(e) => e.target === dialog.current && dialog.current.close()}
-      className="palette fixed inset-x-0 top-[12vh] mx-auto w-[min(640px,calc(100vw-2rem))] overflow-hidden rounded-card bg-surface-2 p-0 text-ink shadow-[0_24px_80px_-12px_rgba(0,0,0,0.7)] ring-1 ring-white/10"
+      className="palette fixed inset-x-0 top-[12vh] mx-auto w-[min(640px,calc(100vw-2rem))] overflow-hidden rounded-card bg-surface-2 p-0 text-ink shadow-[0_24px_80px_-12px_rgba(0,0,0,0.7)] ring-1 ring-line/10"
     >
-      <div className="flex items-center gap-3 border-b border-white/5 px-4">
-        <Search aria-hidden className={`size-5 shrink-0 ${searching ? "animate-pulse text-accent" : "text-muted"}`} />
+      <div className="flex items-center gap-3 border-b border-line/5 px-4">
+        <Search aria-hidden className={`size-5 shrink-0 ${searching ? "animate-pulse text-accent-ink" : "text-muted"}`} />
         <input
           ref={input}
           role="combobox"
@@ -157,7 +157,7 @@ export function CommandPalette({ off = [] }: { off?: readonly string[] }) {
           <li className="px-3 py-6 text-center text-sm text-muted">{searching ? "Searching…" : `Nothing matches “${q.trim()}”.`}</li>
         )}
       </ul>
-      <p className="hidden border-t border-white/5 px-4 py-2 text-xs text-muted sm:block">↑ ↓ to move · Enter to open · ⌘K or / from anywhere</p>
+      <p className="hidden border-t border-line/5 px-4 py-2 text-xs text-muted sm:block">↑ ↓ to move · Enter to open · ⌘K or / from anywhere</p>
     </dialog>
   );
 }

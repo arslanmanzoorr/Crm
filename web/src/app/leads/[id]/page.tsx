@@ -77,7 +77,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
   return (
     <Reveal>
       <div className="flex flex-col gap-8">
-        <Link href="/leads" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent">← All leads</Link>
+        <Link href="/leads" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← All leads</Link>
 
         <header className="flex flex-col gap-5 lg:flex-row lg:items-center">
           <div className="flex min-w-0 flex-1 items-center gap-5">
@@ -87,13 +87,13 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
               <p className="text-muted">{lead.headline}</p>
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                 <span className="flex items-center gap-2" title={lead.scoreWhy || undefined}><ScoreDots score={lead.score} /> {scoreLabel(lead.score)} · {lead.score}</span>
-                {lead.moveBy && isMoveBy(lead.moveBy) && <span className={`rounded-full px-2.5 py-1 text-xs ${movingSoon(lead.moveBy) ? "bg-accent/15 text-accent" : "bg-surface-3 text-muted"}`}>Moving {MOVE_BY[lead.moveBy].replace(/^In /, "in ").replace(/^As soon/, "as soon")}</span>}
+                {lead.moveBy && isMoveBy(lead.moveBy) && <span className={`rounded-full px-2.5 py-1 text-xs ${movingSoon(lead.moveBy) ? "bg-accent/15 text-accent-ink" : "bg-surface-3 text-muted"}`}>Moving {MOVE_BY[lead.moveBy].replace(/^In /, "in ").replace(/^As soon/, "as soon")}</span>}
                 {lead.stage && <StageSelect id={lead.id} stage={lead.stage} />}
                 {team.members.length > 0 && <OwnerSelect contactId={lead.id} ownerId={lead.ownerId ?? null} members={team.members} />}
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                 <ResponseTime createdAt={lead.createdAt} firstResponseAt={lead.firstResponseAt} />
-                {lead.tags?.map((t) => <Link key={t} href={`/leads?tag=${encodeURIComponent(t)}`} className="rounded-full bg-surface-3 px-3 py-1 text-xs hover:text-accent">#{t}</Link>)}
+                {lead.tags?.map((t) => <Link key={t} href={`/leads?tag=${encodeURIComponent(t)}`} className="rounded-full bg-surface-3 px-3 py-1 text-xs hover:text-accent-ink">#{t}</Link>)}
               </div>
             </div>
           </div>
@@ -114,13 +114,13 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
             </div>
             {signals.length > 0 && (
               <ul aria-label="Buying signals" className="flex flex-wrap gap-2">
-                {signals.map((x) => <li key={x.signal} className="flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1.5 text-sm text-accent"><Flame aria-hidden className="size-4" />{x.signal}</li>)}
+                {signals.map((x) => <li key={x.signal} className="flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1.5 text-sm text-accent-ink"><Flame aria-hidden className="size-4" />{x.signal}</li>)}
               </ul>
             )}
             {blockedReasons.length > 0 && (
               <p id="contact-blocked" className="text-sm text-muted">
                 Contact limited: {blockedReasons.join(", ")}.{" "}
-                {blockedReasons.some((r) => !r!.startsWith("outside calling hours")) && <Link href={`/leads/${lead.id}/edit`} className="text-accent underline">Update consent</Link>}
+                {blockedReasons.some((r) => !r!.startsWith("outside calling hours")) && <Link href={`/leads/${lead.id}/edit`} className="text-accent-ink underline">Update consent</Link>}
               </p>
             )}
             {rules.allParty && !b.call && <p className="text-sm text-muted">Recording a call? Get everyone&apos;s consent on the call first.</p>}
@@ -141,9 +141,9 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 <section aria-labelledby="financing" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 sm:p-6">
                   <h2 id="financing" className="text-xl">Financing</h2>
                   <ReadinessList r={r} />
-                  {financing?.lender && <p className="text-sm text-muted">Lender: <span className="text-ink">{financing.lender}</span>{financing.lenderPhone && <> · <a href={`tel:${financing.lenderPhone}`} className="hover:text-accent">{financing.lenderPhone}</a></>}</p>}
+                  {financing?.lender && <p className="text-sm text-muted">Lender: <span className="text-ink">{financing.lender}</span>{financing.lenderPhone && <> · <a href={`tel:${financing.lenderPhone}`} className="hover:text-accent-ink">{financing.lenderPhone}</a></>}</p>}
                   <details>
-                    <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">{financing ? "Update financing" : "Record financing"}</summary>
+                    <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">{financing ? "Update financing" : "Record financing"}</summary>
                     <div className="mt-3"><FinancingForm contactId={lead.id} f={financing} lenders={partners.filter((p) => p.kind === "lender").map((p) => ({ id: p.id, label: [p.name, p.company].filter(Boolean).join(", ") }))} /></div>
                   </details>
                 </section>
@@ -167,16 +167,16 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                   );
                 })()}
                 {showings.length > 0 && (
-                  <ul className="-mx-5 flex flex-col divide-y divide-white/5 sm:-mx-6">
+                  <ul className="-mx-5 flex flex-col divide-y divide-line/5 sm:-mx-6">
                     {showings.map((s) => <ShowingItem key={s.id} s={s} showBuyer={false} />)}
                   </ul>
                 )}
                 <details>
-                  <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Plan a tour (several homes)</summary>
+                  <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">Plan a tour (several homes)</summary>
                   <div className="mt-3"><TourPlanner contactId={lead.id} listings={properties.filter((p) => p.status === "Active" || p.status === "Coming soon").map(({ id, address }) => ({ id, address }))} /></div>
                 </details>
                 <details>
-                  <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Book a showing</summary>
+                  <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">Book a showing</summary>
                   <div className="mt-3"><ScheduleShowing contactId={lead.id} listings={properties.filter((p) => p.status !== "Sold").map(({ id, address }) => ({ id, address }))} /></div>
                 </details>
               </section>
@@ -251,7 +251,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 <div>
                   <p className="text-muted">Has referred</p>
                   {refs.referred.length === 0 ? <p>Nobody yet</p> : (
-                    <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{refs.referred.map((r) => <li key={r.id}><Link href={`/leads/${r.id}`} className="text-accent hover:underline">{r.name}</Link></li>)}</ul>
+                    <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{refs.referred.map((r) => <li key={r.id}><Link href={`/leads/${r.id}`} className="text-accent-ink hover:underline">{r.name}</Link></li>)}</ul>
                   )}
                 </div>
               </div>
@@ -259,7 +259,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
             {offers.length > 0 && (
               <section aria-labelledby="offers" className="flex flex-col gap-2">
                 <h2 id="offers" className="text-xl">Offers</h2>
-                <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+                <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
                   {offers.map((o) => (
                     <li key={o.id}>
                       <Link href={`/offers/${o.id}`} className="flex min-h-14 flex-col justify-center px-5 py-3 hover:bg-surface-3">
@@ -274,7 +274,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
             {deals.length > 0 && (
               <section aria-labelledby="deals" className="flex flex-col gap-2">
                 <h2 id="deals" className="text-xl">Deals</h2>
-                <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+                <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
                   {deals.map((d) => (
                     <li key={d.id}>
                       <Link href={`/deals/${d.id}`} className="flex min-h-14 flex-col justify-center px-5 py-3 hover:bg-surface-3">
@@ -311,7 +311,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                     <AddToShortlist contactId={lead.id} propertyId={p.id} on={shortlist.some((i) => i.propertyId === p.id)} />
                     {!c.dnc && (
                       <details className="rounded-card bg-surface-2 px-5 py-1">
-                        <summary className="min-h-11 cursor-pointer content-center text-sm text-accent">Draft a message about it</summary>
+                        <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">Draft a message about it</summary>
                         <div className="pb-4"><FarmNote label="Listing outreach" draft={outreachDraft(p, m, me.name)} due={[{ id: lead.id, name: lead.name, email: c.email }]} /></div>
                       </details>
                     )}

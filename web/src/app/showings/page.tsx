@@ -39,7 +39,7 @@ async function Agenda() {
         <section aria-labelledby="feedback" className="flex flex-col gap-3">
           <h2 id="feedback" className="text-xl">How did it go? <span className="text-muted">({feedback.length})</span></h2>
           <p className="-mt-2 text-sm text-muted">Buyer feedback goes on their timeline and into the seller report.</p>
-          <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+          <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
             {feedback.map((s) => <ShowingItem key={s.id} s={s} />)}
           </ul>
         </section>
@@ -51,7 +51,7 @@ async function Agenda() {
         {[...days].map(([day, list]) => (
           <div key={day} className="flex flex-col gap-2">
             <h3 className="text-sm text-muted">{new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })} · {list.length} showing{list.length === 1 ? "" : "s"}</h3>
-            <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+            <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
               {list.map((s) => <ShowingItem key={s.id} s={s} conflict={clash.has(s.id)} />)}
             </ul>
           </div>

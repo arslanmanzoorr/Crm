@@ -107,12 +107,12 @@ export function Inbox({ threads }: { threads: Thread[] }) {
       </nav>
 
       <section aria-label={`Conversation with ${t.name}`} className={`min-h-[70dvh] min-w-0 flex-col rounded-card bg-surface-2 p-4 lg:flex ${open ? "flex" : "hidden"}`}>
-        <header className="flex items-center gap-3 border-b border-white/5 pb-3">
+        <header className="flex items-center gap-3 border-b border-line/5 pb-3">
           <button type="button" onClick={() => setOpen(false)} aria-label="Back to conversations" className="-ml-1 grid size-11 place-items-center rounded-full hover:bg-surface-3 lg:hidden">
             <ArrowLeft aria-hidden className="size-5" />
           </button>
           <Avatar name={t.name} size={36} />
-          <Link href={`/leads/${t.leadId}`} className="flex min-h-11 min-w-0 flex-1 items-center truncate hover:text-accent">{t.name}</Link>
+          <Link href={`/leads/${t.leadId}`} className="flex min-h-11 min-w-0 flex-1 items-center truncate hover:text-accent-ink">{t.name}</Link>
           <Chip>{t.channel}</Chip>
         </header>
 
@@ -140,7 +140,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
             <button type="button" onClick={aiDraft} disabled={busy} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-light px-4 text-sm font-medium text-on-light hover:bg-white disabled:opacity-60">
               <Sparkles aria-hidden className={`size-4 ${busy ? "animate-pulse" : ""}`} /> {busy ? "Drafting…" : "AI draft"}
             </button>
-            <button type="button" onClick={() => record("in")} disabled={pending || !draft.trim()} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:text-accent disabled:opacity-60">
+            <button type="button" onClick={() => record("in")} disabled={pending || !draft.trim()} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:text-accent-ink disabled:opacity-60">
               <MessageSquareReply aria-hidden className="size-4" /> Log their reply
             </button>
             <button type="button" onClick={() => record("out")} disabled={pending || !draft.trim()} className="ml-auto flex min-h-11 items-center gap-2 rounded-full bg-accent px-4 text-sm font-medium text-on-light hover:bg-accent-strong disabled:opacity-60">

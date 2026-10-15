@@ -43,7 +43,7 @@ function Share({ text, leads }: { text: string; leads: { id: string; name: strin
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}
           className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:bg-surface-1">
-          {copied ? <Check aria-hidden className="size-4 text-accent" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy summary"}
+          {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}{copied ? "Copied" : "Copy summary"}
         </button>
         <select aria-label="Lead to save to" value={lead} onChange={(e) => setLead(e.target.value)} className={inputAuto}>
           <option value="">Save to a lead…</option>
@@ -52,7 +52,7 @@ function Share({ text, leads }: { text: string; leads: { id: string; name: strin
         <button type="button" disabled={!lead || pending} onClick={() => start(async () => { const r = await saveNoteToLead(lead, text); setMsg(r?.ok ?? r?.error ?? null); })}
           className="min-h-11 rounded-full bg-surface-3 px-4 text-sm hover:bg-surface-1 disabled:opacity-50">{pending ? "Saving…" : "Save"}</button>
       </div>
-      <p aria-live="polite" className="text-sm text-accent empty:hidden">{msg}</p>
+      <p aria-live="polite" className="text-sm text-accent-ink empty:hidden">{msg}</p>
     </div>
   );
 }

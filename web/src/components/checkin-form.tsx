@@ -31,7 +31,7 @@ export function CheckinForm({ id, who }: { id: string; who: string }) {
   if (sent)
     return (
       <div role="status" className="flex animate-rise flex-col items-center gap-3 rounded-card bg-surface-2 p-10 text-center">
-        <CircleCheck aria-hidden className="size-12 text-accent" />
+        <CircleCheck aria-hidden className="size-12 text-accent-ink" />
         <h2 className="text-2xl">Thanks for visiting!</h2>
         <p className="text-muted">Enjoy the tour.</p>
         <button type="button" onClick={next} className="mt-2 min-h-11 rounded-full bg-surface-3 px-5 text-sm hover:bg-surface-1">Next visitor</button>

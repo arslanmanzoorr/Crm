@@ -14,7 +14,7 @@ export function TcMilestones({ token, milestones }: { token: string; milestones:
   if (!items.length) return <p className="text-sm text-muted">No milestones on this deal yet.</p>;
   return (
     <>
-      <ul className="flex flex-col divide-y divide-white/5 overflow-hidden rounded-card bg-surface-2">
+      <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
         {items.map((m) => (
           <li key={m.id}>
             <label className="flex min-h-12 items-center gap-3 px-5 py-2 text-sm">

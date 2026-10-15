@@ -92,7 +92,7 @@ export function DealForm({ deal, clients, listings, contactId, prefill, defaultS
               <div><dt className="text-muted">Gross</dt><dd>{cash(c.gci)}</dd></div>
               <div><dt className="text-muted">Referral</dt><dd>{cash(c.referral)}</dd></div>
               <div><dt className="text-muted">Brokerage</dt><dd>{cash(c.brokerage)}</dd></div>
-              <div><dt className="text-muted">You</dt><dd className="font-medium text-accent">{cash(c.agent)}</dd></div>
+              <div><dt className="text-muted">You</dt><dd className="font-medium text-accent-ink">{cash(c.agent)}</dd></div>
             </dl>
             {plan && (
               <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
