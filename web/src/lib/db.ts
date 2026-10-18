@@ -384,8 +384,13 @@ export async function getTeam(): Promise<Team | null> {
  * Falls back to UTC until the team sets a time zone on the Team page.
  */
 export const teamToday = cache(async (): Promise<string> => {
-  const utc = () => new Date().toISOString().slice(0, 10);
-  if (!dbEnabled) return utc();
+  const tz = await teamZone();
+  return tz ? new Date().toLocaleDateString("en-CA", { timeZone: tz }) : new Date().toISOString().slice(0, 10);
+});
+
+/** The time zone the signed-in agent works in: their office's, else the team's (null if neither is set). */
+export const teamZone = cache(async (): Promise<string | null> => {
+  if (!dbEnabled) return null;
   const db = await supabase();
   const [{ data: org }, { data: auth }] = await Promise.all([db.rpc("active_org"), db.auth.getUser()]);
   const [{ data }, { data: mine }] = await Promise.all([
@@ -393,8 +398,7 @@ export const teamToday = cache(async (): Promise<string> => {
     db.from("memberships").select("offices(time_zone)").eq("org_id", org).eq("user_id", auth.user?.id ?? "").maybeSingle(),
   ]);
   // A member's office zone (multi-market brokerages) wins over the team's.
-  const tz = (mine as unknown as { offices: { time_zone: string | null } | null } | null)?.offices?.time_zone ?? data?.time_zone;
-  return tz ? new Date().toLocaleDateString("en-CA", { timeZone: tz }) : utc();
+  return (mine as unknown as { offices: { time_zone: string | null } | null } | null)?.offices?.time_zone ?? data?.time_zone ?? null;
 });
 
 export type Office = { id: string; name: string; timeZone: string | null };

@@ -1,4 +1,5 @@
 import { FileSignature, Flame, Handshake, Mail, MessageSquare, Pencil, Phone } from "lucide-react";
+import { QuickUpdate } from "@/components/quick-update";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,7 +14,7 @@ import { Chip, LeadAvatar, Reveal, ScoreDots, scoreLabel, Skeleton } from "@/com
 import { blockers, scrubbed } from "@/lib/consent";
 import { farmReport, homeUpdate } from "@/lib/farm";
 import { DncCheck } from "@/components/dnc-check";
-import { getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, getShortlist, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks, teamToday, getCompliance, supabase } from "@/lib/db";
+import { dbEnabled, getDealsFor, getLead, getLeadOptions, getMembers, getOffers, getProperties, getBuyingSignals, getDocuments, getFarmData, getFinancing, getHoldings, getMe, getShortlist, type Holding, getLinks, getPartners, getPortalLink, getReferrals, getShowings, getTasks, teamToday, getCompliance, supabase } from "@/lib/db";
 import { ScheduleShowing, ShowingItem } from "@/components/showing-controls";
 import { TourPlanner } from "@/components/tour-planner";
 import { FinancingForm } from "@/components/financing-controls";
@@ -199,6 +200,8 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 );
               })()}
             </section>
+
+            {dbEnabled && <QuickUpdate leadId={lead.id} first={lead.name.split(" ")[0]} />}
 
             <section aria-labelledby="timeline" className="rounded-card bg-surface-2 p-5 sm:p-6">
               <h2 id="timeline" className="mb-4 text-xl">Timeline</h2>

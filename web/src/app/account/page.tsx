@@ -15,6 +15,7 @@ import { GoogleConnect } from "@/components/google-connect";
 import { clientBase } from "@/lib/domain";
 import { ThemePicker } from "@/components/theme-picker";
 import { TakeTourButton } from "@/components/tour";
+import { InstallApp } from "@/components/install-app";
 import { googleConnected, googleEnv } from "@/lib/google-server";
 
 export const metadata: Metadata = { title: "Account" };
@@ -28,6 +29,11 @@ export default function AccountPage({ searchParams }: PageProps<"/account">) {
       <Suspense fallback={<div className="h-24 rounded-card bg-surface-2" />}>
         <Me />
       </Suspense>
+
+      <section aria-labelledby="app" className="flex flex-col gap-2">
+        <h2 id="app" className="text-sm text-muted">Phone and desktop app</h2>
+        <InstallApp />
+      </section>
 
       {dbEnabled && (
         <section aria-labelledby="appearance" className="flex flex-col gap-2">
