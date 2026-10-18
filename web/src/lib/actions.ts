@@ -1,12 +1,13 @@
 "use server";
 
+import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AI_KEY_MISSING, AiError, chat } from "./ai-server";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
-import { getAppBrand, dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
+import { getAppBrand, isOwnerOrAdmin, dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
 import { brandColorError } from "./brand";
 import { cleanFeatures, cleanSections, RADII, THEMES, type Radius, type Theme } from "./features";
 import { cleanDomain, clientBase, domainToken } from "./domain";
@@ -2181,4 +2182,33 @@ export async function verifyCustomDomain(): Promise<FormState> {
   const attached = vercelConfigured() ? await attachDomain(row.custom_domain) : false;
   revalidatePath("/", "layout");
   return { ok: attached || !vercelConfigured() ? "Verified" : "Verified. Connecting it to hosting failed; try Verify again in a minute." };
+}
+
+/** End-to-end check of the public lead form, the way a visitor uses it: submit a test inquiry with no session, then
+ *  confirm it arrived, was routed and got its speed-to-lead task, and remove it again. Owners and admins only. */
+export async function testLeadForm(formId: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(formId)) return { error: "Form not found." };
+  const key = process.env.FORM_RPC_KEY, url = process.env.NEXT_PUBLIC_SUPABASE_URL, pub = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!key || !url || !pub) return { error: "The public form isn't configured on the server (FORM_RPC_KEY)." };
+  const db = await authed();
+  const org = (await db.rpc("active_org")).data as string | null;
+  if (!(await isOwnerOrAdmin())) return { error: NOT_ALLOWED };
+  if (!org || !allow(`formtest:${org}`, 10, 3_600_000)) return { error: "Too many tests. Try again in an hour." };
+
+  const email = `form-test+${crypto.randomUUID().slice(0, 8)}@example.com`;
+  const started = Date.now();
+  const anon = createClient(url, pub, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: result, error } = await anon.rpc("submit_lead", {
+    p_key: key, p_form: formId, p_ip_hash: `selftest-${org.slice(0, 8)}`, p_name: "EstateOS form test", p_email: email, p_phone: "",
+    p_message: "Automatic check from Account → Test my form. Safe to ignore; it removes itself.", p_consent_call_sms: false, p_consent_email: false, p_source: "Form test",
+  });
+  if (error || result !== "ok") return { error: result === "closed" ? "Your form is switched off, so visitors can't send inquiries." : "The form didn't accept the test inquiry. Visitors may be seeing an error." };
+
+  const { data: lead } = await db.from("contacts").select("id,owner_id,inbound,tasks(title)").eq("email", email).maybeSingle();
+  const ms = Date.now() - started;
+  if (!lead) return { error: "The form accepted the inquiry but it didn't reach your Leads. Contact support." };
+  await db.from("contacts").delete().eq("id", lead.id);
+  const task = (lead.tasks as { title: string }[] | null)?.some((t) => /new web lead/i.test(t.title));
+  return { ok: `Working. The test inquiry reached Leads in ${(ms / 1000).toFixed(1)}s, ${lead.owner_id ? "was assigned to an agent" : "is unassigned (no one in rotation)"}${task ? ", and got its call-within-5-minutes task" : ", but no follow-up task was created"}. It has been removed.` };
 }

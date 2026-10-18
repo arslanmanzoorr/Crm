@@ -73,8 +73,8 @@ async function Report({ searchParams }: { searchParams: PageProps<"/analytics">[
     <>
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label={`New leads, ${label}`} value={String(a.leads)} />
-        <Stat label="Median first response" value={mins(a.response.median_min)} sub={a.response.never ? `${a.response.never} never contacted` : "Every lead contacted"} warn={a.response.never > 0} />
-        <Stat label="Reached within 5 min" value={pct(a.response.within_5m, a.leads)} sub={`${pct(a.response.within_1h, a.leads)} within an hour`} />
+        <Stat label="Median first response" value={mins(a.response.median_min)} sub={!a.response.inbound ? "No inbound leads yet" : a.response.never ? `${a.response.never} of ${a.response.inbound} inbound never contacted` : "Every inbound lead contacted"} warn={a.response.never > 0} />
+        <Stat label="Reached within 5 min" value={pct(a.response.within_5m, a.response.inbound)} sub={`${pct(a.response.within_1h, a.response.inbound)} within an hour · inbound leads`} />
         <Stat label={`Earned, ${label}`} value={money(earned)} sub={`${money(pipeline)} in the pipeline`} accent />
       </dl>
 

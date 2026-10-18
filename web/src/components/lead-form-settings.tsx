@@ -1,8 +1,8 @@
 "use client";
 
-import { Check, Copy, ExternalLink } from "lucide-react";
-import { useState } from "react";
-import { saveLeadForm } from "@/lib/actions";
+import { Check, Copy, ExternalLink, FlaskConical } from "lucide-react";
+import { useState, useTransition } from "react";
+import { saveLeadForm, testLeadForm, type FormState } from "@/lib/actions";
 import { ActionForm, Field, primaryBtn } from "./forms";
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -16,6 +16,25 @@ function CopyButton({ text, label }: { text: string; label: string }) {
       {copied ? <Check aria-hidden className="size-4 text-accent-ink" /> : <Copy aria-hidden className="size-4" />}
       <span aria-live="polite">{copied ? "Copied" : label}</span>
     </button>
+  );
+}
+
+/** Sends a real test inquiry through the public form and reports whether it arrived, was routed and got its task. */
+function TestForm({ formId }: { formId: string }) {
+  const [msg, setMsg] = useState<FormState | null>(null);
+  const [pending, start] = useTransition();
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl bg-surface-1 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm"><span className="font-medium">Is your form working?</span> <span className="text-muted">Send a test inquiry the way a visitor would. It removes itself.</span></p>
+        <button type="button" disabled={pending} onClick={() => start(async () => setMsg(await testLeadForm(formId)))}
+          className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm font-medium hover:bg-surface-light hover:text-on-light disabled:opacity-60">
+          <FlaskConical aria-hidden className="size-4" /> {pending ? "Testing…" : "Test my form"}
+        </button>
+      </div>
+      {msg?.error && <p role="alert" className="text-sm text-score-1">{msg.error}</p>}
+      {msg?.ok && <p role="status" className="text-sm text-accent-ink">{msg.ok}</p>}
+    </div>
   );
 }
 
@@ -48,6 +67,7 @@ export function LeadFormSettings({ form, url }: { form: { id: string; public_nam
         <code className="min-w-0 flex-1 truncate rounded-2xl bg-surface-1 px-4 py-3 text-xs">{`${url}/chat`}</code>
         <CopyButton text={`${url}/chat`} label="Copy link" />
       </div>
+      <TestForm formId={form.id} />
       <ActionForm action={saveLeadForm} className="flex flex-wrap items-end gap-3">
         {(pending) => (
           <>

@@ -539,7 +539,7 @@ type Money = { month: string; deals: number; gci: number; agent: number };
 export type Analytics = {
   days: number; leads: number;
   by_source: { source: string; leads: number; reached: number; qualified: number; contracted: number; closed: number; median_response_min: number | null; spend: number }[];
-  response: { median_min: number | null; within_5m: number; within_1h: number; responded: number; never: number };
+  response: { inbound: number; median_min: number | null; within_5m: number; within_1h: number; responded: number; never: number };
   cycle: { deals: number; lead_to_contract_days: number | null; contract_to_close_days: number | null };
   revenue: Money[]; forecast: Money[];
   cohorts: { month: string; leads: number; reached: number; qualified: number; contracted: number; closed: number }[];
@@ -1103,4 +1103,40 @@ export async function isOwnerOrAdmin(): Promise<boolean> {
   const [{ data: auth }, org] = await Promise.all([db.auth.getUser(), db.rpc("active_org")]);
   const { data } = await db.from("memberships").select("role").eq("org_id", org.data).eq("user_id", auth.user?.id ?? "").maybeSingle();
   return data?.role === "owner" || data?.role === "admin";
+}
+
+export type WaitingLead = { id: string; name: string; createdAt: string; owner: string | null; mine: boolean; source: string | null };
+
+/** Inbound leads from the last 7 days nobody has called, texted or emailed yet. Agents see their own and unassigned
+ *  ones; owners and admins see the whole team, with who each lead belongs to. */
+export async function getWaitingLeads(): Promise<{ leads: WaitingLead[]; team: boolean }> {
+  if (!dbEnabled) return { leads: [], team: false };
+  const db = await supabase();
+  const [{ data: auth }, org] = await Promise.all([db.auth.getUser(), db.rpc("active_org")]);
+  const me = auth.user?.id ?? "";
+  const { data: members } = await db.from("memberships").select("user_id,email,role").eq("org_id", org.data);
+  const team = members?.some((m) => m.user_id === me && (m.role === "owner" || m.role === "admin")) ?? false;
+  const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  let q = db.from("contacts").select("id,name,created_at,owner_id,sources,stage").eq("inbound", true).is("first_response_at", null)
+    .gte("created_at", since).not("stage", "in", "(Closed,Lost)").order("created_at").limit(50);
+  if (!team) q = q.or(`owner_id.eq.${me},owner_id.is.null`);
+  const { data } = await q;
+  const email = new Map((members ?? []).map((m) => [m.user_id, m.email?.split("@")[0] ?? "Agent"]));
+  return {
+    team,
+    leads: (data ?? []).map((c) => ({ id: c.id, name: c.name, createdAt: c.created_at, owner: c.owner_id ? email.get(c.owner_id) ?? "Agent" : null, mine: c.owner_id === me, source: c.sources?.[0] ?? null })),
+  };
+}
+
+/** Inbound leads from the last 14 days with their first-response times, for the speed-to-lead report. */
+export async function getResponseRows(): Promise<{ createdAt: string; firstResponseAt: string | null; owner: string; source: string }[]> {
+  if (!dbEnabled) return [];
+  const db = await supabase();
+  const org = await db.rpc("active_org");
+  const [{ data }, { data: members }] = await Promise.all([
+    db.from("contacts").select("created_at,first_response_at,owner_id,sources").eq("inbound", true).gte("created_at", new Date(Date.now() - 14 * 86_400_000).toISOString()).limit(5000),
+    db.from("memberships").select("user_id,email").eq("org_id", org.data),
+  ]);
+  const email = new Map((members ?? []).map((m) => [m.user_id, m.email?.split("@")[0] ?? "Agent"]));
+  return (data ?? []).map((c) => ({ createdAt: c.created_at, firstResponseAt: c.first_response_at, owner: c.owner_id ? email.get(c.owner_id) ?? "Agent" : "Unassigned", source: c.sources?.[0] ?? "Unknown" }));
 }

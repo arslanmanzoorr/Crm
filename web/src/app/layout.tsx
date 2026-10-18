@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Urbanist } from "next/font/google";
 import { Suspense } from "react";
 import { Sidebar } from "@/components/sidebar";
+import { Watchdog } from "@/components/watchdog";
 import { getAppBrand } from "@/lib/db";
 import { themeCss } from "@/lib/theme";
 import "./globals.css";
@@ -47,6 +48,7 @@ async function Shell() {
     <>
       {css && <style>{css}</style>}
       <Sidebar logo={b?.logo} team={b?.name} off={b?.off} />
+      {b && <Watchdog />}
     </>
   );
 }

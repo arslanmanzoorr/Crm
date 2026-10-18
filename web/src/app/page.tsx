@@ -4,6 +4,7 @@ import { PlanMyDay } from "@/components/plan-my-day";
 import { Reveal, Skeleton, LoadingCards } from "@/components/ui";
 import { Workspace } from "@/components/workspace";
 import { HomeCustomize } from "@/components/home-customize";
+import { LeadsWaiting } from "@/components/leads-waiting";
 import { TopLeads } from "@/components/leads";
 import { DayTasks } from "@/components/tasks";
 import { Today } from "@/components/today";
@@ -12,7 +13,7 @@ import { CircleAlert, Flame, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { daysBetween } from "@/lib/deals";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getAppBrand, getHomeLayout, isOwnerOrAdmin, getBuyingSignals, getLeadOptions, getProperties, getMe, getSavedPriceDrops, getPastClients, getShowings, getSoonMovers, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
+import { dbEnabled, getAppBrand, getHomeLayout, getWaitingLeads, isOwnerOrAdmin, getBuyingSignals, getLeadOptions, getProperties, getMe, getSavedPriceDrops, getPastClients, getShowings, getSoonMovers, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
 import { ShowingItem } from "@/components/showing-controls";
 import { agenda } from "@/lib/retention";
 import { money } from "@/lib/data";
@@ -32,6 +33,7 @@ async function Home_() {
   const layout = await getHomeLayout(brand?.off ?? []);
   const db = (node: ReactNode) => (dbEnabled ? node : null);
   const blocks: Record<Section, ReactNode> = {
+    waiting: db(<Suspense fallback={null}><Waiting /></Suspense>),
     today: <Today leads={[...top.leads, ...soon.filter((s) => !top.leads.some((l) => l.id === s.id))]} tasks={tasks} />,
     plan: db(<Suspense fallback={null}><Plan /></Suspense>),
     signals: db(<Suspense fallback={<Skeleton className="h-32" />}><Signals /></Suspense>),
@@ -51,6 +53,11 @@ async function Home_() {
       </Workspace>
     </Reveal>
   );
+}
+
+async function Waiting() {
+  const { leads, team } = await getWaitingLeads();
+  return <LeadsWaiting leads={leads} team={team} />;
 }
 
 /** Compact facts for the AI day plan: open tasks due by tomorrow, hot leads, showings and deals at risk. */

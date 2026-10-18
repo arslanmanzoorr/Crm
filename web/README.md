@@ -99,6 +99,8 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0073_logo_delete_fix.sql` | Owners/admins can read their team's logo objects so Storage deletes (replace/remove) succeed |
 | `0074_theme_domain_default_layout.sql` | Team theme (dark/light/match device) + per-person override in `user_prefs.theme`; team default Today layout; `custom_domain` + `domain_verified` (set only server-side after the TXT check; unique once verified; changing the domain resets it); anon `domain_allows(host, kind, id)` for the proxy |
 | `0075_export_log.sql` | `log_export(files)`: owners/admins only, writes an `export` row to `audit_log`, max 5 per person per hour; `/api/export` streams the full-history zip (CSV + JSON per table, change log, optional documents and photos; token/hash columns never included) |
+| `0076_lead_watchdog.sql` | `contacts.inbound` (true when created with no signed-in user: forms, open house, booking, portal, API; backfilled from system tasks) + partial index for leads still waiting on a first reply |
+| `0077_analytics_inbound_response.sql` | `team_analytics` response stats (median, within 5 min / 1 h, never contacted) count inbound leads only; adds `response.inbound` |
 
 After `0010`, store the hash of your form key (per environment):
 

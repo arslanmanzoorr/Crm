@@ -32,6 +32,7 @@ export type Radius = (typeof RADII)[number];
 
 /** Today page sections, in default order. `needs` hides a section when its module is off. */
 export const SECTIONS = [
+  { key: "waiting", label: "New leads waiting for a reply" },
   { key: "today", label: "Who to call today" },
   { key: "plan", label: "AI day plan" },
   { key: "signals", label: "Buying signals" },
@@ -51,7 +52,15 @@ const cleanSections = (v: unknown): Section[] => (Array.isArray(v) ? [...new Set
 /** Saved order first, then any section added since, minus hidden and switched-off ones. */
 export function homeLayout(order: unknown, hidden: unknown, off: readonly string[]): Section[] {
   const saved = cleanSections(order);
-  const all = [...saved, ...SECTIONS.map((s) => s.key).filter((k) => !saved.includes(k))];
+  // Sections added after someone saved their layout go in at their default position, so a new urgent section
+  // (like "waiting") shows near the top instead of at the bottom.
+  const rank = (k: string) => SECTIONS.findIndex((s) => s.key === k);
+  const all: Section[] = [...saved];
+  SECTIONS.forEach((s, i) => {
+    if (saved.includes(s.key)) return;
+    const at = all.findIndex((k) => rank(k) > i);
+    all.splice(at < 0 ? all.length : at, 0, s.key);
+  });
   const hide = new Set<string>(cleanSections(hidden));
   return all.filter((k) => !hide.has(k)).filter((k) => {
     const s = SECTIONS.find((x) => x.key === k) as { needs?: string } | undefined;
