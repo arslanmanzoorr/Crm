@@ -12,6 +12,7 @@ import { DealRescue } from "@/components/deal-rescue";
 import { EXPENSE_CATEGORIES, getDeal, getDealLink, getDocuments, getExpenses, getFinancing, getMembers, getTemplates, teamToday } from "@/lib/db";
 import { CoordinatorControls } from "@/components/coordinator-controls";
 import { Documents } from "@/components/documents";
+import { ContractReader } from "@/components/contract-reader";
 import { DeleteExpense, ExpenseForm, PayoutControls } from "@/components/money-controls";
 import { ReadinessList } from "@/components/readiness-card";
 import { EMPTY_FINANCING, readiness } from "@/lib/readiness";
@@ -94,6 +95,7 @@ async function DealView({ params }: { params: PageProps<"/deals/[id]">["params"]
               {d.milestones.length === 0 && <li className="py-4 text-sm text-muted">No steps yet.</li>}
             </ul>
             <AddMilestone dealId={d.id} />
+            <ContractReader dealId={d.id} pdfs={docs.filter((x) => x.mime === "application/pdf").map((x) => ({ id: x.id, name: x.name }))} closeOn={d.closeOn} price={d.price} />
           </section>
 
           <section aria-labelledby="docs" className="flex flex-col gap-3">

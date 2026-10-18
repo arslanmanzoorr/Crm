@@ -23,7 +23,7 @@ Key: **Have** = built and working. **Partial** = a smaller version exists. **Mis
 2. ✅ **Lead watchdog + response-time report** (gaps 9, 1): uses data we already store. Proves "no lead slips" to brokers.
 3. **Instant first reply by email** (gap 1): opt-in, consent-checked and logged. Text follows once Twilio is connected.
 4. ~~Spend per source → ROI~~ (gap 7): already in Analytics (Expenses by source → cost per lead and per closing).
-5. **AI contract reader → deal timeline** (gap 6): replaces part of a $300–500 per file coordinator.
+5. ✅ **AI contract reader → deal timeline** (gap 6): replaces part of a $300–500 per file coordinator.
 6. **Voice commands + installable app** (gap 10).
 7. Onboarding tour and setup checklist (gap 5), already planned in PLAN_onboarding_tour.md.
 8. Twilio texting/calling (gap 2) once the account is set up.

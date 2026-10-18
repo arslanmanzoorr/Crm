@@ -17,8 +17,9 @@ export function extractJson(text: string): string {
   return start >= 0 && end > start ? t.slice(start, end + 1) : t;
 }
 
-/** One chat call. With `image` (a data: URL) it goes to the vision model (OPENROUTER_VISION_MODEL). */
-export async function chat(o: { system: string; user: string; maxTokens: number; schema?: { name: string; schema: object }; image?: string }): Promise<string> {
+/** One chat call. With `image` (a data: URL) it goes to the vision model (OPENROUTER_VISION_MODEL). With `pdf`, OpenRouter
+ *  extracts the document's text first (file-parser plugin, free "pdf-text" engine), so any text model can read it. */
+export async function chat(o: { system: string; user: string; maxTokens: number; schema?: { name: string; schema: object }; image?: string; pdf?: { name: string; data: string } }): Promise<string> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new AiError(AI_KEY_MISSING, 503);
   // The schema also goes in the prompt, so models without enforced structured output (most free ones) still answer in shape.
@@ -35,10 +36,14 @@ export async function chat(o: { system: string; user: string; maxTokens: number;
       // Thinking off: these are short tasks, and reasoning models (DeepSeek, Nemotron) otherwise spend the whole
       // budget thinking and return nothing. Models without reasoning ignore it.
       reasoning: { enabled: false },
-      messages: [{ role: "system", content: system }, { role: "user", content: o.image ? [{ type: "text", text: o.user }, { type: "image_url", image_url: { url: o.image } }] : o.user }],
+      messages: [{ role: "system", content: system }, { role: "user", content:
+        o.image ? [{ type: "text", text: o.user }, { type: "image_url", image_url: { url: o.image } }]
+        : o.pdf ? [{ type: "text", text: o.user }, { type: "file", file: { filename: o.pdf.name, file_data: o.pdf.data } }]
+        : o.user }],
+      ...(o.pdf && { plugins: [{ id: "file-parser", pdf: { engine: "pdf-text" } }] }),
       ...(structured && o.schema && { response_format: { type: "json_schema", json_schema: { name: o.schema.name, strict: true, schema: o.schema.schema } } }),
     }),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(o.pdf ? 120_000 : 60_000),
   }).catch((e: Error) => { throw new AiError(e.name === "TimeoutError" ? "AI took too long, try again." : "Couldn't reach the AI service.", 502); });
 
   let res = await send(!!o.schema);
