@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { FarmNote } from "@/components/farm-note";
-import { input, primaryBtn } from "@/components/forms";
+import { input, primaryBtn } from "@/components/form-classes";
 import { Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { dbEnabled, getFarmData, getMe, teamToday } from "@/lib/db";

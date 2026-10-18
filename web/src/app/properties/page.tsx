@@ -6,7 +6,7 @@ import { EmptyDemo } from "@/components/empty-demo";
 import { PropertyCard } from "@/components/property-card";
 import { getProperties } from "@/lib/db";
 import { LoadingCards } from "@/components/ui";
-import { inputAuto } from "@/components/forms";
+import { inputAuto } from "@/components/form-classes";
 import { filterListings } from "@/lib/match";
 
 export const metadata: Metadata = { title: "Listings" };

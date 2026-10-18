@@ -108,11 +108,14 @@ export default function AccountPage({ searchParams }: PageProps<"/account">) {
           <Link href="/templates" className={row}><Receipt aria-hidden className="size-5 text-muted" /><span className="flex-1">Document templates <span className="block text-xs text-muted">Your own forms, filled from a deal</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/studio" className={row}><Clapperboard aria-hidden className="size-5 text-muted" /><span className="flex-1">Video Studio</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/publish" className={row}><Send aria-hidden className="size-5 text-muted" /><span className="flex-1">Publish to socials</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
-          {dbEnabled && (
-            <a href="/api/export" download className={row}><Download aria-hidden className="size-5 text-muted" /><span className="flex-1">Export team data <span className="block text-xs text-muted">JSON file, owners and admins</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></a>
-          )}
         </div>
       </section>
+
+      {dbEnabled && (
+        <Suspense fallback={null}>
+          <YourData />
+        </Suspense>
+      )}
 
       {dbEnabled && (
         <form action={signOut}>
@@ -225,4 +228,25 @@ async function Google({ searchParams }: { searchParams: PageProps<"/account">["s
 async function Appearance() {
   const [mine, team] = await Promise.all([getMyTheme(), getBranding()]);
   return <ThemePicker mine={mine} team={team.theme} />;
+}
+
+/** Owners and admins: the whole team's history as one zip, any time, no caps. */
+async function YourData() {
+  if (!(await isOwnerOrAdmin())) return null;
+  return (
+    <section aria-labelledby="your-data" className="flex flex-col gap-2">
+      <h2 id="your-data" className="text-sm text-muted">Your data</h2>
+      <form action="/api/export" method="get" className="flex flex-col gap-4 rounded-card bg-surface-2 p-4 text-sm">
+        <div className="flex items-start gap-3">
+          <Download aria-hidden className="mt-0.5 size-5 shrink-0 text-accent-ink" />
+          <p><span className="font-medium">Download everything.</span> <span className="text-muted">Every lead, note, call, text, email, task, listing, deal and change, with no limits. Spreadsheet and JSON files you can open or move anywhere. It&apos;s your data.</span></p>
+        </div>
+        <label className="flex items-center gap-3">
+          <input type="checkbox" name="files" value="1" className="size-5 accent-[var(--color-accent)]" />
+          <span>Include documents and listing photos <span className="text-muted">(bigger download)</span></span>
+        </label>
+        <button type="submit" className="min-h-11 w-fit rounded-full bg-accent px-5 text-sm font-medium text-on-light hover:bg-accent-strong">Download zip</button>
+      </form>
+    </section>
+  );
 }
