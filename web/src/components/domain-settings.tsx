@@ -2,16 +2,18 @@
 
 import { CircleCheck, CircleDashed } from "lucide-react";
 import { useState, useTransition } from "react";
-import { setCustomDomain, verifyCustomDomain } from "@/lib/actions";
+import { setCustomDomain, verifyCustomDomain, type FormState } from "@/lib/actions";
 import { CopyLink } from "./open-house-controls";
 import { input, primaryBtn } from "./forms";
 
-type Msg = { error?: string; ok?: string } | null;
 
 /** A team's own domain for client pages: claim it, add two DNS records, verify. Sign-in never moves to it. */
-export function DomainSettings({ domain, verified, token, dns }: { domain: string | null; verified: boolean; token: string; dns: "ok" | "dns" | null }) {
+export function DomainSettings({ domain, verified, token, dns, save = setCustomDomain, verify = verifyCustomDomain, example = "homes.yourteam.com", liveNote }: {
+  domain: string | null; verified: boolean; token: string; dns: "ok" | "dns" | null;
+  save?: (input: string) => Promise<FormState>; verify?: () => Promise<FormState>; example?: string; liveNote?: string;
+}) {
   const [v, setV] = useState(domain ?? "");
-  const [msg, setMsg] = useState<Msg>(null);
+  const [msg, setMsg] = useState<FormState | null>(null);
   const [pending, start] = useTransition();
   const apex = !!domain && domain.split(".").length === 2;
   const host = domain ? domain.split(".").slice(0, -2).join(".") || "@" : "";
@@ -22,13 +24,13 @@ export function DomainSettings({ domain, verified, token, dns }: { domain: strin
 
   return (
     <div className="flex flex-col gap-5 rounded-card bg-surface-2 p-5 text-sm">
-      <form className="flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); start(async () => setMsg((await setCustomDomain(v)) ?? null)); }}>
+      <form className="flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); start(async () => setMsg((await save(v)) ?? null)); }}>
         <label className="flex min-w-60 flex-1 flex-col gap-1.5">
           <span className="font-medium">Domain</span>
-          <input value={v} onChange={(e) => setV(e.target.value)} placeholder="homes.yourteam.com" autoComplete="off" spellCheck={false} inputMode="url" maxLength={253} className={input} />
+          <input value={v} onChange={(e) => setV(e.target.value)} placeholder={example} autoComplete="off" spellCheck={false} inputMode="url" maxLength={253} className={input} />
         </label>
         <button type="submit" disabled={pending || v.trim() === (domain ?? "")} className={primaryBtn}>{pending ? "Saving…" : "Save"}</button>
-        {domain && <button type="button" disabled={pending} onClick={() => { setV(""); start(async () => setMsg((await setCustomDomain("")) ?? null)); }} className="min-h-11 rounded-full px-3 text-muted hover:text-ink">Remove</button>}
+        {domain && <button type="button" disabled={pending} onClick={() => { setV(""); start(async () => setMsg((await save("")) ?? null)); }} className="min-h-11 rounded-full px-3 text-muted hover:text-ink">Remove</button>}
       </form>
 
       {domain && (
@@ -39,7 +41,7 @@ export function DomainSettings({ domain, verified, token, dns }: { domain: strin
           </p>
           {!verified && (
             <>
-              <p className="text-muted">Add these at your domain provider. A subdomain like <span className="text-ink">homes.</span>yourteam.com keeps your main website untouched.</p>
+              <p className="text-muted">Add these at your domain provider. A subdomain like <span className="text-ink">{example}</span> keeps your main website untouched.</p>
               <div className="overflow-x-auto rounded-2xl bg-surface-1">
                 <table className="w-full min-w-[520px] text-left">
                   <thead className="text-xs text-muted"><tr><th scope="col" className="px-4 py-2 font-medium">Type</th><th scope="col" className="px-4 py-2 font-medium">Name</th><th scope="col" className="px-4 py-2 font-medium">Value</th><th scope="col"><span className="sr-only">Copy</span></th></tr></thead>
@@ -55,10 +57,10 @@ export function DomainSettings({ domain, verified, token, dns }: { domain: strin
                   </tbody>
                 </table>
               </div>
-              <button type="button" disabled={pending} className={`${primaryBtn} w-fit`} onClick={() => start(async () => setMsg((await verifyCustomDomain()) ?? null))}>{pending ? "Checking…" : "Verify"}</button>
+              <button type="button" disabled={pending} className={`${primaryBtn} w-fit`} onClick={() => start(async () => setMsg((await verify()) ?? null))}>{pending ? "Checking…" : "Verify"}</button>
             </>
           )}
-          {verified && <p className="text-muted">New form, open house, booking and portal links use https://{domain}. Links you already shared keep working.</p>}
+          {verified && <p className="text-muted">{liveNote ?? `New form, open house, booking and portal links use https://${domain}. Links you already shared keep working.`}</p>}
         </>
       )}
       {msg?.error && <p role="alert" className="text-score-1">{msg.error}</p>}

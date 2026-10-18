@@ -2173,6 +2173,7 @@ export async function verifyCustomDomain(): Promise<FormState> {
   if (!can?.length) return { error: NOT_ALLOWED };
   if (!allow(`dns:${org}`, 20, 3_600_000)) return { error: "Too many checks. Try again in an hour." };
   const want = await domainToken(org);
+  if (await domainTaken(row.custom_domain)) return { error: "That domain is already in use." };
   const txt = await resolveTxt(`_estateos.${row.custom_domain}`).then((r) => r.map((parts) => parts.join("")), () => [] as string[]);
   if (!txt.includes(want)) return { error: "We can't see the TXT record yet. DNS changes can take up to an hour; try again soon." };
   // Users can't write domain_verified; only this server-side check can, with the service key.
@@ -2449,4 +2450,122 @@ export async function setAgencyBrand(agencyId: string, name: string, color: stri
   if (!data?.length) return { error: NOT_ALLOWED };
   revalidatePath("/", "layout");
   return { ok: "Saved" };
+}
+
+const agencyRole = async (db: Awaited<ReturnType<typeof authed>>, agencyId: string) => {
+  const { data: auth } = await db.auth.getUser();
+  const { data } = await db.from("agency_members").select("role").eq("agency_id", agencyId).eq("user_id", auth.user?.id ?? "").maybeSingle();
+  return (data?.role as "owner" | "admin" | undefined) ?? null;
+};
+
+/** Owner invites agency staff; returns the link to send them (no email service is connected yet). */
+export async function inviteAgencyStaff(agencyId: string, email: string): Promise<FormState & { link?: string }> {
+  if (!dbEnabled) return NO_DB;
+  const e = email.trim().toLowerCase();
+  if (!UUID.test(agencyId) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e) || e.length > 320) return { error: "Enter their work email." };
+  const { data, error } = await (await authed()).rpc("agency_invite", { p_agency: agencyId, p_email: e });
+  if (error || !data) return { error: /limit/.test(error?.message ?? "") ? "An agency can have 50 staff." : "Only the agency owner can invite staff." };
+  revalidatePath("/agency");
+  return { ok: `Invite ready for ${e}. Send them this link; it works for 7 days.`, link: `${process.env.SITE_URL ?? ""}/agency-invite/${data}` };
+}
+
+export async function cancelAgencyInvite(id: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(id)) return NO_DB;
+  const { data } = await (await authed()).from("agency_invites").delete().eq("id", id).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/agency");
+  return { ok: "Invite cancelled" };
+}
+
+export async function removeAgencyStaff(agencyId: string, userId: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(agencyId) || !UUID.test(userId)) return NO_DB;
+  const { data } = await (await authed()).rpc("agency_remove_staff", { p_agency: agencyId, p_user: userId });
+  if (!data) return { error: NOT_ALLOWED };
+  revalidatePath("/", "layout");
+  return { ok: "Removed. Their access to every sub-account went with it." };
+}
+
+/** Billing control per sub-account. Pausing locks its own users out (agency staff keep access). */
+export async function setSubBilling(orgId: string, status: string, price: string, note: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(orgId) || !["trial", "active", "past_due", "paused"].includes(status)) return { error: "Pick a status." };
+  const p = price.trim() === "" ? null : Number(price);
+  if (p !== null && (!Number.isFinite(p) || p < 0 || p > 100000)) return { error: "Price must be between $0 and $100,000." };
+  const { data } = await (await authed()).rpc("agency_set_billing", { p_org: orgId, p_status: status, p_price: p === null ? null : Math.round(p * 100) / 100, p_note: note.slice(0, 300) });
+  if (!data) return { error: NOT_ALLOWED };
+  revalidatePath("/agency");
+  return { ok: status === "paused" ? "Paused: its users are locked out until you resume it." : "Saved" };
+}
+
+export async function uploadAgencyLogo(agencyId: string, form: FormData): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(agencyId)) return NO_DB;
+  const file = form.get("logo");
+  if (!(file instanceof File) || file.size === 0) return { error: "Choose an image." };
+  if (file.size > LOGO_MAX) return { error: "Logos can be up to 512 KB." };
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const ext = logoType(bytes);
+  if (!ext) return { error: "Use a PNG, JPG or WebP image." };
+  const db = await authed();
+  if (!allow(`alogo:${agencyId}`, 10, 3_600_000)) return { error: "Too many uploads. Try again in an hour." };
+  const { data: before } = await db.from("agencies").select("logo_path").eq("id", agencyId).maybeSingle();
+  const path = `agency/${agencyId}/logo-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+  const { error } = await db.storage.from("brand-logos").upload(path, bytes, { contentType: ext === "jpg" ? "image/jpeg" : `image/${ext}`, cacheControl: "31536000" });
+  if (error) return { error: NOT_ALLOWED };
+  const { data } = await db.from("agencies").update({ logo_path: path }).eq("id", agencyId).select("id");
+  if (!data?.length) { await db.storage.from("brand-logos").remove([path]); return { error: NOT_ALLOWED }; }
+  if (before?.logo_path) await db.storage.from("brand-logos").remove([before.logo_path]);
+  revalidatePath("/", "layout");
+  return { ok: "Logo updated" };
+}
+
+/** Is this address already a verified team or agency domain? (service key: crosses teams by design; returns yes/no only) */
+async function domainTaken(domain: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return false;
+  const h = { apikey: key, authorization: `Bearer ${key}` };
+  const q = encodeURIComponent(domain);
+  const [a, b] = await Promise.all([
+    fetch(`${url}/rest/v1/organizations?select=id&domain_verified=is.true&custom_domain=eq.${q}`, { headers: h }).then((r) => r.json()).catch(() => []),
+    fetch(`${url}/rest/v1/agencies?select=id&domain_verified=is.true&app_domain=eq.${q}`, { headers: h }).then((r) => r.json()).catch(() => []),
+  ]);
+  return (Array.isArray(a) && a.length > 0) || (Array.isArray(b) && b.length > 0);
+}
+
+/** The agency's own address for the whole app (sign-in included), e.g. app.youragency.com. */
+export async function setAgencyDomain(agencyId: string, input: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(agencyId)) return NO_DB;
+  const appHost = process.env.SITE_URL ? new URL(process.env.SITE_URL).host : "";
+  const domain = input.trim() ? cleanDomain(input, appHost) : null;
+  if (input.trim() && !domain) return { error: "Enter a domain you own, like app.youragency.com." };
+  const db = await authed();
+  if ((await agencyRole(db, agencyId)) !== "owner") return { error: "Only the agency owner can change the domain." };
+  const { data: before } = await db.from("agencies").select("app_domain,domain_verified").eq("id", agencyId).maybeSingle();
+  const { data } = await db.from("agencies").update({ app_domain: domain }).eq("id", agencyId).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  if (before?.domain_verified && before.app_domain && before.app_domain !== domain) await detachDomain(before.app_domain);
+  revalidatePath("/agency");
+  return { ok: domain ? "Saved. Add the DNS records below, then verify." : "Domain removed" };
+}
+
+export async function verifyAgencyDomain(agencyId: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(agencyId)) return NO_DB;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return { error: "Set SUPABASE_SERVICE_ROLE_KEY on the server to verify domains." };
+  const db = await authed();
+  if ((await agencyRole(db, agencyId)) !== "owner") return { error: "Only the agency owner can verify the domain." };
+  const { data: row } = await db.from("agencies").select("app_domain").eq("id", agencyId).maybeSingle();
+  if (!row?.app_domain) return { error: "Add a domain first." };
+  if (!allow(`adns:${agencyId}`, 20, 3_600_000)) return { error: "Too many checks. Try again in an hour." };
+  const want = await domainToken(`agency:${agencyId}`);
+  const txt = await resolveTxt(`_estateos.${row.app_domain}`).then((r) => r.map((parts) => parts.join("")), () => [] as string[]);
+  if (!txt.includes(want)) return { error: "We can't see the TXT record yet. DNS changes can take up to an hour; try again soon." };
+  if (await domainTaken(row.app_domain)) return { error: "That domain is already in use." };
+  const res = await fetch(`${url}/rest/v1/agencies?id=eq.${agencyId}&app_domain=eq.${encodeURIComponent(row.app_domain)}`, {
+    method: "PATCH", headers: { apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json", prefer: "return=minimal" },
+    body: JSON.stringify({ domain_verified: true }),
+  });
+  if (!res.ok) return { error: res.status === 409 ? "That domain is already in use." : "Couldn't save. Try again." };
+  const attached = vercelConfigured() ? await attachDomain(row.app_domain) : false;
+  revalidatePath("/agency");
+  return { ok: attached || !vercelConfigured() ? "Verified. Add it to Supabase Auth's redirect URLs so sign-in emails link back to it." : "Verified. Connecting it to hosting failed; try Verify again in a minute." };
 }

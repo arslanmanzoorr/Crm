@@ -5,7 +5,9 @@ import { Sidebar } from "@/components/sidebar";
 import { Watchdog } from "@/components/watchdog";
 import { Tour } from "@/components/tour";
 import { AgencyBar } from "@/components/agency-bar";
-import { getAppBrand } from "@/lib/db";
+import { ProductTitle } from "@/components/product-title";
+import { Paused } from "@/components/paused";
+import { getAppBrand, getPausedNotice } from "@/lib/db";
 import { themeCss } from "@/lib/theme";
 import "./globals.css";
 
@@ -45,12 +47,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 /** The team's theme (validated CSS variables), logo and switched-off modules around the navigation. */
 async function Shell() {
   const b = await getAppBrand();
+  if (!b) {
+    const paused = await getPausedNotice();
+    if (paused) return <Paused team={paused.team} agency={paused.agency} />;
+  }
   const css = b ? themeCss(b.color, b.radius, b.theme) : "";
   return (
     <>
       {css && <style>{css}</style>}
       <Sidebar logo={b?.logo} team={b?.name} off={b?.off} agency={!!b?.agency} />
       {b?.viaAgency && b.agency && <AgencyBar agency={b.agency.name} team={b.name} />}
+      {b?.product && <ProductTitle name={b.product} />}
       {b && <Watchdog />}
       {b && <Tour state={b.tour} role={b.role} off={b.off} team={b.name} />}
     </>

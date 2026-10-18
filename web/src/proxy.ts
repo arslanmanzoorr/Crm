@@ -25,8 +25,10 @@ export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   // A team's own domain serves only that team's client pages (forms, open house sign-in, portal) and the bits they
   // load; everything else, including sign-in, stays on the app's own host so sessions never live on a team domain.
+  // An agency's own verified domain is the whole app under their brand, so it falls through to the normal flow.
   const host = (req.headers.get("host") ?? "").toLowerCase().replace(/:\d+$/, "");
-  if (APP_HOST && host !== APP_HOST && host !== "localhost" && !host.endsWith(".vercel.app")) {
+  const custom = !!APP_HOST && host !== APP_HOST && host !== "localhost" && !host.endsWith(".vercel.app");
+  if (custom && !(await db.rpc("agency_domain_brand", { p_host: host })).data) {
     if (path.startsWith("/legal")) return res;
     const page = clientPage(path.replace(/^\/api\/chat\//, "/f/"));
     const { data: ok } = page ? await db.rpc("domain_allows", { p_host: host, p_kind: page.kind, p_id: page.id }) : { data: false };
@@ -34,7 +36,9 @@ export async function proxy(req: NextRequest) {
   }
   const { data } = await db.auth.getUser();
   // Signed-out visitors at the root see the marketing site, not the sign-in form.
-  if (!data.user && path === "/") return NextResponse.redirect(new URL("/welcome", req.url));
+  // On an agency's domain there is no EstateOS marketing site: visitors get the agency's sign-in.
+  if (custom && (path.startsWith("/welcome") || path.startsWith("/store"))) return NextResponse.redirect(new URL("/login", req.url));
+  if (!data.user && path === "/") return NextResponse.redirect(new URL(custom ? "/login" : "/welcome", req.url));
   if (!data.user && !PUBLIC.some((p) => path.startsWith(p)))
     return path.startsWith("/api/")
       ? NextResponse.json({ error: "Sign in again." }, { status: 401 })

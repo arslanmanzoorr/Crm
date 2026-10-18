@@ -104,6 +104,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0078_onboarding_tour.sql` | `user_prefs.tour` (walkthrough progress), `tour` as a module owners can switch off, `contacts.is_sample` (practice lead, excluded from `team_analytics`), `app_brand()` also returns tour state and role |
 | `0079_agency_mode.sql` | Agencies, agency staff, `organizations.agency_id`, `memberships.via_agency`, snapshots (settings + automations + document templates, never client data); definer RPCs `create_agency`, `agency_enter`, `agency_create_subaccount`, `agency_snapshot_save/apply`, `agency_overview` (30-day counts per sub-account), all checking agency staff; removing staff drops their sub-account access; `app_brand` returns agency + via_agency and inherits the agency's default color |
 | `0080_agency_home_team.sql` | Starting an agency brings the founder's own team (if they own it) in as its first sub-account |
+| `0081_agency_phase2.sql` | Agency staff invites (`agency_invite`, `accept_agency_invite`, `agency_remove_staff`), agency logo (brand-logos `agency/<id>/`), agency app domain (`app_domain` + `domain_verified`, anon `agency_domain_brand(host)` for the sign-in page and titles), billing per sub-account (`billing_status/price/note`, `agency_set_billing`); paused sub-accounts are hidden from their own users in `my_org`, `is_member` and `member_of_folder` (agency staff keep access); `paused_notice()` |
 
 After `0010`, store the hash of your form key (per environment):
 
