@@ -101,6 +101,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0075_export_log.sql` | `log_export(files)`: owners/admins only, writes an `export` row to `audit_log`, max 5 per person per hour; `/api/export` streams the full-history zip (CSV + JSON per table, change log, optional documents and photos; token/hash columns never included) |
 | `0076_lead_watchdog.sql` | `contacts.inbound` (true when created with no signed-in user: forms, open house, booking, portal, API; backfilled from system tasks) + partial index for leads still waiting on a first reply |
 | `0077_analytics_inbound_response.sql` | `team_analytics` response stats (median, within 5 min / 1 h, never contacted) count inbound leads only; adds `response.inbound` |
+| `0078_onboarding_tour.sql` | `user_prefs.tour` (walkthrough progress), `tour` as a module owners can switch off, `contacts.is_sample` (practice lead, excluded from `team_analytics`), `app_brand()` also returns tour state and role |
 
 After `0010`, store the hash of your form key (per environment):
 

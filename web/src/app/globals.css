@@ -57,6 +57,16 @@ a {
   border-radius: var(--radius-btn, 9999px);
 }
 
+/* Walkthrough: room to scroll bottom-of-page targets clear of the step card */
+:root[data-touring] #main {
+  padding-bottom: 60vh;
+}
+@media (max-width: 639px) {
+  :root[data-touring] * {
+    scroll-margin-top: 16vh;
+  }
+}
+
 /* One visible focus style for every control; inputs keep their ring */
 :focus-visible {
   outline: 2px solid var(--color-accent);

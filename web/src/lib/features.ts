@@ -13,6 +13,7 @@ export const FEATURES = [
   { key: "farm", label: "Farming", paths: ["/farm"] },
   { key: "marketing", label: "Video and social posts", paths: ["/studio", "/publish"] },
   { key: "partners", label: "Partners", paths: ["/partners"] },
+  { key: "tour", label: "First-run tour", paths: [] },
 ] as const;
 export type Feature = (typeof FEATURES)[number]["key"];
 
@@ -33,6 +34,7 @@ export type Radius = (typeof RADII)[number];
 /** Today page sections, in default order. `needs` hides a section when its module is off. */
 export const SECTIONS = [
   { key: "waiting", label: "New leads waiting for a reply" },
+  { key: "quests", label: "Getting started", needs: "tour" },
   { key: "today", label: "Who to call today" },
   { key: "plan", label: "AI day plan" },
   { key: "signals", label: "Buying signals" },

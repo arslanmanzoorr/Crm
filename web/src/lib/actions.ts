@@ -14,6 +14,7 @@ import { cleanDomain, clientBase, domainToken } from "./domain";
 import { attachDomain, detachDomain, vercelConfigured } from "./vercel";
 import { resolveTxt } from "node:dns/promises";
 import { allow } from "./rate-limit";
+import { cleanTour, type TourState } from "./tour";
 import { cleanTiers, defaultMilestones, type Tier } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
 import { DOCS, LOAN_STAGES } from "./readiness";
@@ -2211,4 +2212,34 @@ export async function testLeadForm(formId: string): Promise<FormState> {
   await db.from("contacts").delete().eq("id", lead.id);
   const task = (lead.tasks as { title: string }[] | null)?.some((t) => /new web lead/i.test(t.title));
   return { ok: `Working. The test inquiry reached Leads in ${(ms / 1000).toFixed(1)}s, ${lead.owner_id ? "was assigned to an agent" : "is unassigned (no one in rotation)"}${task ? ", and got its call-within-5-minutes task" : ", but no follow-up task was created"}. It has been removed.` };
+}
+
+/** Walkthrough progress for this person (validated shape only). */
+export async function setTourState(state: TourState): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const { error } = await (await authed()).from("user_prefs").upsert({ tour: cleanTour(state), updated_at: new Date().toISOString() });
+  return error ? { error: NOT_ALLOWED } : { ok: "Saved" };
+}
+
+/** A labelled sample lead to practise on: fictional details, no contact consent (calls and texts stay disabled),
+ *  left out of analytics, and cleared after 14 days. Reuses the one you already have. */
+export async function createPracticeLead(): Promise<{ id?: string; error?: string }> {
+  if (!dbEnabled) return NO_DB;
+  const db = await authed();
+  const { data: auth } = await db.auth.getUser();
+  const me = auth.user!.id;
+  await db.from("contacts").delete().eq("is_sample", true).eq("owner_id", me).lt("created_at", new Date(Date.now() - 14 * 86_400_000).toISOString());
+  const { data: existing } = await db.from("contacts").select("id").eq("is_sample", true).eq("owner_id", me).limit(1).maybeSingle();
+  if (existing) return { id: existing.id };
+  const { data, error } = await db.from("contacts").insert({
+    name: "Taylor Practice (sample)", type: "buyer", email: "taylor.practice@example.com", phone: null, owner_id: me, is_sample: true,
+    sources: ["Practice"], budget: "$450k–$520k", areas: ["Westside"], preferences: ["3 bedrooms", "Garage", "Near a park"], tags: ["sample"],
+    consent_sms: false, consent_call: false, consent_email: false, move_by: "1-3",
+    next_action: "Practice: change the stage, add a note, or ask AI for a reply draft.",
+  }).select("id").single();
+  if (error || !data) return { error: "Couldn't create the practice lead." };
+  await db.from("activities").insert({ contact_id: data.id, user_id: null, channel: "Note", direction: "in",
+    content: "Hi! I'm a practice lead. Try things out on me: nothing here reaches a real person, and I disappear after 14 days." });
+  revalidatePath("/leads");
+  return { id: data.id };
 }

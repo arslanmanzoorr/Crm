@@ -3,6 +3,7 @@ import { Urbanist } from "next/font/google";
 import { Suspense } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Watchdog } from "@/components/watchdog";
+import { Tour } from "@/components/tour";
 import { getAppBrand } from "@/lib/db";
 import { themeCss } from "@/lib/theme";
 import "./globals.css";
@@ -49,6 +50,7 @@ async function Shell() {
       {css && <style>{css}</style>}
       <Sidebar logo={b?.logo} team={b?.name} off={b?.off} />
       {b && <Watchdog />}
+      {b && <Tour state={b.tour} role={b.role} off={b.off} team={b.name} />}
     </>
   );
 }

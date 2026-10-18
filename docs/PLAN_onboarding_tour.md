@@ -1,5 +1,7 @@
 # Plan: first-run walkthrough ("Learn EstateOS")
 
+**Status: built 2026-10-18** (see STATUS.md, row 20). Defaults taken: no mascot, practice lead offered, owners can switch the tour off.
+
 Goal: anyone opening EstateOS for the first time can take a short, fun tour or skip it, and can come back to it any time.
 It should feel like a game you finish in two minutes, not a manual.
 

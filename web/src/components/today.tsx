@@ -40,7 +40,7 @@ export function Today({ leads, tasks }: { leads: Lead[]; tasks: Task[] }) {
   ].filter(Boolean).join(" · ");
 
   return (
-    <section aria-labelledby="today" className="flex flex-col gap-4">
+    <section data-tour="today" aria-labelledby="today" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="today" className="text-xl">Today</h2>
         <p className="text-sm text-muted">{summary}</p>

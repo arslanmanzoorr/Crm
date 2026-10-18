@@ -77,7 +77,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
 
   return (
     <div className="grid gap-4 lg:h-[calc(100dvh-4rem)] lg:grid-cols-[320px_1fr]">
-      <nav aria-label="Conversations" className={`min-w-0 flex-col gap-2 lg:flex lg:overflow-y-auto ${open ? "hidden" : "flex"}`}>
+      <nav data-tour="inbox" aria-label="Conversations" className={`min-w-0 flex-col gap-2 lg:flex lg:overflow-y-auto ${open ? "hidden" : "flex"}`}>
         <h1 className="mb-2 text-4xl font-light">Inbox</h1>
         {threads.map((x, i) => {
           const sel = x === t;
@@ -137,7 +137,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
             className="min-w-0 resize-none rounded-3xl bg-surface-1 px-4 py-3 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-accent"
           />
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={aiDraft} disabled={busy} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-light px-4 text-sm font-medium text-on-light hover:bg-white disabled:opacity-60">
+            <button type="button" data-tour="ai-draft" onClick={aiDraft} disabled={busy} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-light px-4 text-sm font-medium text-on-light hover:bg-white disabled:opacity-60">
               <Sparkles aria-hidden className={`size-4 ${busy ? "animate-pulse" : ""}`} /> {busy ? "Drafting…" : "AI draft"}
             </button>
             <button type="button" onClick={() => record("in")} disabled={pending || !draft.trim()} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm hover:text-accent-ink disabled:opacity-60">

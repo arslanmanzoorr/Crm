@@ -15,6 +15,7 @@ import type { Doc, Financing as BuyerFinancing, LoanStage } from "./readiness";
 import { areaKey, campaignResults, type FarmListing, type FarmPerson } from "./farm";
 import { scrubbed } from "./consent";
 import { cleanFeatures, cleanSections, homeLayout, type Feature, type Radius, type Section, type Theme } from "./features";
+import { cleanTour, questsFor, type QuestId, type TourState } from "./tour";
 import type { DormantLead } from "./reactivate";
 import type { Fee } from "./rental-feed";
 export { likeSafe };
@@ -1022,15 +1023,15 @@ export async function getBranding(): Promise<Branding> {
 
 const logoUrl = (path: string | null | undefined) => (path ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/brand-logos/${path}` : null);
 
-export type AppBrand = { color: string | null; radius: Radius; logo: string | null; off: Feature[]; name: string; theme: Theme; domain: string | null };
+export type AppBrand = { color: string | null; radius: Radius; logo: string | null; off: Feature[]; name: string; theme: Theme; domain: string | null; tour: TourState; role: string | null };
 
 /** Theme, logo, switched-off modules and verified domain for the app shell; null when signed out or without a database. */
 export const getAppBrand = cache(async (): Promise<AppBrand | null> => {
   if (!dbEnabled) return null;
   const { data } = await (await supabase()).rpc("app_brand");
   if (!data) return null;
-  const b = data as Omit<AppBrand, "off"> & { off: unknown };
-  return { ...b, logo: logoUrl(b.logo), off: cleanFeatures(b.off) };
+  const b = data as Omit<AppBrand, "off" | "tour"> & { off: unknown; tour: unknown };
+  return { ...b, logo: logoUrl(b.logo), off: cleanFeatures(b.off), tour: cleanTour(b.tour) };
 });
 
 /** This person's own theme choice; null = follow the team. */
@@ -1139,4 +1140,32 @@ export async function getResponseRows(): Promise<{ createdAt: string; firstRespo
   ]);
   const email = new Map((members ?? []).map((m) => [m.user_id, m.email?.split("@")[0] ?? "Agent"]));
   return (data ?? []).map((c) => ({ createdAt: c.created_at, firstResponseAt: c.first_response_at, owner: c.owner_id ? email.get(c.owner_id) ?? "Agent" : "Unassigned", source: c.sources?.[0] ?? "Unknown" }));
+}
+
+/** Getting-started quests for this person, each ticked from real data. */
+export async function getQuests(): Promise<{ id: QuestId; title: string; href: string; done: boolean }[]> {
+  const brand = await getAppBrand();
+  if (!brand) return [];
+  const db = await supabase();
+  const [{ data: auth }, org] = await Promise.all([db.auth.getUser(), db.rpc("active_org")]);
+  const me = auth.user?.id ?? "";
+  const any = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => (r.count ?? 0) > 0);
+  const [lead, touch, ai, listing, prefs, factors, members, invites] = await Promise.all([
+    any(db.from("contacts").select("id", { count: "exact", head: true }).eq("owner_id", me).eq("is_sample", false)),
+    any(db.from("activities").select("id", { count: "exact", head: true }).eq("user_id", me)),
+    any(db.from("ai_usage").select("id", { count: "exact", head: true }).eq("user_id", me)),
+    any(db.from("properties").select("id", { count: "exact", head: true })),
+    db.from("user_prefs").select("home_order,theme").maybeSingle(),
+    db.auth.mfa.listFactors(),
+    db.from("memberships").select("user_id", { count: "exact", head: true }).eq("org_id", org.data),
+    any(db.from("invites").select("id", { count: "exact", head: true })),
+  ]);
+  const done: Record<QuestId, boolean> = {
+    lead, touch, ai, listing,
+    layout: !!prefs.data && (prefs.data.home_order.length > 0 || prefs.data.theme !== null),
+    mfa: (factors.data?.totp ?? []).some((f) => f.status === "verified"),
+    invite: (members.count ?? 0) > 1 || invites,
+    brand: !!brand.logo || !!brand.color,
+  };
+  return questsFor(brand.role, brand.off).map((q) => ({ id: q.id, title: q.title, href: q.href, done: done[q.id] }));
 }

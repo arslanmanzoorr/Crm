@@ -67,10 +67,10 @@ export function greeting(h: number) {
 export function Header({ name, tasks }: { name: string; tasks: Task[] }) {
   const now = useNow();
   return (
-    <header className="flex flex-col gap-6">
+    <header data-tour="header" className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <ScheduleTimeline tasks={tasks} />
-        <button type="button" onClick={openPalette} aria-label="Search (⌘K)" className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-2 hover:text-accent-ink md:hidden">
+        <button type="button" data-tour="search" onClick={openPalette} aria-label="Search (⌘K)" className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-2 hover:text-accent-ink md:hidden">
           <Search aria-hidden className="size-5" />
         </button>
         <Link href="/account" aria-label="Account" className="shrink-0 rounded-full">

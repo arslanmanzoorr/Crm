@@ -5,6 +5,7 @@ import { Reveal, Skeleton, LoadingCards } from "@/components/ui";
 import { Workspace } from "@/components/workspace";
 import { HomeCustomize } from "@/components/home-customize";
 import { LeadsWaiting } from "@/components/leads-waiting";
+import { Quests } from "@/components/quests";
 import { TopLeads } from "@/components/leads";
 import { DayTasks } from "@/components/tasks";
 import { Today } from "@/components/today";
@@ -13,7 +14,7 @@ import { CircleAlert, Flame, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { daysBetween } from "@/lib/deals";
 import { riskFlags } from "@/lib/deals";
-import { dbEnabled, getAppBrand, getHomeLayout, getWaitingLeads, isOwnerOrAdmin, getBuyingSignals, getLeadOptions, getProperties, getMe, getSavedPriceDrops, getPastClients, getShowings, getSoonMovers, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
+import { dbEnabled, getAppBrand, getHomeLayout, getQuests, getWaitingLeads, isOwnerOrAdmin, getBuyingSignals, getLeadOptions, getProperties, getMe, getSavedPriceDrops, getPastClients, getShowings, getSoonMovers, getTasks, getTopLeads, listDeals, teamToday } from "@/lib/db";
 import { ShowingItem } from "@/components/showing-controls";
 import { agenda } from "@/lib/retention";
 import { money } from "@/lib/data";
@@ -34,6 +35,7 @@ async function Home_() {
   const db = (node: ReactNode) => (dbEnabled ? node : null);
   const blocks: Record<Section, ReactNode> = {
     waiting: db(<Suspense fallback={null}><Waiting /></Suspense>),
+    quests: db(<Suspense fallback={null}><GettingStarted /></Suspense>),
     today: <Today leads={[...top.leads, ...soon.filter((s) => !top.leads.some((l) => l.id === s.id))]} tasks={tasks} />,
     plan: db(<Suspense fallback={null}><Plan /></Suspense>),
     signals: db(<Suspense fallback={<Skeleton className="h-32" />}><Signals /></Suspense>),
@@ -53,6 +55,10 @@ async function Home_() {
       </Workspace>
     </Reveal>
   );
+}
+
+async function GettingStarted() {
+  return <Quests quests={await getQuests()} />;
 }
 
 async function Waiting() {

@@ -22,7 +22,7 @@ export function HomeCustomize({ order, hidden, own, canTeam }: { order: Section[
   const flip = (k: Section) => setOff((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
 
   if (!open) return (
-    <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 w-fit items-center gap-2 self-center rounded-full px-4 text-sm text-muted hover:bg-surface-2 hover:text-ink">
+    <button type="button" data-tour="customize" onClick={() => setOpen(true)} className="inline-flex min-h-11 w-fit items-center gap-2 self-center rounded-full px-4 text-sm text-muted hover:bg-surface-2 hover:text-ink">
       <SlidersHorizontal aria-hidden className="size-4" /> Customize this page
     </button>
   );

@@ -1,4 +1,4 @@
-import { Calculator, RotateCcw, CircleCheck, CircleDashed, ChartNoAxesCombined, MapPinned, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
+import { Calculator, Compass, RotateCcw, CircleCheck, CircleDashed, ChartNoAxesCombined, MapPinned, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -14,6 +14,7 @@ import { TwoStep } from "@/components/two-step";
 import { GoogleConnect } from "@/components/google-connect";
 import { clientBase } from "@/lib/domain";
 import { ThemePicker } from "@/components/theme-picker";
+import { TakeTourButton } from "@/components/tour";
 import { googleConnected, googleEnv } from "@/lib/google-server";
 
 export const metadata: Metadata = { title: "Account" };
@@ -94,6 +95,7 @@ export default function AccountPage({ searchParams }: PageProps<"/account">) {
       <section aria-labelledby="tools" className="flex flex-col gap-2">
         <h2 id="tools" className="text-sm text-muted">Team and tools</h2>
         <div className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
+          <TakeTourButton className={row}><Compass aria-hidden className="size-5 text-muted" /><span className="flex-1">Take the tour <span className="block text-xs text-muted">A 2-minute walkthrough of EstateOS</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></TakeTourButton>
           <Link href="/showings" className={`${row} md:hidden`}><CalendarDays aria-hidden className="size-5 text-muted" /><span className="flex-1">Showings</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/clients" className={`${row} md:hidden`}><HeartHandshake aria-hidden className="size-5 text-muted" /><span className="flex-1">Past clients</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/tools" className={`${row} md:hidden`}><Calculator aria-hidden className="size-5 text-muted" /><span className="flex-1">Calculators</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>

@@ -45,7 +45,7 @@ async function TeamView() {
         </section>
       )}
       {(team.me.role === "owner" || team.me.role === "admin") && (
-        <section aria-labelledby="branding" className="flex flex-col gap-3">
+        <section data-tour="branding" aria-labelledby="branding" className="flex flex-col gap-3">
           <h2 id="branding" className="text-xl">Branding</h2>
           <p className="-mt-2 text-sm text-muted">Your logo, color and button shape across the CRM for everyone on the team, and on lead forms, open house sign-in, showing booking and the client portal.</p>
           <BrandSettings color={brand.color} hide={brand.hide} radius={brand.radius} logo={brand.logo} team={team.org.name} theme={brand.theme} />
@@ -60,7 +60,7 @@ async function TeamView() {
         </section>
       )}
       {(team.me.role === "owner" || team.me.role === "admin") && (
-        <section aria-labelledby="modules" className="flex flex-col gap-3">
+        <section data-tour="modules" aria-labelledby="modules" className="flex flex-col gap-3">
           <h2 id="modules" className="text-xl">Modules</h2>
           <p className="-mt-2 text-sm text-muted">Switch off what your team doesn&apos;t use. It leaves the menu and search, and its pages close for everyone. Nothing is deleted; switch it back on any time.</p>
           <FeatureSettings off={brand.off} />

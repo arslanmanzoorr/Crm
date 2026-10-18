@@ -14,7 +14,7 @@ export function AskLeads({ initial }: { initial: string }) {
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
   return (
-    <form className="flex flex-col gap-1.5" onSubmit={(e) => { e.preventDefault(); start(async () => { setErr(null); const r = await askLeads(q); if (r.url) router.push(r.url); else setErr(r.error ?? "Try again."); }); }}>
+    <form data-tour="ask" className="flex flex-col gap-1.5" onSubmit={(e) => { e.preventDefault(); start(async () => { setErr(null); const r = await askLeads(q); if (r.url) router.push(r.url); else setErr(r.error ?? "Try again."); }); }}>
       <div className="flex gap-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} maxLength={200} aria-label="Ask about your leads"
           placeholder="Ask: buyers in Westside nobody's called in 30 days" className={`${inputAuto} min-w-0 flex-1`} />

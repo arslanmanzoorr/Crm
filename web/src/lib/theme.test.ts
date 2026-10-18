@@ -24,7 +24,7 @@ test("homeLayout: saved order, new sections appended, hidden and switched-off re
   assert.equal(l[0], "waiting"); // added after this layout was saved: keeps its default place at the top
   assert.ok(l.indexOf("tasks") < l.indexOf("today")); // the saved order is kept
   assert.ok(!l.includes("plan") && !l.includes("deals") && l.includes("leads"));
-  assert.equal(homeLayout(null, null, []).length, 11);
+  assert.equal(homeLayout(null, null, []).length, 12);
   const saved = ["leads", "today", "plan", "signals", "drops", "showings", "deals", "expiring", "keep", "tasks"];
-  assert.deepEqual(homeLayout(saved, null, []).slice(0, 3), ["waiting", "leads", "today"]);
+  assert.deepEqual(homeLayout(saved, null, []).slice(0, 3), ["waiting", "quests", "leads"]);
 });

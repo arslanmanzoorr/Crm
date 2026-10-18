@@ -243,7 +243,7 @@ export function LeadList({ leads, total, counts, q, temp, limit, owner = "", tag
       )}
       {leads.length ? (
         <>
-          <div className={`grid gap-4 transition-opacity duration-150 sm:grid-cols-2 xl:grid-cols-3 ${pending ? "opacity-60" : ""}`}>
+          <div data-tour="leads" className={`grid gap-4 transition-opacity duration-150 sm:grid-cols-2 xl:grid-cols-3 ${pending ? "opacity-60" : ""}`}>
             {leads.map((l) => <LeadCard key={l.id} lead={l} owner={team ? nameOf(l.ownerId) : undefined} selected={picked.has(l.id)} onToggle={selecting ? () => toggle(l.id) : undefined} />)}
           </div>
           {leads.length < total && (
