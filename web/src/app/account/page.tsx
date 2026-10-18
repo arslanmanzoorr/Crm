@@ -1,4 +1,4 @@
-import { Calculator, Compass, RotateCcw, CircleCheck, CircleDashed, ChartNoAxesCombined, MapPinned, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
+import { Building2, Calculator, Compass, RotateCcw, CircleCheck, CircleDashed, ChartNoAxesCombined, MapPinned, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -16,6 +16,7 @@ import { clientBase } from "@/lib/domain";
 import { ThemePicker } from "@/components/theme-picker";
 import { TakeTourButton } from "@/components/tour";
 import { InstallApp } from "@/components/install-app";
+import { StartAgency } from "@/components/agency";
 import { googleConnected, googleEnv } from "@/lib/google-server";
 
 export const metadata: Metadata = { title: "Account" };
@@ -122,6 +123,12 @@ export default function AccountPage({ searchParams }: PageProps<"/account">) {
       {dbEnabled && (
         <Suspense fallback={null}>
           <YourData />
+        </Suspense>
+      )}
+
+      {dbEnabled && (
+        <Suspense fallback={null}>
+          <AgencyEntry />
         </Suspense>
       )}
 
@@ -255,6 +262,22 @@ async function YourData() {
         </label>
         <button type="submit" className="min-h-11 w-fit rounded-full bg-accent px-5 text-sm font-medium text-on-light hover:bg-accent-strong">Download zip</button>
       </form>
+    </section>
+  );
+}
+
+/** Agency staff get a way back to their dashboard; team owners can start an agency. */
+async function AgencyEntry() {
+  const b = await getAppBrand();
+  if (!b || (!b.agency && b.role !== "owner")) return null;
+  return (
+    <section id="agency" aria-labelledby="agency-h" className="flex scroll-mt-20 flex-col gap-2">
+      <h2 id="agency-h" className="text-sm text-muted">Agency</h2>
+      {b.agency ? (
+        <Link href="/agency" className="flex min-h-14 items-center gap-3 rounded-card bg-surface-2 px-5 hover:bg-surface-3">
+          <Building2 aria-hidden className="size-5 text-muted" /><span className="flex-1">{b.agency.name} <span className="block text-xs text-muted">Sub-accounts, snapshots and numbers</span></span><ChevronRight aria-hidden className="size-4 text-muted" />
+        </Link>
+      ) : <StartAgency />}
     </section>
   );
 }

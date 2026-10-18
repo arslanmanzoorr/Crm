@@ -346,7 +346,7 @@ export type Team = {
   me: { userId: string; role: Role };
   org: { id: string; name: string; timeZone: string | null };
   orgs: { id: string; name: string }[];
-  members: { userId: string; email: string; role: Role; joined: string }[];
+  members: { userId: string; email: string; role: Role; joined: string; agency?: boolean }[];
   invites: { id: string; email: string; role: Role; expires: string }[];
 };
 
@@ -367,14 +367,14 @@ export async function getTeam(): Promise<Team | null> {
   const current = orgs.find((o) => o.id === orgId)!;
   const isAdmin = current.role === "owner" || current.role === "admin";
   const [members, invites] = await Promise.all([
-    db.from("memberships").select("user_id,email,role,created_at").eq("org_id", orgId).order("created_at"),
+    db.from("memberships").select("user_id,email,role,created_at,via_agency").eq("org_id", orgId).order("created_at"),
     isAdmin ? db.from("invites").select("id,email,role,expires_at").is("accepted_at", null).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }) : { data: [] },
   ]);
   return {
     me: { userId: auth.user.id, role: current.role },
     org: { id: orgId, name: current.name, timeZone: current.timeZone },
     orgs: orgs.map(({ id, name }) => ({ id, name })),
-    members: (members.data ?? []).map((m) => ({ userId: m.user_id, email: m.email ?? "", role: m.role as Role, joined: m.created_at })),
+    members: (members.data ?? []).map((m) => ({ userId: m.user_id, email: m.email ?? "", role: m.role as Role, joined: m.created_at, agency: !!m.via_agency })),
     invites: (invites.data ?? []).map((i) => ({ id: i.id, email: i.email, role: i.role as Role, expires: i.expires_at })),
   };
 }
@@ -1027,15 +1027,18 @@ export async function getBranding(): Promise<Branding> {
 
 const logoUrl = (path: string | null | undefined) => (path ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/brand-logos/${path}` : null);
 
-export type AppBrand = { color: string | null; radius: Radius; logo: string | null; off: Feature[]; name: string; theme: Theme; domain: string | null; tour: TourState; role: string | null };
+export type AppBrand = {
+  color: string | null; radius: Radius; logo: string | null; off: Feature[]; name: string; theme: Theme; domain: string | null; tour: TourState; role: string | null;
+  agency: { id: string; name: string } | null; viaAgency: boolean;
+};
 
 /** Theme, logo, switched-off modules and verified domain for the app shell; null when signed out or without a database. */
 export const getAppBrand = cache(async (): Promise<AppBrand | null> => {
   if (!dbEnabled) return null;
   const { data } = await (await supabase()).rpc("app_brand");
   if (!data) return null;
-  const b = data as Omit<AppBrand, "off" | "tour"> & { off: unknown; tour: unknown };
-  return { ...b, logo: logoUrl(b.logo), off: cleanFeatures(b.off), tour: cleanTour(b.tour) };
+  const b = data as Omit<AppBrand, "off" | "tour" | "viaAgency"> & { off: unknown; tour: unknown; via_agency: boolean | null };
+  return { ...b, logo: logoUrl(b.logo), off: cleanFeatures(b.off), tour: cleanTour(b.tour), agency: b.agency ?? null, viaAgency: !!b.via_agency };
 });
 
 /** This person's own theme choice; null = follow the team. */
@@ -1172,4 +1175,31 @@ export async function getQuests(): Promise<{ id: QuestId; title: string; href: s
     brand: !!brand.logo || !!brand.color,
   };
   return questsFor(brand.role, brand.off).map((q) => ({ id: q.id, title: q.title, href: q.href, done: done[q.id] }));
+}
+
+export type SubAccount = {
+  id: string; name: string; created_at: string; users: number; leads_30d: number; inbound_30d: number; unanswered_30d: number;
+  median_response_min: number | null; active_deals: number; closed_30d: number; last_activity: string | null;
+};
+export type Agency = { id: string; name: string; brandColor: string | null; role: "owner" | "admin"; subs: SubAccount[]; snapshots: { id: string; name: string; createdAt: string }[]; staff: { email: string; role: string }[] };
+
+/** The agency this person runs or works for, with every sub-account's 30-day health. Null if they're not agency staff. */
+export async function getAgency(): Promise<Agency | null> {
+  if (!dbEnabled) return null;
+  const db = await supabase();
+  const { data: auth } = await db.auth.getUser();
+  const { data: me } = await db.from("agency_members").select("agency_id,role,agencies(id,name,brand_color)").eq("user_id", auth.user?.id ?? "").order("created_at").limit(1).maybeSingle();
+  const a = (me as unknown as { agency_id: string; role: "owner" | "admin"; agencies: { id: string; name: string; brand_color: string | null } } | null);
+  if (!a) return null;
+  const [overview, snaps, staff] = await Promise.all([
+    db.rpc("agency_overview", { p_agency: a.agency_id }),
+    db.from("agency_snapshots").select("id,name,created_at").eq("agency_id", a.agency_id).order("created_at", { ascending: false }),
+    db.from("agency_members").select("email,role").eq("agency_id", a.agency_id).order("created_at"),
+  ]);
+  return {
+    id: a.agency_id, name: a.agencies.name, brandColor: a.agencies.brand_color, role: a.role,
+    subs: (overview.data as SubAccount[] | null) ?? [],
+    snapshots: (snaps.data ?? []).map((x) => ({ id: x.id, name: x.name, createdAt: x.created_at })),
+    staff: (staff.data ?? []).map((x) => ({ email: x.email ?? "", role: x.role })),
+  };
 }

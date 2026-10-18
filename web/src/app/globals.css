@@ -57,6 +57,11 @@ a {
   border-radius: var(--radius-btn, 9999px);
 }
 
+/* Agency staff inside a sub-account: room for the agency bar */
+:root:has([data-agency-bar]) #main {
+  padding-top: calc(1.5rem + 2.25rem);
+}
+
 /* Walkthrough: room to scroll bottom-of-page targets clear of the step card */
 :root[data-touring] #main {
   padding-bottom: 60vh;

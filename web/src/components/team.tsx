@@ -88,7 +88,7 @@ export function TeamManager({ team, routing, siteUrl }: { team: Team; routing: {
               <li key={m.userId} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <Avatar name={m.email} size={36} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{m.email}{me && <span className="font-normal text-muted"> (you)</span>}</p>
+                  <p className="truncate text-sm font-medium">{m.email}{me && <span className="font-normal text-muted"> (you)</span>}{m.agency && <span className="ml-2 rounded-full bg-surface-3 px-2 py-0.5 text-xs font-normal text-muted">Agency</span>}</p>
                   <p className="text-xs text-muted">{ROLE_HELP[m.role]} · joined <LocalTime ts={m.joined} opts={{ month: "short", day: "numeric", year: "numeric" }} /></p>
                 </div>
                 {isOwner && !me && m.role !== "owner" ? (

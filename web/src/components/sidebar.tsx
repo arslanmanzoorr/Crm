@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, CalendarDays, ChartColumn, CircleUserRound, Handshake, HeartHandshake, Home, Inbox, LayoutGrid, Menu, Search, Users } from "lucide-react";
+import { Building2, Calculator, CalendarDays, ChartColumn, CircleUserRound, Handshake, HeartHandshake, Home, Inbox, LayoutGrid, Menu, Search, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { featureFor } from "@/lib/features";
@@ -33,7 +33,7 @@ function Item({ href, label, icon: Icon, active, className = "" }: { href: strin
 export const bare = (path: string) => path === "/login" || path === "/mfa" || path.startsWith("/legal") || path.startsWith("/f/") || path.startsWith("/oh/") || path.startsWith("/p/") || path.startsWith("/tc/") || path.startsWith("/welcome") || path.startsWith("/store") || path.endsWith("/print") || path.endsWith("/flyer");
 
 /** Labeled navigation: a bottom bar with the four daily destinations on phones, a full rail on wider screens. */
-export function Sidebar({ logo = null, team = "EstateOS", off = [] }: { logo?: string | null; team?: string; off?: readonly string[] }) {
+export function Sidebar({ logo = null, team = "EstateOS", off = [], agency = false }: { logo?: string | null; team?: string; off?: readonly string[]; agency?: boolean }) {
   const path = usePathname();
   if (bare(path)) return null;
   const isActive = (href: string) => (href === "/" ? path === "/" : href === "/leads" ? path.startsWith("/leads") || path.startsWith("/pipeline") : path.startsWith(href));
@@ -60,7 +60,8 @@ export function Sidebar({ logo = null, team = "EstateOS", off = [] }: { logo?: s
         <Item key={n.href} {...n} active={isActive(n.href)} className={n.phone ? "" : "hidden md:flex"} />
       ))}
       <Item href="/account" label="More" icon={Menu} active={moreActive} className="md:hidden" />
-      <Item href="/account" label="Account" icon={CircleUserRound} active={path.startsWith("/account") || path.startsWith("/studio") || path.startsWith("/publish")} className="hidden md:mt-auto md:flex" />
+      {agency && <Item href="/agency" label="Agency" icon={Building2} active={path.startsWith("/agency")} className="hidden md:mt-auto md:flex" />}
+      <Item href="/account" label="Account" icon={CircleUserRound} active={path.startsWith("/account") || path.startsWith("/studio") || path.startsWith("/publish")} className={`hidden md:flex ${agency ? "" : "md:mt-auto"}`} />
     </nav>
     </>
   );

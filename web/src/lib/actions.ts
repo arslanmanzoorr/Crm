@@ -2370,3 +2370,83 @@ export async function applyQuickUpdate(leadId: string, actions: QuickAction[]): 
   revalidatePath("/", "layout");
   return { ok: `${n} update${n === 1 ? "" : "s"} saved` };
 }
+
+// ---------- Agency mode ----------
+// Every permission is checked in the database functions (agency staff only, same agency); these only validate input.
+
+export async function createAgency(name: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const n = name.trim();
+  if (n.length < 2 || n.length > 80) return { error: "Give your agency a name (2–80 characters)." };
+  const { error } = await (await authed()).rpc("create_agency", { p_name: n });
+  if (error) return { error: /limit/.test(error.message) ? "You already run 3 agencies." : NOT_ALLOWED };
+  revalidatePath("/", "layout");
+  redirect("/agency");
+}
+
+/** Work inside a sub-account (joins it as agency staff the first time), then open its Today page. */
+export async function enterSubaccount(orgId: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(orgId)) return { error: "Sub-account not found." };
+  const { data } = await (await authed()).rpc("agency_enter", { p_org: orgId });
+  if (!data) return { error: NOT_ALLOWED };
+  revalidatePath("/", "layout");
+  redirect("/");
+}
+
+export async function createSubaccount(agencyId: string, name: string, snapshotId: string | null, ownerEmail: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const n = name.trim(), email = ownerEmail.trim().toLowerCase();
+  if (!UUID.test(agencyId) || n.length < 2 || n.length > 80) return { error: "Give the sub-account a name (2–80 characters)." };
+  if (snapshotId && !UUID.test(snapshotId)) return { error: "Pick a snapshot." };
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "That email doesn't look right." };
+  const db = await authed();
+  const prev = (await db.rpc("active_org")).data as string | null;
+  const { data: org, error } = await db.rpc("agency_create_subaccount", { p_agency: agencyId, p_name: n, p_snapshot: snapshotId || null });
+  if (error || !org) return { error: /limit/.test(error?.message ?? "") ? "This agency has reached 500 sub-accounts." : NOT_ALLOWED };
+  // Creating it joined us to it, so the client's invite lands there (as its admin); then return to where we were.
+  if (email) await db.from("invites").insert({ email, role: "admin" });
+  if (prev) await db.rpc("set_active_org", { p_org: prev });
+  revalidatePath("/", "layout");
+  return { ok: email ? `Created. ${email} has an invite to join as admin.` : "Created." };
+}
+
+export async function saveSnapshot(orgId: string, name: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const n = name.trim();
+  if (!UUID.test(orgId) || n.length < 2 || n.length > 80) return { error: "Pick a sub-account and name the snapshot." };
+  const { error } = await (await authed()).rpc("agency_snapshot_save", { p_org: orgId, p_name: n });
+  if (error) return { error: /limit/.test(error.message) ? "An agency can keep 50 snapshots. Delete one first." : NOT_ALLOWED };
+  revalidatePath("/agency");
+  return { ok: "Snapshot saved" };
+}
+
+export async function applySnapshot(snapshotId: string, orgId: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(snapshotId) || !UUID.test(orgId)) return { error: "Pick a snapshot and a sub-account." };
+  const { data, error } = await (await authed()).rpc("agency_snapshot_apply", { p_snapshot: snapshotId, p_org: orgId });
+  if (error || !data) return { error: NOT_ALLOWED };
+  revalidatePath("/", "layout");
+  return { ok: "Applied" };
+}
+
+export async function deleteSnapshot(id: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(id)) return NO_DB;
+  const { data } = await (await authed()).from("agency_snapshots").delete().eq("id", id).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/agency");
+  return { ok: "Deleted" };
+}
+
+/** Agency name and the default color for sub-accounts that haven't set their own. */
+export async function setAgencyBrand(agencyId: string, name: string, color: string | null): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const n = name.trim(), c = color?.toLowerCase() || null;
+  if (!UUID.test(agencyId) || n.length < 2 || n.length > 80) return { error: "Name must be 2–80 characters." };
+  const bad = c && brandColorError(c);
+  if (bad) return { error: bad };
+  const { data } = await (await authed()).from("agencies").update({ name: n, brand_color: c }).eq("id", agencyId).select("id");
+  if (!data?.length) return { error: NOT_ALLOWED };
+  revalidatePath("/", "layout");
+  return { ok: "Saved" };
+}

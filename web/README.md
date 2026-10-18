@@ -102,6 +102,8 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0076_lead_watchdog.sql` | `contacts.inbound` (true when created with no signed-in user: forms, open house, booking, portal, API; backfilled from system tasks) + partial index for leads still waiting on a first reply |
 | `0077_analytics_inbound_response.sql` | `team_analytics` response stats (median, within 5 min / 1 h, never contacted) count inbound leads only; adds `response.inbound` |
 | `0078_onboarding_tour.sql` | `user_prefs.tour` (walkthrough progress), `tour` as a module owners can switch off, `contacts.is_sample` (practice lead, excluded from `team_analytics`), `app_brand()` also returns tour state and role |
+| `0079_agency_mode.sql` | Agencies, agency staff, `organizations.agency_id`, `memberships.via_agency`, snapshots (settings + automations + document templates, never client data); definer RPCs `create_agency`, `agency_enter`, `agency_create_subaccount`, `agency_snapshot_save/apply`, `agency_overview` (30-day counts per sub-account), all checking agency staff; removing staff drops their sub-account access; `app_brand` returns agency + via_agency and inherits the agency's default color |
+| `0080_agency_home_team.sql` | Starting an agency brings the founder's own team (if they own it) in as its first sub-account |
 
 After `0010`, store the hash of your form key (per environment):
 

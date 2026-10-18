@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Watchdog } from "@/components/watchdog";
 import { Tour } from "@/components/tour";
+import { AgencyBar } from "@/components/agency-bar";
 import { getAppBrand } from "@/lib/db";
 import { themeCss } from "@/lib/theme";
 import "./globals.css";
@@ -48,7 +49,8 @@ async function Shell() {
   return (
     <>
       {css && <style>{css}</style>}
-      <Sidebar logo={b?.logo} team={b?.name} off={b?.off} />
+      <Sidebar logo={b?.logo} team={b?.name} off={b?.off} agency={!!b?.agency} />
+      {b?.viaAgency && b.agency && <AgencyBar agency={b.agency.name} team={b.name} />}
       {b && <Watchdog />}
       {b && <Tour state={b.tour} role={b.role} off={b.off} team={b.name} />}
     </>
