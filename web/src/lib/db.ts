@@ -1270,3 +1270,29 @@ export async function getCampaignStats(id: string): Promise<CampaignStats> {
   ]);
   return { sent, delivered, opened, clicked, bounced, skipped, failed, queued };
 }
+
+export type ChatMode = "off" | "answer" | "book";
+export type WebChatRow = {
+  id: string; human: boolean; wantsPerson: boolean; lastAt: string; contact: { id: string; name: string } | null;
+  messages: { id: number; from: "visitor" | "ai" | "agent"; text: string; at: string }[];
+};
+
+/** Website chats, newest first, with what the AI does for the team. Visitors are anonymous until they book. */
+export async function getWebChats(): Promise<{ chats: WebChatRow[]; mode: ChatMode }> {
+  if (!dbEnabled) return { chats: [], mode: "answer" };
+  const db = await supabase();
+  const org = (await db.rpc("active_org")).data;
+  const [{ data }, { data: o }] = await Promise.all([
+    db.from("web_chats").select("id,human,wants_person,last_at,contacts(id,name),web_chat_messages(id,sender,body,created_at)")
+      .order("last_at", { ascending: false }).order("id", { referencedTable: "web_chat_messages" }).limit(40),
+    db.from("organizations").select("chat_ai").eq("id", org).maybeSingle(),
+  ]);
+  type Row = { id: string; human: boolean; wants_person: boolean; last_at: string; contacts: { id: string; name: string } | null; web_chat_messages: { id: number; sender: "visitor" | "ai" | "agent"; body: string; created_at: string }[] };
+  return {
+    mode: (o?.chat_ai as ChatMode) ?? "answer",
+    chats: ((data ?? []) as unknown as Row[]).map((c) => ({
+      id: c.id, human: c.human, wantsPerson: c.wants_person, lastAt: c.last_at, contact: c.contacts,
+      messages: c.web_chat_messages.map((m) => ({ id: m.id, from: m.sender, text: m.body, at: m.created_at })),
+    })),
+  };
+}

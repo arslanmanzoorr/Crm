@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Inbox as InboxIcon, MessageSquareReply, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Inbox as InboxIcon, MessageSquareReply, MessagesSquare, Send, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Avatar, Chip } from "@/components/ui";
@@ -39,7 +39,10 @@ export function Inbox({ threads }: { threads: Thread[] }) {
       <div className="flex flex-col items-start gap-3 rounded-card bg-surface-2 p-8">
         <InboxIcon aria-hidden className="size-6 text-muted" />
         <p>No conversations yet. Log an SMS, WhatsApp, email or Instagram message on a lead&apos;s timeline and it shows up here.</p>
-        <Link href="/leads" className="flex min-h-11 items-center rounded-full bg-surface-light px-4 text-sm font-medium text-on-light">Go to leads</Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/leads" className="flex min-h-11 items-center rounded-full bg-surface-light px-4 text-sm font-medium text-on-light">Go to leads</Link>
+          <Link href="/inbox/chats" className="flex min-h-11 items-center rounded-full bg-surface-3 px-4 text-sm">Website chats</Link>
+        </div>
       </div>
     );
 
@@ -79,6 +82,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
     <div className="grid gap-4 lg:h-[calc(100dvh-4rem)] lg:grid-cols-[320px_1fr]">
       <nav data-tour="inbox" aria-label="Conversations" className={`min-w-0 flex-col gap-2 lg:flex lg:overflow-y-auto ${open ? "hidden" : "flex"}`}>
         <h1 className="mb-2 text-4xl font-light">Inbox</h1>
+        <Link href="/inbox/chats" className="flex min-h-11 items-center gap-2 rounded-card bg-surface-2 px-3 text-sm hover:bg-surface-3"><MessagesSquare aria-hidden className="size-4 text-muted" /> Website chats</Link>
         {threads.map((x, i) => {
           const sel = x === t;
           const last = x.messages.at(-1);

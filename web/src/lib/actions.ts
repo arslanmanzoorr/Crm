@@ -2097,6 +2097,9 @@ export async function bookShowing(formId: string, _: FormState, f: FormData): Pr
     p_consent_call_sms: f.get("consent_call_sms") === "on", p_consent_email: f.get("consent_email") === "on",
   });
   if (error) return { error: "Something went wrong on our side. Please try again." };
+  // Booked from the website chat: the chat joins the new lead, so the team sees the conversation that led here.
+  if (data === "ok" && UUID.test(str(f, "chat")))
+    await (await supabase()).rpc("chat_link", { p_key: v.key, p_chat: str(f, "chat"), p_token: str(f, "chat_token"), p_email: str(f, "email"), p_phone: str(f, "phone") });
   return ({
     ok: { ok: "Requested." },
     taken: { error: "Someone just took that time. Please pick another." },
@@ -2682,4 +2685,37 @@ export async function deleteCampaign(id: string): Promise<FormState> {
   if (!data?.length) return { error: "Only drafts can be deleted." };
   revalidatePath("/email");
   redirect("/email");
+}
+
+/** Website chat, team side: take over (the AI stops) or hand back. */
+export async function takeOverChat(id: string, human: boolean): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!UUID.test(id)) return { error: "Unknown chat." };
+  const { data } = await (await authed()).rpc("chat_takeover", { p_chat: id, p_human: human });
+  if (!data) return { error: "Couldn't change this chat. Sign in again." };
+  revalidatePath("/inbox/chats");
+  return { ok: human ? "You have this chat" : "Handed back to the assistant" };
+}
+
+/** Website chat, team side: reply (shows on the visitor's page within seconds). */
+export async function replyChat(id: string, text: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const t = text.trim();
+  if (!UUID.test(id) || !t) return { error: "Write a message first." };
+  if (t.length > 2000) return { error: "Keep it under 2,000 characters." };
+  const { data } = await (await authed()).rpc("chat_reply", { p_chat: id, p_text: t });
+  if (!data) return { error: "Couldn't send. Sign in again." };
+  revalidatePath("/inbox/chats");
+  return { ok: "Sent" };
+}
+
+/** What the website chat's AI does for the whole team (owners and admins). */
+export async function setChatMode(mode: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (!["off", "answer", "book"].includes(mode)) return { error: "Pick an option." };
+  const db = await authed();
+  const { data } = await db.from("organizations").update({ chat_ai: mode }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (!data?.length) return { error: "Only owners and admins can change this." };
+  revalidatePath("/inbox/chats");
+  return { ok: "Saved" };
 }

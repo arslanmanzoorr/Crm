@@ -13,7 +13,8 @@ export type Bookable = { id: string; address: string; area: string; price: numbe
 const chip = "relative flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-surface-3 px-3.5 text-sm has-[:checked]:bg-accent has-[:checked]:font-medium has-[:checked]:text-on-light has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent";
 
 /** Pick a home, a day and a half hour; times show in the visitor's own clock. Same spam checks as the lead form. */
-export function BookingForm({ formId, team, listings, initial, tz }: { formId: string; team: string; listings: Bookable[]; initial: string; tz: string | null }) {
+export function BookingForm({ formId, team, listings, initial, tz, chat }: { formId: string; team: string; listings: Bookable[]; initial: string; tz: string | null; chat?: { id: string; token: string } }) {
+  const H = chat ? "h2" : "h1"; // inside the website chat it's a section of the chat page
   const Team = team.charAt(0).toUpperCase() + team.slice(1);
   const now = useNow();
   const [startedAt] = useState(() => Date.now());
@@ -27,7 +28,7 @@ export function BookingForm({ formId, team, listings, initial, tz }: { formId: s
     return (
       <div role="status" className="flex flex-col items-center gap-3 rounded-card bg-surface-2 p-10 text-center">
         <CircleCheck aria-hidden className="size-10 text-accent-ink" />
-        <h1 className="text-2xl">Showing requested</h1>
+        <H className="text-2xl">Showing requested</H>
         <p className="text-muted">{sent.address}, {sent.when}. {Team} will confirm with you shortly.</p>
       </div>
     );
@@ -53,13 +54,14 @@ export function BookingForm({ formId, team, listings, initial, tz }: { formId: s
   return (
     <div className="flex flex-col gap-6 rounded-card bg-surface-2 p-6 sm:p-8">
       <div>
-        <h1 className="text-3xl font-light">Book a showing</h1>
+        <H className="text-3xl font-light">Book a showing</H>
         <p className="mt-1 text-muted">Pick a home and a time. {Team} confirms every request.</p>
       </div>
       <ActionForm action={action}>
         {(pending) => (
           <>
             <input type="hidden" name="t" value={startedAt} />
+            {chat && <><input type="hidden" name="chat" value={chat.id} /><input type="hidden" name="chat_token" value={chat.token} /></>}
             <div aria-hidden className="absolute -left-[9999px] size-px overflow-hidden"><label>Website <input name="website" tabIndex={-1} autoComplete="off" /></label></div>
             <label className="flex flex-col gap-1.5 text-sm">
               <span className="text-muted">Home</span>

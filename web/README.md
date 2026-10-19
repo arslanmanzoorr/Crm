@@ -109,6 +109,7 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0083_email_dispatch_rpcs.sql` | Dispatcher functions gated by the shared secret: `email_claim` (claims queued mail with sender, brand, recipient, content, eligibility), `email_report` (results, timeline entries as automated, campaign done), `email_unsubscribe`, `email_event` (delivered/opened/clicked; bounce and spam suppress) |
 | `0084_dispatch_secret_hash.sql` | The dispatch secret may also be registered by SHA-256 hash in `private.config` (`email_dispatch_sha256`) |
 | `0085_pg_net_schema.sql` | `pg_net` moved to the `extensions` schema |
+| `0086_web_chat_conversations.sql` | Website chat as saved conversations: `organizations.chat_ai` (off / answer / book), `web_chats` (visitor token stored as a hash, human takeover, wants-a-person flag, linked to the lead after booking) and `web_chat_messages` (visitor / ai / agent), read-only to members; keyed public functions `chat_mode`, `chat_open`, `chat_say` (AI messages dropped once a person has the chat), `chat_read`, `chat_want_person`, `chat_link` (only a lead that just booked); team functions `chat_takeover`, `chat_reply`; anonymous chats deleted after 90 days |
 
 After `0010`, store the hash of your form key (per environment):
 
