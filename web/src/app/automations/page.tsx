@@ -15,7 +15,7 @@ export default function AutomationsPage() {
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="text-4xl font-light">Automations</h1>
-        <p className="mt-1 max-w-2xl text-muted">Playbooks create the right follow-up task at the right time, so nothing depends on memory. They never message clients on their own: a person does that.</p>
+        <p className="mt-1 max-w-2xl text-muted">Playbooks create the right follow-up task at the right time, so nothing depends on memory. Calls and texts are always done by a person; a &ldquo;send an email&rdquo; step goes out automatically, only to leads who agreed to email, with an unsubscribe link.</p>
       </header>
       {dbEnabled ? (
         <Suspense fallback={<div className="flex flex-col gap-4"><Skeleton className="h-40" /><Skeleton className="h-64" /></div>}><Playbooks /></Suspense>
@@ -25,7 +25,7 @@ export default function AutomationsPage() {
 }
 
 // Previews read naturally ("Call them now"); the real tasks use the lead's first name.
-const describe = (s: Step) => (s.kind === "tag" ? `Tag “${s.tag}”` : s.title.replaceAll("{first_name}", "them"));
+const describe = (s: Step) => (s.kind === "tag" ? `Tag “${s.tag}”` : s.kind === "email" ? `Email “${s.subject}”` : s.title.replaceAll("{first_name}", "them"));
 const COND_WORDS: Record<string, string> = { buyer: "buyers", seller: "sellers", investor: "investors", renter: "renters", interested: "interested", maybe: "on the fence", offer: "wanting to offer", not_interested: "not interested", true: "with an agent", false: "without an agent" };
 
 async function Playbooks() {

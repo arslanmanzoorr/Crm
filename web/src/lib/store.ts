@@ -41,4 +41,4 @@ export const STORE: StoreItem[] = TEMPLATES.map((t) => ({
 export const storeItem = (key: string) => STORE.find((s) => s.key === key);
 
 /** Step text for a public page: the {first_name} placeholder reads as "the client". */
-export const stepText = (s: Template["steps"][number]) => (s.kind === "tag" ? `Tag them "${s.tag}"` : s.title.replace(/\{first_name\}/g, "the client"));
+export const stepText = (s: Template["steps"][number]) => (s.kind === "tag" ? `Tag them "${s.tag}"` : s.kind === "email" ? `Email: ${s.subject}` : s.title.replace(/\{first_name\}/g, "the client"));

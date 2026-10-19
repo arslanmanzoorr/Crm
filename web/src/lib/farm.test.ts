@@ -63,3 +63,14 @@ test("soldTrend buckets solds by month for 12 months; monthsOfSupply from 90-day
   assert.equal(monthsOfSupply({ active: 6, sold90: 3 }), 6);
   assert.equal(monthsOfSupply({ active: 6, sold90: 0 }), null);
 });
+
+test("marketUpdate: a section per active area, quiet fallback, sign-off", async () => {
+  const { marketUpdate } = await import("./farm.ts");
+  const r = (active: number, pending: number, sold90: number) => ({ active, pending, sold90, medianActive: active ? 500000 : null, medianSold: sold90 ? 480000 : null, due: [] }) as never;
+  const body = marketUpdate([{ area: "Westside", r: r(3, 1, 2) }, { area: "Quiet", r: r(0, 0, 0) }], "Maya Lee", "October");
+  assert.match(body, /^Hi \{\{first_name\}\},\n\nHere's what moved in the market in October\./);
+  assert.match(body, /# Westside\n- 3 homes for sale, typically around \$500,000\n- 1 home under contract\n- 2 sold in the last 90 days, at a typical \$480,000/);
+  assert.doesNotMatch(body, /# Quiet/);
+  assert.match(body, /Maya Lee$/);
+  assert.match(marketUpdate([], "A", "May"), /quiet month/);
+});

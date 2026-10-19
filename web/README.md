@@ -105,6 +105,10 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0079_agency_mode.sql` | Agencies, agency staff, `organizations.agency_id`, `memberships.via_agency`, snapshots (settings + automations + document templates, never client data); definer RPCs `create_agency`, `agency_enter`, `agency_create_subaccount`, `agency_snapshot_save/apply`, `agency_overview` (30-day counts per sub-account), all checking agency staff; removing staff drops their sub-account access; `app_brand` returns agency + via_agency and inherits the agency's default color |
 | `0080_agency_home_team.sql` | Starting an agency brings the founder's own team (if they own it) in as its first sub-account |
 | `0081_agency_phase2.sql` | Agency staff invites (`agency_invite`, `accept_agency_invite`, `agency_remove_staff`), agency logo (brand-logos `agency/<id>/`), agency app domain (`app_domain` + `domain_verified`, anon `agency_domain_brand(host)` for the sign-in page and titles), billing per sub-account (`billing_status/price/note`, `agency_set_billing`); paused sub-accounts are hidden from their own users in `my_org`, `is_member` and `member_of_folder` (agency staff keep access); `paused_notice()` |
+| `0082_email_marketing.sql` | Email: sender settings on `organizations` (from name/address, reply-to, postal address), `campaigns` (drafts editable by owners/admins; status changes only through `send_campaign`/`cancel_campaign`), `email_messages` outbox (read-only to members), `private.audience` (consented, not suppressed, not sample), monthly repeat (next draft + review task), automation `email` step in `run_workflows`, first response counts people only (`user_id` set), `email_tick` cron (queues due scheduled campaigns, wakes the dispatcher via pg_net when Vault has `email_dispatch_url` + `email_dispatch_secret`), `email` module switch |
+| `0083_email_dispatch_rpcs.sql` | Dispatcher functions gated by the shared secret: `email_claim` (claims queued mail with sender, brand, recipient, content, eligibility), `email_report` (results, timeline entries as automated, campaign done), `email_unsubscribe`, `email_event` (delivered/opened/clicked; bounce and spam suppress) |
+| `0084_dispatch_secret_hash.sql` | The dispatch secret may also be registered by SHA-256 hash in `private.config` (`email_dispatch_sha256`) |
+| `0085_pg_net_schema.sql` | `pg_net` moved to the `extensions` schema |
 
 After `0010`, store the hash of your form key (per environment):
 
@@ -133,6 +137,10 @@ FORM_RPC_KEY=<random 32+ bytes hex>           # server-only key for submit_lead 
 N8N_PUBLISH_WEBHOOK_URL=https://your-n8n/webhook/estateos-publish   # Publish button
 VERCEL_TOKEN=<token scoped to the project's team>   # optional: verified team domains attach to hosting automatically
 VERCEL_PROJECT_ID=prj_...                           # with VERCEL_TOKEN; VERCEL_TEAM_ID too if the project is under a team
+RESEND_API_KEY=re_...                               # email sending (newsletters, drips)
+RESEND_WEBHOOK_SECRET=whsec_...                     # opens, clicks, bounces: webhook to https://<site>/api/email/webhook
+EMAIL_TOKEN_SECRET=<32 random bytes, hex>           # signs unsubscribe links
+EMAIL_DISPATCH_SECRET=<32 random bytes, hex>        # shared with the database (Vault email_dispatch_secret)
 ```
 
 In Supabase → Authentication: set **Site URL** to `SITE_URL`, add `SITE_URL/auth/callback` to the redirect allow-list, and turn on **leaked password protection**.
@@ -158,3 +166,16 @@ In Supabase → Authentication: set **Site URL** to `SITE_URL`, add `SITE_URL/au
 ```
 
 `scheduledAt` is `null` for "publish now". Branch on `platform` in n8n and call each network's API, or an aggregator such as Ayrshare.
+
+## Turning on email (production)
+
+1. In Resend: add and verify your sending domain, create an API key, and add a webhook to `https://<your site>/api/email/webhook`
+   for delivered, opened, clicked, bounced and complained events.
+2. On the server (Vercel): set `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `EMAIL_TOKEN_SECRET`, `EMAIL_DISPATCH_SECRET` (both random,
+   32+ bytes), and `SITE_URL`.
+3. In Supabase, SQL editor, add two Vault secrets so the database can wake the sender every minute (drips and scheduled campaigns):
+   `select vault.create_secret('<same value as EMAIL_DISPATCH_SECRET>', 'email_dispatch_secret');`
+   `select vault.create_secret('https://<your site>/api/email/dispatch', 'email_dispatch_url');`
+4. In the app: Email -> Sender: from name, an address on the verified domain, and your postal address.
+
+"Send now" sends straight away without step 3. Locally, `RESEND_API_URL` can point at a stand-in server so nothing real is sent.

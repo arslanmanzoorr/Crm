@@ -50,7 +50,7 @@ export function RetryRun({ id }: { id: number }) {
   return <button type="button" disabled={pending} className={pill} onClick={() => start(() => retryRun(id))}>{pending ? "…" : "Retry"}</button>;
 }
 
-type DraftStep = { id: number; amount: number; unit: "hours" | "days"; kind: "task" | "tag"; task_kind: string; title: string; note: string; tag: string };
+type DraftStep = { id: number; amount: number; unit: "hours" | "days"; kind: "task" | "tag" | "email"; task_kind: string; title: string; note: string; tag: string; subject: string; body: string };
 const CONDITIONS: Record<Trigger, { key: string; label: string; options: [string, string][] } | null> = {
   lead_created: { key: "type", label: "Only for", options: [["", "Any lead"], ["buyer", "Buyers"], ["seller", "Sellers"], ["investor", "Investors"], ["renter", "Renters"]] },
   stage_changed: { key: "stage", label: "When the stage becomes", options: STAGES.map((s) => [s, s]) },
@@ -61,7 +61,7 @@ const CONDITIONS: Record<Trigger, { key: string; label: string; options: [string
 };
 
 let nextId = 1;
-const blank = (): DraftStep => ({ id: nextId++, amount: 0, unit: "hours", kind: "task", task_kind: "call", title: "", note: "", tag: "" });
+const blank = (): DraftStep => ({ id: nextId++, amount: 0, unit: "hours", kind: "task", task_kind: "call", title: "", note: "", tag: "", subject: "", body: "" });
 
 /** Build a custom playbook: what starts it, an optional condition, timed steps, and stages that stop it. */
 export function WorkflowBuilder() {
@@ -71,7 +71,7 @@ export function WorkflowBuilder() {
   const set = (id: number, patch: Partial<DraftStep>) => setSteps((all) => all.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   const json = JSON.stringify(steps.map((s) => {
     const after_hours = s.unit === "days" ? s.amount * 24 : s.amount;
-    return s.kind === "tag" ? { after_hours, kind: "tag", tag: s.tag } : { after_hours, kind: "task", task_kind: s.task_kind, title: s.title, note: s.note };
+    return s.kind === "tag" ? { after_hours, kind: "tag", tag: s.tag } : s.kind === "email" ? { after_hours, kind: "email", subject: s.subject, body: s.body } : { after_hours, kind: "task", task_kind: s.task_kind, title: s.title, note: s.note };
   }));
   return (
     <ActionForm action={saveWorkflow} className="flex flex-col gap-4">
@@ -103,7 +103,7 @@ export function WorkflowBuilder() {
                   <input type="number" min={0} step={1} aria-label="Delay" value={s.amount} onChange={(e) => set(s.id, { amount: Math.max(0, Number(e.target.value) || 0) })} className={`${inputAuto} w-20`} />
                   <select aria-label="Delay unit" value={s.unit} onChange={(e) => set(s.id, { unit: e.target.value as DraftStep["unit"] })} className={inputAuto}><option value="hours">hours</option><option value="days">days</option></select>
                   <span className="text-muted">after it starts,</span>
-                  <select aria-label="Step type" value={s.kind} onChange={(e) => set(s.id, { kind: e.target.value as DraftStep["kind"] })} className={inputAuto}><option value="task">create a task</option><option value="tag">add a tag</option></select>
+                  <select aria-label="Step type" value={s.kind} onChange={(e) => set(s.id, { kind: e.target.value as DraftStep["kind"] })} className={inputAuto}><option value="task">create a task</option><option value="tag">add a tag</option><option value="email">send an email</option></select>
                   {steps.length > 1 && <button type="button" aria-label={`Remove step ${i + 1}`} onClick={() => setSteps((all) => all.filter((x) => x.id !== s.id))} className="ml-auto grid size-10 place-items-center rounded-full text-muted hover:bg-surface-3"><X aria-hidden className="size-4" /></button>}
                 </div>
                 {s.kind === "task" ? (
@@ -113,6 +113,12 @@ export function WorkflowBuilder() {
                       {[["call", "Call"], ["email", "Email"], ["video", "Video call"], ["showing", "Showing"], ["cma", "CMA"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                     <input aria-label="Task note" value={s.note} onChange={(e) => set(s.id, { note: e.target.value })} maxLength={2000} placeholder="Note for whoever does it (optional)" className={`${input} sm:col-span-2`} />
+                  </div>
+                ) : s.kind === "email" ? (
+                  <div className="flex flex-col gap-2">
+                    <input aria-label="Email subject" required value={s.subject} onChange={(e) => set(s.id, { subject: e.target.value })} maxLength={200} placeholder="Subject, e.g. {{first_name}}, homes you might like" className={input} />
+                    <textarea aria-label="Email message" required value={s.body} onChange={(e) => set(s.id, { body: e.target.value })} maxLength={20000} rows={5} placeholder={"Hi {{first_name}},\n\nWrite it like you would to one person. Blank line = new paragraph."} className={`${input} resize-y py-2.5`} />
+                    <p className="text-xs text-muted">Sent automatically from your sender address, only to leads who agreed to email, with your address and an unsubscribe link at the bottom.</p>
                   </div>
                 ) : (
                   <input aria-label="Tag" required value={s.tag} onChange={(e) => set(s.id, { tag: e.target.value })} maxLength={30} placeholder="e.g. nurture" className={input} />

@@ -30,7 +30,7 @@ function Item({ href, label, icon: Icon, active, className = "" }: { href: strin
 }
 
 /** Pages shown without the app's navigation (sign-in, client-facing pages, marketing site, print views). */
-export const bare = (path: string) => path === "/login" || path === "/mfa" || path.startsWith("/legal") || path.startsWith("/f/") || path.startsWith("/oh/") || path.startsWith("/p/") || path.startsWith("/tc/") || path.startsWith("/welcome") || path.startsWith("/store") || path.endsWith("/print") || path.endsWith("/flyer");
+export const bare = (path: string) => path === "/login" || path.startsWith("/u/") || path === "/mfa" || path.startsWith("/legal") || path.startsWith("/f/") || path.startsWith("/oh/") || path.startsWith("/p/") || path.startsWith("/tc/") || path.startsWith("/welcome") || path.startsWith("/store") || path.endsWith("/print") || path.endsWith("/flyer");
 
 /** Labeled navigation: a bottom bar with the four daily destinations on phones, a full rail on wider screens. */
 export function Sidebar({ logo = null, team = "EstateOS", off = [], agency = false }: { logo?: string | null; team?: string; off?: readonly string[]; agency?: boolean }) {

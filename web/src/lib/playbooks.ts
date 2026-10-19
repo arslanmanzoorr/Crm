@@ -12,7 +12,9 @@ export const TRIGGERS = {
 } as const;
 export type Trigger = keyof typeof TRIGGERS;
 
-export type Step = { after_hours: number; kind: "task"; task_kind: "call" | "email" | "video" | "showing" | "cma"; title: string; note: string } | { after_hours: number; kind: "tag"; tag: string };
+export type Step = { after_hours: number; kind: "task"; task_kind: "call" | "email" | "video" | "showing" | "cma"; title: string; note: string }
+  | { after_hours: number; kind: "tag"; tag: string }
+  | { after_hours: number; kind: "email"; subject: string; body: string };
 
 export type Template = { key: string; name: string; trigger: Trigger; conditions: Record<string, string>; stop: string[]; steps: Step[]; why: string };
 
@@ -98,6 +100,11 @@ export function cleanSteps(raw: unknown): { steps: Step[] } | { error: string } 
       if (!title) return { error: `Step ${i + 1}: give the task a title.` };
       const kind = KINDS.includes(x.task_kind as (typeof KINDS)[number]) ? (x.task_kind as (typeof KINDS)[number]) : "call";
       steps.push({ after_hours: after, kind: "task", task_kind: kind, title, note: String(x.note ?? "").trim().slice(0, 2000) });
+    } else if (x.kind === "email") {
+      // Sent automatically, but only to leads who agreed to email (checked in the database and again at send time).
+      const subject = String(x.subject ?? "").trim().slice(0, 200), body = String(x.body ?? "").trim().slice(0, 20000);
+      if (!subject || !body) return { error: `Step ${i + 1}: an email needs a subject and a message.` };
+      steps.push({ after_hours: after, kind: "email", subject, body });
     } else return { error: `Step ${i + 1}: unknown step type.` };
   }
   return { steps };

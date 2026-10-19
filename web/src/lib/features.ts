@@ -13,6 +13,7 @@ export const FEATURES = [
   { key: "farm", label: "Farming", paths: ["/farm"] },
   { key: "marketing", label: "Video and social posts", paths: ["/studio", "/publish"] },
   { key: "partners", label: "Partners", paths: ["/partners"] },
+  { key: "email", label: "Email newsletters", paths: ["/email"] },
   { key: "tour", label: "First-run tour", paths: [] },
 ] as const;
 export type Feature = (typeof FEATURES)[number]["key"];

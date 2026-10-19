@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { AI_KEY_MISSING, AiError, chat, extractJson } from "./ai-server";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
-import { getAppBrand, isOwnerOrAdmin, teamZone, dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
+import { getAppBrand, getCampaign, getMe, isOwnerOrAdmin, teamZone, dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
 import { brandColorError } from "./brand";
 import { cleanFeatures, cleanSections, RADII, THEMES, type Radius, type Theme } from "./features";
 import { cleanDomain, clientBase, domainToken } from "./domain";
@@ -17,6 +17,9 @@ import { allow } from "./rate-limit";
 import { cleanTour, type TourState } from "./tour";
 import { CONTRACT_SCHEMA, cleanContract, matchMilestone, type ContractRead } from "./contract";
 import { QUICK_SCHEMA, cleanQuick, type QuickAction } from "./quick";
+import { cleanAudience, renderEmail, validFrom } from "./email";
+import { dispatchQueued, emailMissing, sendTest } from "./email-server";
+import { farmReport, marketUpdate } from "./farm";
 import { addDays, cleanTiers, defaultMilestones, type Tier } from "./deals";
 import { CONTINGENCIES, FINANCING } from "./offers";
 import { DOCS, LOAN_STAGES } from "./readiness";
@@ -2568,4 +2571,115 @@ export async function verifyAgencyDomain(agencyId: string): Promise<FormState> {
   const attached = vercelConfigured() ? await attachDomain(row.app_domain) : false;
   revalidatePath("/agency");
   return { ok: attached || !vercelConfigured() ? "Verified. Add it to Supabase Auth's redirect URLs so sign-in emails link back to it." : "Verified. Connecting it to hosting failed; try Verify again in a minute." };
+}
+
+// ---------- Email newsletters ----------
+
+/** Sender settings: name, an address on the team's own domain (verified in Resend), reply-to, and the postal address. */
+export async function saveSender(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const fromName = str(f, "from_name").slice(0, 80), from = str(f, "from_address").toLowerCase(), reply = str(f, "reply_to").toLowerCase(), postal = str(f, "postal").slice(0, 300);
+  if (!fromName) return { error: "Add the name people see the email from." };
+  if (!validFrom(from)) return { error: "Use an address on your own domain, like news@yourteam.com." };
+  if (reply && !validFrom(reply)) return { error: "That reply-to address doesn't look right." };
+  if (postal.length < 10) return { error: "Add your business's postal address. US law requires it in marketing email." };
+  const db = await authed();
+  const { data } = await db.from("organizations").update({ email_from_name: fromName, email_from_address: from, email_reply_to: reply || null, email_postal_address: postal }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (!data?.length) return { error: "Only owners and admins can change email settings." };
+  revalidatePath("/email");
+  return { ok: "Saved" };
+}
+
+/** New campaign: blank, or this month's market update drafted from the team's own numbers. */
+export async function createCampaign(kind: "blank" | "market"): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  const db = await authed();
+  let row = { name: "New email", subject: "", preheader: "", body: "", audience: {}, repeat_monthly: false };
+  if (kind === "market") {
+    const [{ areas, listings, people }, me, today] = await Promise.all([getFarmData(), getMe(), teamToday()]);
+    const month = new Date(`${today}T12:00:00Z`).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" });
+    const reports = areas.map((area) => ({ area, r: farmReport(area, listings, people.filter((p) => p.areas.includes(area)), today) }))
+      .sort((a, b) => b.r.active + b.r.sold90 - (a.r.active + a.r.sold90));
+    row = { name: `Market update`, subject: `Your ${month} market update`, preheader: "What sold, what's for sale, and what it means for you", body: marketUpdate(reports, me.name, month), audience: {}, repeat_monthly: true };
+  }
+  const { data, error } = await db.from("campaigns").insert(row).select("id").single();
+  if (error || !data) return { error: "Only owners and admins can create campaigns." };
+  redirect(`/email/${data.id}`);
+}
+
+export async function saveCampaign(id: string, c: { name: string; subject: string; preheader: string; body: string; audience: unknown; repeatMonthly: boolean }): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(id)) return NO_DB;
+  const name = c.name.trim().slice(0, 120);
+  if (!name) return { error: "Name the campaign." };
+  const { data } = await (await authed()).from("campaigns").update({
+    name, subject: c.subject.slice(0, 200), preheader: c.preheader.slice(0, 200), body: c.body.slice(0, 20000),
+    audience: cleanAudience(c.audience, mock.STAGES), repeat_monthly: c.repeatMonthly === true, updated_at: new Date().toISOString(),
+  }).eq("id", id).select("id");
+  if (!data?.length) return { error: "Only drafts can be edited, by owners and admins." };
+  revalidatePath(`/email/${id}`);
+  return { ok: "Saved" };
+}
+
+export async function audienceCount(audience: unknown): Promise<number> {
+  if (!dbEnabled) return 0;
+  const { data } = await (await authed()).rpc("campaign_audience_count", { p_audience: cleanAudience(audience, mock.STAGES) });
+  return (data as number) ?? 0;
+}
+
+/** Preview exactly as sent, with sample details. */
+export async function previewCampaign(c: { subject: string; preheader: string; body: string }): Promise<{ subject: string; html: string }> {
+  const db = await authed();
+  const { data: o } = await db.from("organizations").select("name,brand_color,logo_path,email_from_name,email_postal_address").eq("id", (await db.rpc("active_org")).data).maybeSingle();
+  const r = renderEmail({
+    subject: c.subject.slice(0, 200), preheader: c.preheader.slice(0, 200), body: c.body.slice(0, 20000), unsubscribeUrl: "#unsubscribe",
+    brand: { team: o?.email_from_name || o?.name || "Your team", color: o?.brand_color ?? "#c5f36a", logo: o?.logo_path ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/brand-logos/${o.logo_path}` : null, address: o?.email_postal_address || "Your postal address appears here" },
+    vars: { first_name: "Alex", last_name: "Rivera", name: "Alex Rivera", team: o?.name ?? "", agent_name: o?.email_from_name ?? "" },
+  });
+  return { subject: r.subject, html: r.html };
+}
+
+/** Send the current draft to yourself. */
+export async function sendCampaignTest(id: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(id)) return NO_DB;
+  const missing = emailMissing();
+  if (missing.length) return { error: `Email isn't connected yet. Add ${missing.join(", ")} on the server.` };
+  const db = await authed();
+  const [{ data: auth }, c] = await Promise.all([db.auth.getUser(), getCampaign(id)]);
+  if (!c || !auth.user?.email) return { error: "Campaign not found." };
+  if (!allow(`etest:${auth.user.id}`, 10, 3_600_000)) return { error: "Up to 10 tests an hour." };
+  const { data: o } = await db.from("organizations").select("id,name,brand_color,logo_path,email_from_name,email_from_address,email_reply_to,email_postal_address,agency_id").eq("id", (await db.rpc("active_org")).data).maybeSingle();
+  if (!o?.email_from_address || !o.email_postal_address) return { error: "Set your sender address and postal address first." };
+  try { await sendTest(o, auth.user.email, c, (await getMe()).name.split(" ")[0] ?? ""); }
+  catch (e) { return { error: e instanceof Error ? `Couldn't send: ${e.message}` : "Couldn't send." }; }
+  return { ok: `Test sent to ${auth.user.email}` };
+}
+
+/** Send now (queues everyone, then sends straight away) or schedule for later. */
+export async function sendCampaign(id: string, at: string | null): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(id)) return NO_DB;
+  const when = at ? new Date(at) : null;
+  if (when && (Number.isNaN(when.getTime()) || when.getTime() > Date.now() + 366 * 86_400_000)) return { error: "Pick a date within the next year." };
+  if (!when && emailMissing().length) return { error: `Email isn't connected yet. Add ${emailMissing().join(", ")} on the server.` };
+  const { data, error } = await (await authed()).rpc("send_campaign", { p_campaign: id, p_at: when?.toISOString() ?? null });
+  if (error) return { error: /sender/.test(error.message) ? "Set your sender address and postal address first." : /incomplete/.test(error.message) ? "Add a subject and a message." : /not a draft/.test(error.message) ? "This campaign was already sent." : NOT_ALLOWED };
+  if (!when) await dispatchQueued(1000);
+  revalidatePath("/email");
+  revalidatePath(`/email/${id}`);
+  return { ok: when ? `Scheduled for ${when.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}` : `Sending to ${data} ${data === 1 ? "person" : "people"}` };
+}
+
+export async function cancelCampaign(id: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(id)) return NO_DB;
+  const { data } = await (await authed()).rpc("cancel_campaign", { p_campaign: id });
+  if (!data) return { error: NOT_ALLOWED };
+  revalidatePath(`/email/${id}`);
+  return { ok: "Back to draft" };
+}
+
+export async function deleteCampaign(id: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(id)) return NO_DB;
+  const { data } = await (await authed()).from("campaigns").delete().eq("id", id).select("id");
+  if (!data?.length) return { error: "Only drafts can be deleted." };
+  revalidatePath("/email");
+  redirect("/email");
 }

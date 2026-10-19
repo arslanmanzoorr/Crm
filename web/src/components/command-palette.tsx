@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Clapperboard, Compass, Home, Inbox, KanbanSquare, LayoutGrid, Plus, Search, Send, UserRound, Users } from "lucide-react";
+import { ArrowRight, Clapperboard, Compass, Mail, Home, Inbox, KanbanSquare, LayoutGrid, Plus, Search, Send, UserRound, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { searchEverything, type SearchHit } from "@/lib/actions";
@@ -21,6 +21,7 @@ const COMMANDS: Cmd[] = [
   { id: "publish", title: "Publish", sub: "Post to socials", href: "/publish", icon: Send },
   { id: "team", title: "Team", sub: "Members, roles and invites", href: "/team", icon: Users },
   { id: "account", title: "Account", sub: "Profile and sign out", href: "/account", icon: UserRound },
+  { id: "email", title: "Email newsletters", sub: "Campaigns and market updates", href: "/email", icon: Mail },
   { id: "tour", title: "Take the tour", sub: "2-minute walkthrough of EstateOS", href: "#tour", icon: Compass },
 ];
 

@@ -21,7 +21,7 @@ Key: **Have** = built and working. **Partial** = a smaller version exists. **Mis
 ## Recommended order (impact ÷ effort, no outside accounts needed first)
 1. ✅ **Download everything** (gap 3): a day of work and the strongest marketing line right now, given the Zillow/FUB data story and brokerage mergers.
 2. ✅ **Lead watchdog + response-time report** (gaps 9, 1): uses data we already store. Proves "no lead slips" to brokers.
-3. **Instant first reply by email** (gap 1): opt-in, consent-checked and logged. Text follows once Twilio is connected.
+3. **Instant first reply by email** (gap 1; the email pipeline it needs now exists: newsletters and drips are built): opt-in, consent-checked and logged. Text follows once Twilio is connected.
 4. ~~Spend per source → ROI~~ (gap 7): already in Analytics (Expenses by source → cost per lead and per closing).
 5. ✅ **AI contract reader → deal timeline** (gap 6): replaces part of a $300–500 per file coordinator.
 6. ✅ **Voice commands + installable app** (gap 10): Quick update on each lead + installable PWA.

@@ -6,7 +6,7 @@ import { featureFor } from "@/lib/features";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const APP_HOST = process.env.SITE_URL ? new URL(process.env.SITE_URL).hostname : "";
-const PUBLIC = ["/login", "/auth", "/f/", "/oh/", "/p/", "/legal", "/feeds/", "/api/chat/", "/api/v1/", "/tc/", "/welcome", "/store", "/site/"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
+const PUBLIC = ["/u/", "/api/email/", "/login", "/auth", "/f/", "/oh/", "/p/", "/legal", "/feeds/", "/api/chat/", "/api/v1/", "/tc/", "/welcome", "/store", "/site/"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
 
 /** Refreshes the Supabase session cookie and sends signed-out visitors to /login. */
 export async function proxy(req: NextRequest) {

@@ -39,6 +39,21 @@ export function farmNote(area: string, r: ReturnType<typeof farmReport>, agent: 
   return lines.join("\n");
 }
 
+/** Monthly market update for the whole database: one short section per neighborhood, from the team's own numbers. */
+export function marketUpdate(reports: { area: string; r: ReturnType<typeof farmReport> }[], agent: string, month: string) {
+  const parts = [`Hi {{first_name}},`, `Here's what moved in the market in ${month}.`];
+  for (const { area, r } of reports.filter((x) => x.r.active || x.r.pending || x.r.sold90).slice(0, 6)) {
+    const lines = [`# ${area}`];
+    if (r.active) lines.push(`- ${n(r.active, "home")} for sale${r.medianActive ? `, typically around ${usd(r.medianActive)}` : ""}`);
+    if (r.pending) lines.push(`- ${n(r.pending, "home")} under contract`);
+    if (r.sold90) lines.push(`- ${r.sold90} sold in the last 90 days${r.medianSold ? `, at a typical ${usd(r.medianSold)}` : ""}`);
+    parts.push(lines.join("\n"));
+  }
+  if (parts.length === 2) parts.push("It's been a quiet month, which can be a good time to sell with less competition.");
+  parts.push(`Thinking about buying or selling, or just curious what your home is worth today? Reply to this email and I'll put together a free estimate.`, `${agent}`);
+  return parts.join("\n\n");
+}
+
 export type Promo = "just_listed" | "open_house" | "just_sold";
 export const PROMO_LABEL = { just_listed: "Just listed", open_house: "Open house", just_sold: "Just sold" } as const satisfies Record<Promo, string>;
 

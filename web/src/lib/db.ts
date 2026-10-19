@@ -1226,3 +1226,47 @@ export async function getDomainBrand(host: string): Promise<{ name: string; colo
   const b = data as { name: string; color: string | null; logo: string | null } | null;
   return b ? { ...b, logo: logoUrl(b.logo) } : null;
 }
+
+export type Sender = { fromName: string; fromAddress: string; replyTo: string; postal: string; team: string };
+export type CampaignRow = { id: string; name: string; subject: string; preheader: string; body: string; audience: Record<string, unknown>; status: "draft" | "scheduled" | "sending" | "sent" | "cancelled"; scheduledAt: string | null; sentAt: string | null; recipients: number; repeatMonthly: boolean; createdAt: string };
+export type CampaignStats = { sent: number; delivered: number; opened: number; clicked: number; bounced: number; skipped: number; failed: number; queued: number };
+
+/** The team's sender settings for email. */
+export async function getSender(): Promise<Sender | null> {
+  if (!dbEnabled) return null;
+  const db = await supabase();
+  const { data } = await db.from("organizations").select("name,email_from_name,email_from_address,email_reply_to,email_postal_address").eq("id", (await db.rpc("active_org")).data).maybeSingle();
+  return data && { fromName: data.email_from_name ?? "", fromAddress: data.email_from_address ?? "", replyTo: data.email_reply_to ?? "", postal: data.email_postal_address ?? "", team: data.name };
+}
+
+const campaignOf = (c: Record<string, unknown>): CampaignRow => ({
+  id: c.id as string, name: c.name as string, subject: c.subject as string, preheader: c.preheader as string, body: c.body as string,
+  audience: (c.audience as Record<string, unknown>) ?? {}, status: c.status as CampaignRow["status"], scheduledAt: (c.scheduled_at as string) ?? null,
+  sentAt: (c.sent_at as string) ?? null, recipients: c.recipients as number, repeatMonthly: c.repeat_monthly as boolean, createdAt: c.created_at as string,
+});
+const CAMPAIGN_COLS = "id,name,subject,preheader,body,audience,status,scheduled_at,sent_at,recipients,repeat_monthly,created_at";
+
+export async function listCampaigns(): Promise<CampaignRow[]> {
+  if (!dbEnabled) return [];
+  const { data } = await (await supabase()).from("campaigns").select(CAMPAIGN_COLS).order("created_at", { ascending: false }).limit(100);
+  return (data ?? []).map(campaignOf);
+}
+
+export async function getCampaign(id: string): Promise<CampaignRow | null> {
+  if (!dbEnabled || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data } = await (await supabase()).from("campaigns").select(CAMPAIGN_COLS).eq("id", id).maybeSingle();
+  return data ? campaignOf(data) : null;
+}
+
+/** Delivery numbers for one campaign, counted in the database. */
+export async function getCampaignStats(id: string): Promise<CampaignStats> {
+  const db = await supabase();
+  const count = (f: (q: ReturnType<typeof base>) => ReturnType<typeof base>) => f(base()).then((r) => r.count ?? 0);
+  const base = () => db.from("email_messages").select("id", { count: "exact", head: true }).eq("campaign_id", id);
+  const [sent, delivered, opened, clicked, bounced, skipped, failed, queued] = await Promise.all([
+    count((q) => q.in("status", ["sent", "bounced", "complained"])), count((q) => q.not("delivered_at", "is", null)), count((q) => q.not("opened_at", "is", null)),
+    count((q) => q.not("clicked_at", "is", null)), count((q) => q.in("status", ["bounced", "complained"])), count((q) => q.eq("status", "skipped")),
+    count((q) => q.eq("status", "failed")), count((q) => q.in("status", ["queued", "sending"])),
+  ]);
+  return { sent, delivered, opened, clicked, bounced, skipped, failed, queued };
+}
