@@ -16,7 +16,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/store/[key]">): Promise<Metadata> {
   const item = storeItem((await params).key);
-  return item ? { title: { absolute: `${item.name} · EstateOS store` }, description: item.why } : {};
+  return item ? { title: { absolute: `${item.name} · Estos store` }, description: item.why } : {};
 }
 
 export default function PlaybookPage({ params }: PageProps<"/store/[key]">) {

@@ -6,14 +6,14 @@ const HOST = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 export function cleanDomain(input: string, appHost = ""): string | null {
   const d = input.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/[/?#].*$/, "").replace(/\.$/, "");
   if (d.length > 253 || !HOST.test(d)) return null;
-  if (d === appHost || /(^|\.)(vercel\.app|localhost|supabase\.co|estateos\.app)$/.test(d)) return null;
+  if (d === appHost || /(^|\.)(vercel\.app|localhost|supabase\.co|estos\.app)$/.test(d)) return null;
   return d;
 }
 
-/** The TXT record a team adds at _estateos.<domain> to prove it controls the domain. */
+/** The TXT record a team adds at _estos.<domain> to prove it controls the domain. */
 export async function domainToken(orgId: string): Promise<string> {
-  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`estateos-domain:${orgId}`));
-  return `estateos-verify=${Buffer.from(hash).toString("hex").slice(0, 32)}`;
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`estos-domain:${orgId}`));
+  return `estos-verify=${Buffer.from(hash).toString("hex").slice(0, 32)}`;
 }
 
 /** Which client page a path is, for the custom-domain gate. Everything else stays on the main app. */

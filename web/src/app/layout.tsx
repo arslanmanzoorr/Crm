@@ -20,7 +20,7 @@ const urbanist = Urbanist({
 export const viewport: Viewport = { themeColor: "#0e0e0e", viewportFit: "cover", colorScheme: "dark" };
 
 export const metadata: Metadata = {
-  title: { template: "%s · EstateOS", default: "EstateOS" },
+  title: { template: "%s · Estos", default: "Estos" },
   description: "The CRM for real estate agents: leads, follow-ups, listings and marketing in one place.",
 };
 

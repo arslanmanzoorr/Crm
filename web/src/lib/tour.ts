@@ -14,7 +14,7 @@ export type TourStep = {
 
 export const STEPS: TourStep[] = [
   { id: "day", path: "/", target: "[data-tour=\"header\"]", title: "This is your day", body: "Everything that needs you today lands here first. The bar shows your schedule; the dot is now." },
-  { id: "waiting", path: "/", target: "[data-tour=\"today\"]", title: "Who to call, in order", body: "Hottest and most overdue first. Tap Call and EstateOS logs it for you, so nobody slips through." },
+  { id: "waiting", path: "/", target: "[data-tour=\"today\"]", title: "Who to call, in order", body: "Hottest and most overdue first. Tap Call and Estos logs it for you, so nobody slips through." },
   { id: "customize", path: "/", target: "[data-tour=\"customize\"]", title: "Make it yours", body: "Drag sections into your own order or hide what you don't need. Only you see your layout." },
   { id: "ask", path: "/leads", target: "[data-tour=\"ask\"]", title: "Ask in plain English", body: "Try \"buyers in Westside nobody's called in 30 days\". The dots on each card show how hot a lead is, with the reason." },
   { id: "lead", path: "/leads", target: "[data-tour=\"leads\"] > :first-child", title: "Open any lead", body: "AI suggests the next step and drafts the message. Nothing reaches a client until you send it." },

@@ -21,7 +21,7 @@ export function GoogleConnect({ email, ready, status }: { email: string | null; 
         </>
       ) : ready ? (
         <>
-          <p className="text-muted">Send emails to leads from your own Gmail and put showings on your Google Calendar. EstateOS can only send mail you write and add calendar events; it can&apos;t read your inbox.</p>
+          <p className="text-muted">Send emails to leads from your own Gmail and put showings on your Google Calendar. Estos can only send mail you write and add calendar events; it can&apos;t read your inbox.</p>
           {/* A plain link: the server starts Google's sign-in. */}
           <a href="/api/google/connect" className="flex min-h-11 w-fit items-center rounded-full bg-accent px-5 font-medium text-on-light hover:bg-accent-strong">Connect Google</a>
         </>

@@ -15,7 +15,7 @@ function Mfa() {
     <div className="mx-auto mt-[10vh] flex max-w-sm flex-col gap-6 rounded-card bg-surface-2 p-8">
       <div>
         <h1 className="text-3xl font-light">Enter your code</h1>
-        <p className="mt-2 text-sm text-muted">Open your authenticator app and type the 6-digit code for EstateOS.</p>
+        <p className="mt-2 text-sm text-muted">Open your authenticator app and type the 6-digit code for Estos.</p>
       </div>
       <ActionForm action={mfaVerify}>
         {(pending) => (

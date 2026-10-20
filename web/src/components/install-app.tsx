@@ -23,12 +23,12 @@ export function InstallApp() {
   }, []);
 
   const body = env === "installed" || done
-    ? <p className="text-muted">Installed. EstateOS opens from your home screen like any app.</p>
+    ? <p className="text-muted">Installed. Estos opens from your home screen like any app.</p>
     : env === "ios"
       ? <p className="text-muted">In Safari, tap <Share aria-label="Share" className="inline size-4 align-text-bottom" /> Share, then <span className="text-ink">Add to Home Screen</span>.</p>
       : prompt
         ? <button type="button" onClick={async () => { await prompt.prompt(); if ((await prompt.userChoice).outcome === "accepted") setDone(true); setPrompt(null); }}
-            className="flex min-h-11 w-fit items-center gap-2 rounded-full bg-accent px-5 font-medium text-on-light hover:bg-accent-strong"><Download aria-hidden className="size-4" /> Install EstateOS</button>
+            className="flex min-h-11 w-fit items-center gap-2 rounded-full bg-accent px-5 font-medium text-on-light hover:bg-accent-strong"><Download aria-hidden className="size-4" /> Install Estos</button>
         : <p className="text-muted">Open this page in Chrome or Edge on your phone or computer and use <span className="text-ink">Install app</span> in the browser menu.</p>;
 
   return (

@@ -74,7 +74,7 @@ export function LeadCaptureForm({ formId, who, open, source }: { formId: string;
           </>
         )}
       </ActionForm>
-      <p className="text-center text-xs text-muted"><a href={`/f/${formId}/chat`} className="underline hover:text-ink">Questions? Chat with us</a> · <a href={`/f/${formId}/privacy`} className="underline hover:text-ink">Your privacy choices</a><span className="powered"> · Powered by EstateOS</span></p>
+      <p className="text-center text-xs text-muted"><a href={`/f/${formId}/chat`} className="underline hover:text-ink">Questions? Chat with us</a> · <a href={`/f/${formId}/privacy`} className="underline hover:text-ink">Your privacy choices</a><span className="powered"> · Powered by Estos</span></p>
     </div>
   );
 }

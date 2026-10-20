@@ -12,7 +12,7 @@ export default function TemplatesPage({ searchParams }: PageProps<"/templates">)
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <header>
         <h1 className="text-4xl font-light">Document templates</h1>
-        <p className="mt-2 text-sm text-muted">Paste your own forms and letters (from your broker, attorney or state association) and add fields like {"{{client_name}}"}. Any deal can then fill one in and print it. EstateOS doesn&apos;t supply legal forms or wording.</p>
+        <p className="mt-2 text-sm text-muted">Paste your own forms and letters (from your broker, attorney or state association) and add fields like {"{{client_name}}"}. Any deal can then fill one in and print it. Estos doesn&apos;t supply legal forms or wording.</p>
       </header>
       {dbEnabled ? <Suspense fallback={<Skeleton className="h-64" />}><List searchParams={searchParams} /></Suspense> : <p className="text-muted">Connect Supabase to save templates.</p>}
     </div>

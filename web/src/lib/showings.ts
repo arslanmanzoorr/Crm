@@ -41,7 +41,7 @@ function fold(line: string) {
 
 export function ics(e: { uid: string; startsAt: string; endsAt: string; title: string; location: string; description: string; now?: string }) {
   return [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//EstateOS//Showings//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Estos//Showings//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     `UID:${e.uid}@estateos`,
     `DTSTAMP:${icsDate(e.now ?? new Date().toISOString())}`,

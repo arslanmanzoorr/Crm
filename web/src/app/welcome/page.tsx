@@ -8,7 +8,7 @@ import { siteFont } from "@/lib/site-font";
 import { STORE } from "@/lib/store";
 
 export const metadata: Metadata = {
-  title: { absolute: "EstateOS: the real estate CRM that writes the follow-up for you" },
+  title: { absolute: "Estos: the real estate CRM that writes the follow-up for you" },
   description: "Leads, listings, deals and follow-up in one place, with AI that drafts the work and you approve it.",
 };
 
@@ -37,7 +37,7 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <CircleReveal src="/site/s-leads.png" alt="The EstateOS leads board: each lead with its AI score, next step and source." w={2360} h={1520} />
+      <CircleReveal src="/site/s-leads.png" alt="The Estos leads board: each lead with its AI score, next step and source." w={2360} h={1520} />
 
       <section id="product" className="scroll-mt-20 pb-28">
         <Reveal className="mx-auto mb-10 max-w-[1240px] px-5 sm:px-8">

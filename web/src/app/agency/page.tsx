@@ -100,7 +100,7 @@ async function Agency() {
       {a.role === "owner" && (
         <section aria-labelledby="app-domain" className="flex flex-col gap-3">
           <h2 id="app-domain" className="text-xl">Your app domain</h2>
-          <p className="-mt-2 text-sm text-muted">Run the whole app on your own address. Sign-in shows your name, logo and color, and the app installs under your name. Clients never see EstateOS.</p>
+          <p className="-mt-2 text-sm text-muted">Run the whole app on your own address. Sign-in shows your name, logo and color, and the app installs under your name. Clients never see Estos.</p>
           <DomainSettings key={a.appDomain ?? ""} domain={a.appDomain} verified={a.domainVerified} token={await domainToken(`agency:${a.id}`)}
             dns={a.appDomain && a.domainVerified ? await domainDns(a.appDomain) : null}
             save={setAgencyDomain.bind(null, a.id)} verify={verifyAgencyDomain.bind(null, a.id)} example="app.youragency.com"

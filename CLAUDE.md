@@ -1,4 +1,4 @@
-# EstateOS: working notes for Claude
+# Estos (estos.app): working notes for Claude
 
 ## Start of every session
 1. Read `docs/STATUS.md` (what's built, what's next) before planning. The full backlog is `docs/FEATURES.md`.

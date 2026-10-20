@@ -129,7 +129,7 @@ export function StartAgency() {
   const [pending, start] = useTransition();
   return (
     <form className="flex flex-col gap-3 rounded-card bg-surface-2 p-4 text-sm" onSubmit={(e) => { e.preventDefault(); start(async () => setMsg((await createAgency(name)) ?? null)); }}>
-      <p><span className="font-medium">Run EstateOS for other teams.</span> <span className="text-muted">Create sub-accounts for clients, copy your setup to each with snapshots, and see every team&apos;s numbers in one place.</span></p>
+      <p><span className="font-medium">Run Estos for other teams.</span> <span className="text-muted">Create sub-accounts for clients, copy your setup to each with snapshots, and see every team&apos;s numbers in one place.</span></p>
       <div className="flex flex-wrap gap-2">
         <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={80} placeholder="Agency name" aria-label="Agency name" className={`${input} min-w-48 flex-1`} />
         <button disabled={pending} className={primaryBtn}>{pending ? "Creating…" : "Start an agency"}</button>

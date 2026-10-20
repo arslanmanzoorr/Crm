@@ -1,8 +1,8 @@
-# Plan: first-run walkthrough ("Learn EstateOS")
+# Plan: first-run walkthrough ("Learn Estos")
 
 **Status: built 2026-10-18** (see STATUS.md, row 20). Defaults taken: no mascot, practice lead offered, owners can switch the tour off.
 
-Goal: anyone opening EstateOS for the first time can take a short, fun tour or skip it, and can come back to it any time.
+Goal: anyone opening Estos for the first time can take a short, fun tour or skip it, and can come back to it any time.
 It should feel like a game you finish in two minutes, not a manual.
 
 ## What the user sees
@@ -22,7 +22,7 @@ It should feel like a game you finish in two minutes, not a manual.
 | # | Where | Highlight | Message (draft) |
 |---|---|---|---|
 | 1 | Today | Header | "This is your day. Everything that needs you today lands here first." |
-| 2 | Today | Who to call today | "Hottest and most overdue first. Tap Call and EstateOS logs it for you." |
+| 2 | Today | Who to call today | "Hottest and most overdue first. Tap Call and Estos logs it for you." |
 | 3 | Today | Customize this page | "Make it yours: drag sections around or hide the ones you don't need." |
 | 4 | Leads | Ask bar + score dots | "Ask in plain English: 'buyers in Westside nobody's called in 30 days'. Dots show how hot each lead is." |
 | 5 | Lead page | AI next step + timeline | "AI suggests the next step and drafts the message. Nothing is sent until you send it." |

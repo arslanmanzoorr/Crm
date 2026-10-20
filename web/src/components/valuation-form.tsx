@@ -81,7 +81,7 @@ export function ValuationForm({ formId, who, open }: { formId: string; who: stri
           </>
         )}
       </ActionForm>
-      <p className="text-center text-xs text-muted"><a href={`/f/${formId}/privacy`} className="underline hover:text-ink">Your privacy choices</a><span className="powered"> · Powered by EstateOS</span></p>
+      <p className="text-center text-xs text-muted"><a href={`/f/${formId}/privacy`} className="underline hover:text-ink">Your privacy choices</a><span className="powered"> · Powered by Estos</span></p>
     </div>
   );
 }

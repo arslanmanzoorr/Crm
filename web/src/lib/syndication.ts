@@ -17,7 +17,7 @@ export const checkUrl = (domain: string, address: string, area: string) =>
 /** What's left before portals can show the listing. Empty list = nothing blocking on our side. */
 export function syndicationSteps(p: { mlsId?: string | null; approved?: boolean; status: string }) {
   const steps: string[] = [];
-  if (p.approved === false) steps.push("Broker approval in EstateOS");
+  if (p.approved === false) steps.push("Broker approval in Estos");
   if (!p.mlsId) steps.push("Enter it on your MLS, then add the MLS number here (Edit)");
   if (p.status === "Coming soon") steps.push("Coming soon: portals only show it if your MLS and brokerage allow pre-market syndication");
   return steps;

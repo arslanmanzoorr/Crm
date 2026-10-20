@@ -19,7 +19,7 @@ export function DomainSettings({ domain, verified, token, dns, save = setCustomD
   const host = domain ? domain.split(".").slice(0, -2).join(".") || "@" : "";
   const records = domain ? [
     apex ? { type: "A", name: "@", value: "76.76.21.21" } : { type: "CNAME", name: host, value: "cname.vercel-dns.com" },
-    { type: "TXT", name: `_estateos${host === "@" ? "" : `.${host}`}`, value: token },
+    { type: "TXT", name: `_estos${host === "@" ? "" : `.${host}`}`, value: token },
   ] : [];
 
   return (

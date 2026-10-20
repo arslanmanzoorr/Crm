@@ -148,7 +148,7 @@ export function LeadImport() {
             </div>
             <p className="text-xs text-muted">
               {checked.length > 8 && `Showing the first 8 of ${checked.length.toLocaleString()} rows. `}
-              Leads whose email or phone is already in EstateOS are skipped automatically.
+              Leads whose email or phone is already in Estos are skipped automatically.
             </p>
           </section>
 

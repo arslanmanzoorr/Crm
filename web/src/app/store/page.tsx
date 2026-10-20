@@ -6,7 +6,7 @@ import { siteFont } from "@/lib/site-font";
 import { CATEGORIES, STORE } from "@/lib/store";
 
 export const metadata: Metadata = {
-  title: { absolute: "Playbook store · EstateOS" },
+  title: { absolute: "Playbook store · Estos" },
   description: "Ready-made follow-up playbooks for real estate agents. Switch one on and the right tasks show up on the right day.",
 };
 

@@ -22,7 +22,7 @@ const COMMANDS: Cmd[] = [
   { id: "team", title: "Team", sub: "Members, roles and invites", href: "/team", icon: Users },
   { id: "account", title: "Account", sub: "Profile and sign out", href: "/account", icon: UserRound },
   { id: "email", title: "Email newsletters", sub: "Campaigns and market updates", href: "/email", icon: Mail },
-  { id: "tour", title: "Take the tour", sub: "2-minute walkthrough of EstateOS", href: "#tour", icon: Compass },
+  { id: "tour", title: "Take the tour", sub: "2-minute walkthrough of Estos", href: "#tour", icon: Compass },
 ];
 
 const isTyping = (el: EventTarget | null) =>

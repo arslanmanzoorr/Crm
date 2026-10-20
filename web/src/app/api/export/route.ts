@@ -82,13 +82,13 @@ export async function GET(req: Request) {
   return new Response(stream, {
     headers: {
       "content-type": "application/zip",
-      "content-disposition": `attachment; filename="estateos-export-${day}.zip"`,
+      "content-disposition": `attachment; filename="estos-export-${day}.zip"`,
       "cache-control": "no-store",
     },
   });
 }
 
-const readme = (day: string, counts: string[], files: boolean, missing: number) => `EstateOS export, ${day}
+const readme = (day: string, counts: string[], files: boolean, missing: number) => `Estos export, ${day}
 
 This is your team's complete data. It is yours: keep it, back it up, or import it anywhere.
 

@@ -36,7 +36,7 @@ export async function proxy(req: NextRequest) {
   }
   const { data } = await db.auth.getUser();
   // Signed-out visitors at the root see the marketing site, not the sign-in form.
-  // On an agency's domain there is no EstateOS marketing site: visitors get the agency's sign-in.
+  // On an agency's domain there is no Estos marketing site: visitors get the agency's sign-in.
   if (custom && (path.startsWith("/welcome") || path.startsWith("/store"))) return NextResponse.redirect(new URL("/login", req.url));
   if (!data.user && path === "/") return NextResponse.redirect(new URL(custom ? "/login" : "/welcome", req.url));
   if (!data.user && !PUBLIC.some((p) => path.startsWith(p)))

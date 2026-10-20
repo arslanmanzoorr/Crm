@@ -28,7 +28,7 @@ export async function chat(o: { system: string; user: string; maxTokens: number;
     method: "POST",
     headers: {
       authorization: `Bearer ${key}`, "content-type": "application/json",
-      ...(process.env.SITE_URL && { "http-referer": process.env.SITE_URL }), "x-title": "EstateOS",
+      ...(process.env.SITE_URL && { "http-referer": process.env.SITE_URL }), "x-title": "Estos",
     },
     body: JSON.stringify({
       model: o.image ? process.env.OPENROUTER_VISION_MODEL || "google/gemma-3-12b-it" : process.env.OPENROUTER_MODEL || "anthropic/claude-haiku-5.5",

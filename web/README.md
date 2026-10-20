@@ -1,6 +1,6 @@
-# EstateOS Web
+# Estos Web
 
-Next.js 16 + Tailwind v4 app for EstateOS. Design tokens live in `src/app/globals.css` (see `../DESIGN.md`).
+Next.js 16 + Tailwind v4 app for Estos. Design tokens live in `src/app/globals.css` (see `../DESIGN.md`).
 
 ```bash
 npm install

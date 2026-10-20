@@ -6,7 +6,7 @@ import { getDomainBrand } from "@/lib/db";
 // On an agency's own domain it installs under the agency's name.
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const host = ((await headers()).get("host") ?? "").toLowerCase().replace(/:\d+$/, "");
-  const name = (await getDomainBrand(host))?.name ?? "EstateOS";
+  const name = (await getDomainBrand(host))?.name ?? "Estos";
   return {
     name,
     short_name: name.slice(0, 12),

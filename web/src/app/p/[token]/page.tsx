@@ -247,7 +247,7 @@ async function Journey({ params }: { params: PageProps<"/p/[token]">["params"] }
         {p.agent_email && <p className="text-sm text-muted">Your agent: <a href={`mailto:${p.agent_email}`} className="text-ink hover:text-accent-ink">{p.agent_email}</a></p>}
         <MessageAgent token={token} />
       </section>
-      <p className="text-center text-xs text-muted">{p.team}<span className="powered"> · Powered by EstateOS</span></p>
+      <p className="text-center text-xs text-muted">{p.team}<span className="powered"> · Powered by Estos</span></p>
     </>
   );
 }

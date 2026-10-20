@@ -21,7 +21,7 @@ export function SiteNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-black/10 bg-[#f4f4f4]/85 backdrop-blur-xl">
       <nav aria-label="Site" className="mx-auto flex h-16 max-w-[1240px] items-center gap-8 px-5 sm:px-8">
-        <Link href="/welcome" className="text-lg font-extrabold tracking-tight">EstateOS<span style={{ color: S.accentDisplay }}>.</span></Link>
+        <Link href="/welcome" className="text-lg font-extrabold tracking-tight">Estos<span style={{ color: S.accentDisplay }}>.</span></Link>
         <div className="ml-auto hidden items-center gap-7 text-sm font-medium md:flex">
           {links.map(([l, h]) => <Link key={h} href={h} className="hover:text-[#c2360a]">{l}</Link>)}
         </div>
@@ -48,14 +48,14 @@ export function SiteFooter() {
   return (
     <footer className="bg-[#111111] text-white/70">
       <div className="mx-auto flex max-w-[1240px] flex-col gap-8 px-5 py-12 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <Link href="/welcome" className="text-lg font-extrabold tracking-tight text-white">EstateOS<span style={{ color: S.accent }}>.</span></Link>
+        <Link href="/welcome" className="text-lg font-extrabold tracking-tight text-white">Estos<span style={{ color: S.accent }}>.</span></Link>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/welcome#product" className="hover:text-white">Product</Link>
           <Link href="/store" className="hover:text-white">Store</Link>
           <Link href="/welcome#trust" className="hover:text-white">Security</Link>
           <Link href="/login" className="hover:text-white">Sign in</Link>
         </nav>
-        <p>&copy; 2026 EstateOS</p>
+        <p>&copy; 2026 Estos</p>
       </div>
     </footer>
   );

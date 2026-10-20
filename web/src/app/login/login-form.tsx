@@ -7,7 +7,7 @@ import { authenticate, googleSignIn } from "@/lib/actions";
 
 type Brand = { name: string; color: string | null; logo: string | null } | null;
 
-/** Sign-in. On an agency's own domain it carries the agency's name, logo and color instead of EstateOS. */
+/** Sign-in. On an agency's own domain it carries the agency's name, logo and color instead of Estos. */
 export function Login({ brand }: { brand: Brand }) {
   const next = useSearchParams().get("next") ?? "";
   const invited = next.startsWith("/invite/");
@@ -18,7 +18,7 @@ export function Login({ brand }: { brand: Brand }) {
           {/* eslint-disable-next-line @next/next/no-img-element -- agency logo from public Storage */}
           {brand?.logo ? <img src={brand.logo} alt="" className="size-full object-contain p-1" /> : (brand?.name ?? "E")[0].toUpperCase()}
         </span>
-        <h1 className="mt-4 text-3xl font-light">Sign in to {brand?.name ?? "EstateOS"}</h1>
+        <h1 className="mt-4 text-3xl font-light">Sign in to {brand?.name ?? "Estos"}</h1>
         {invited && <p className="mt-2 text-sm text-muted">Sign in or create an account with the email your invite was sent to.</p>}
       </div>
       <ActionForm action={googleSignIn}>

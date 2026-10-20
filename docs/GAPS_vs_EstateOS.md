@@ -1,10 +1,10 @@
-# Market pain points vs EstateOS (18 Oct 2026)
+# Market pain points vs Estos (18 Oct 2026)
 
-This checks the "real estate CRM feature gaps" research against what EstateOS already does.
+This checks the "real estate CRM feature gaps" research against what Estos already does.
 Key: **Have** = built and working. **Partial** = a smaller version exists. **Missing** = not built.
 **Needs account** = can't go live until an outside service (Twilio, email, etc.) is connected.
 
-| # | Pain point | EstateOS today | Status | Smallest next step |
+| # | Pain point | Estos today | Status | Smallest next step |
 |---|---|---|---|---|
 | 1 | Leads wait hours for a reply | Website chat answers 24/7 from your listings. New leads get a "call within 5 minutes" task, and AI drafts the first reply | Partial | **Instant first reply**: an opt-in, consent-checked first text/email sent within 60s, with a log of what was sent and why. The email version works now via Gmail; text needs Twilio |
 | 2 | Texting/calling paywalled, group texts, phone texts not logged | Call/text buttons check consent and calling hours. Voice notes and logging exist. No SMS provider yet | Needs account | Twilio: A2P 10DLC registration, group/MMS, every message logged. Include it in the price instead of selling it as an add-on |

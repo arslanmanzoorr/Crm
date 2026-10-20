@@ -33,7 +33,7 @@ function Item({ href, label, icon: Icon, active, className = "" }: { href: strin
 export const bare = (path: string) => path === "/login" || path.startsWith("/u/") || path === "/mfa" || path.startsWith("/legal") || path.startsWith("/f/") || path.startsWith("/oh/") || path.startsWith("/p/") || path.startsWith("/tc/") || path.startsWith("/welcome") || path.startsWith("/store") || path.endsWith("/print") || path.endsWith("/flyer");
 
 /** Labeled navigation: a bottom bar with the four daily destinations on phones, a full rail on wider screens. */
-export function Sidebar({ logo = null, team = "EstateOS", off = [], agency = false }: { logo?: string | null; team?: string; off?: readonly string[]; agency?: boolean }) {
+export function Sidebar({ logo = null, team = "Estos", off = [], agency = false }: { logo?: string | null; team?: string; off?: readonly string[]; agency?: boolean }) {
   const path = usePathname();
   if (bare(path)) return null;
   const isActive = (href: string) => (href === "/" ? path === "/" : href === "/leads" ? path.startsWith("/leads") || path.startsWith("/pipeline") : path.startsWith(href));

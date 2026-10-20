@@ -22,7 +22,7 @@ test("clientPage recognises only the client-facing pages", () => {
 test("domainToken is stable per team and differs between teams", async () => {
   assert.equal(await domainToken("a"), await domainToken("a"));
   assert.notEqual(await domainToken("a"), await domainToken("b"));
-  assert.match(await domainToken("a"), /^estateos-verify=[0-9a-f]{32}$/);
+  assert.match(await domainToken("a"), /^estos-verify=[0-9a-f]{32}$/);
 });
 
 test("themeCss: light and system themes, never on the marketing site", () => {

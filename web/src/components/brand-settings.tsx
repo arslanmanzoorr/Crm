@@ -110,7 +110,7 @@ export function BrandSettings({ color, hide, radius, logo, team, theme }: { colo
 
         <label className="flex items-center gap-3">
           <input type="checkbox" checked={h} onChange={(e) => setH(e.target.checked)} className="size-5 accent-[var(--color-accent)]" />
-          Hide &ldquo;Powered by EstateOS&rdquo; on client pages
+          Hide &ldquo;Powered by Estos&rdquo; on client pages
         </label>
 
         <div className="flex flex-wrap items-center gap-3">
