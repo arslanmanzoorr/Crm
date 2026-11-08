@@ -7,7 +7,7 @@ import { LEGAL } from "@/lib/legal";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const APP_HOST = process.env.SITE_URL ? new URL(process.env.SITE_URL).hostname : "";
-const PUBLIC = ["/u/", "/api/email/", "/login", "/auth", "/f/", "/oh/", "/p/", "/legal", "/feeds/", "/api/chat/", "/api/v1/", "/tc/", "/welcome", "/store", "/site/"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
+const PUBLIC = ["/u/", "/api/email/", "/login", "/auth", "/f/", "/oh/", "/p/", "/legal", "/feeds/", "/api/chat/", "/api/v1/", "/tc/", "/welcome", "/store", "/pricing", "/site/"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
 
 /** Refreshes the Supabase session cookie and sends signed-out visitors to /login. */
 export async function proxy(req: NextRequest) {
@@ -38,7 +38,7 @@ export async function proxy(req: NextRequest) {
   const { data } = await db.auth.getUser();
   // Signed-out visitors at the root see the marketing site, not the sign-in form.
   // On an agency's domain there is no Estos marketing site: visitors get the agency's sign-in.
-  if (custom && (path.startsWith("/welcome") || path.startsWith("/store"))) return NextResponse.redirect(new URL("/login", req.url));
+  if (custom && (path.startsWith("/welcome") || path.startsWith("/store") || path.startsWith("/pricing"))) return NextResponse.redirect(new URL("/login", req.url));
   if (!data.user && path === "/") return NextResponse.redirect(new URL(custom ? "/login" : "/welcome", req.url));
   if (!data.user && !PUBLIC.some((p) => path.startsWith(p)))
     return path.startsWith("/api/")

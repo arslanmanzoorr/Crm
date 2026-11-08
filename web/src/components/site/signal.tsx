@@ -19,7 +19,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function SiteNav() {
   const [open, setOpen] = useState(false);
-  const links = [["Product", "/welcome#product"], ["Security", "/welcome#trust"], ["Store", "/store"], ["Sign in", "/login"]] as const;
+  const links = [["Product", "/welcome#product"], ["Pricing", "/pricing"], ["Security", "/welcome#trust"], ["Store", "/store"], ["Sign in", "/login"]] as const;
   return (
     <header className="sticky top-0 z-40 border-b border-black/10 bg-[#f4f4f4]/85 backdrop-blur-xl">
       <nav aria-label="Site" className="mx-auto flex h-16 max-w-[1240px] items-center gap-8 px-5 sm:px-8">
@@ -53,6 +53,7 @@ export function SiteFooter() {
         <Link href="/welcome" className="text-lg font-extrabold tracking-tight text-white">Estos<span style={{ color: S.accent }}>.</span></Link>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/welcome#product" className="hover:text-white">Product</Link>
+          <Link href="/pricing" className="hover:text-white">Pricing</Link>
           <Link href="/store" className="hover:text-white">Store</Link>
           <Link href="/welcome#trust" className="hover:text-white">Security</Link>
           <Link href="/legal/terms" className="hover:text-white">Terms</Link>
