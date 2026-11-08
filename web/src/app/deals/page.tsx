@@ -2,7 +2,7 @@ import { CircleAlert, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui";
+import { Roll, Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { closeOutlook, commission, daysBetween, pipelineByAgent, riskFlags } from "@/lib/deals";
 import { dbEnabled, getMembers, getOffices, listDeals, type Deal, teamToday } from "@/lib/db";
@@ -169,7 +169,7 @@ function Stat({ label, value, sub, accent }: { label: string; value: string; sub
   return (
     <div className="rounded-card bg-surface-2 p-4">
       <dt className="text-sm text-muted">{label}</dt>
-      <dd className={`mt-1 text-2xl font-light ${accent ? "text-accent-ink" : ""}`}>{value}</dd>
+      <dd className={`mt-1 text-2xl font-light ${accent ? "text-accent-ink" : ""}`}><Roll value={value} /></dd>
       {sub && <dd className="text-xs text-muted">{sub}</dd>}
     </div>
   );

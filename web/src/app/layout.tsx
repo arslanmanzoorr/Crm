@@ -26,7 +26,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${urbanist.variable} h-full antialiased`}>
+    // suppressHydrationWarning: the intro script below marks <html data-intro> before React hydrates.
+    <html lang="en" className={`${urbanist.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full font-sans">
         <a href="#main" className="sr-only rounded-full bg-accent px-4 py-2 text-on-light focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50">
           Skip to content
@@ -60,6 +61,20 @@ async function Shell() {
       {b?.product && <ProductTitle name={b.product} />}
       {b && <Watchdog />}
       {b && <Tour state={b.tour} role={b.role} off={b.off} team={b.name} />}
+      {b && <Intro name={b.product ?? "Estos"} />}
+    </>
+  );
+}
+
+/**
+ * First app load in a browser session: the logo, then a circle opens onto the app (pure CSS, `.intro`).
+ * The inline script runs as the HTML streams in and hides it for the rest of the session.
+ */
+function Intro({ name }: { name: string }) {
+  return (
+    <>
+      <div className="intro" aria-hidden><span>{name}<span>.</span></span></div>
+      <script dangerouslySetInnerHTML={{ __html: `try{sessionStorage.getItem("estos:intro")?document.documentElement.dataset.intro="seen":sessionStorage.setItem("estos:intro","1")}catch(e){document.documentElement.dataset.intro="seen"}` }} />
     </>
   );
 }

@@ -138,6 +138,107 @@ dialog.palette::backdrop {
   }
 }
 
+/* Route entrance: the page's sections rise out of a blur one after another. Fill "backwards" only, so no transform
+   lingers afterwards (a transformed ancestor would trap position: fixed children). */
+.page-in > * > * {
+  animation: page-in 640ms var(--ease-out-expo) backwards;
+}
+.page-in > * > :nth-child(2) { animation-delay: 70ms; }
+.page-in > * > :nth-child(3) { animation-delay: 140ms; }
+.page-in > * > :nth-child(4) { animation-delay: 210ms; }
+.page-in > * > :nth-child(5) { animation-delay: 280ms; }
+.page-in > * > :nth-child(n + 6) { animation-delay: 350ms; }
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+    filter: blur(10px);
+  }
+}
+
+/* Odometer digits (<Roll>): the final digit (hidden) sizes the slot; a 0-9 column centred on it scrolls into place. */
+.roll {
+  position: relative;
+  display: inline-block;
+  height: 1lh;
+  overflow: hidden;
+  vertical-align: top;
+}
+.roll > :first-child {
+  visibility: hidden;
+}
+.roll > :last-child {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1ch;
+  margin-left: -0.5ch;
+  text-align: center;
+  word-break: break-all;
+  transform: translateY(calc(var(--d) * -1lh));
+  animation: roll 1200ms var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--i) * 55ms + 120ms);
+}
+@keyframes roll {
+  from { transform: translateY(0); }
+}
+
+/* Chart bars grow up from the baseline, left to right. */
+.bar-grow {
+  transform-origin: bottom;
+  animation: bar-grow 900ms var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--i) * 45ms + 200ms);
+}
+@keyframes bar-grow {
+  from { transform: scaleY(0); }
+}
+
+/* First app load in a browser session: the logo, then a circle opens onto the app (<Intro>). */
+@property --ring {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --hole {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  /* A lime ring rides the edge of the opening circle (no ring until it starts opening). */
+  background: radial-gradient(circle at 50% 50%, var(--color-accent) calc(var(--hole) + var(--ring)), var(--color-bg) calc(var(--hole) + var(--ring)));
+  pointer-events: none;
+  mask: radial-gradient(circle at 50% 50%, transparent var(--hole), #000 var(--hole));
+  animation: intro-open 750ms cubic-bezier(0.7, 0, 0.2, 1) 950ms both;
+}
+.intro > span {
+  font-size: clamp(56px, 9vw, 104px);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  animation: rise 700ms var(--ease-out-expo) 80ms both;
+}
+.intro > span > span {
+  display: inline-block;
+  color: var(--color-accent);
+  animation: pop 500ms var(--ease-out-expo) 520ms both;
+}
+@keyframes intro-open {
+  3% {
+    --ring: 10px;
+  }
+  to {
+    --ring: 10px;
+    --hole: 101%;
+    visibility: hidden;
+  }
+}
+html[data-intro="seen"] .intro { display: none; }
+
 /* Reduced motion: no travel, keep the state change visible through opacity and color */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -150,6 +251,16 @@ dialog.palette::backdrop {
   .animate-pop,
   dialog.palette[open] {
     animation: fade-in 150ms ease-out both !important;
+  }
+  .page-in > * > * {
+    animation: fade-in 150ms ease-out backwards !important;
+  }
+  .roll > :last-child,
+  .bar-grow {
+    animation: none !important;
+  }
+  .intro {
+    display: none;
   }
   ::view-transition-group(*),
   ::view-transition-old(*),

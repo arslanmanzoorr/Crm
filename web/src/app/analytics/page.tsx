@@ -5,7 +5,7 @@ import { CsvDownload } from "@/components/csv-download";
 import { AskBusiness } from "@/components/ask-business";
 import { WeeklySummary } from "@/components/weekly-summary";
 import { weekOverWeek } from "@/lib/summary";
-import { Skeleton } from "@/components/ui";
+import { Roll, Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
 import { dbEnabled, getAnalytics, getCampaigns, getOffices, type Analytics } from "@/lib/db";
 
@@ -221,9 +221,9 @@ function Revenue({ a }: { a: Analytics }) {
       {total === 0 ? <Empty>No closed deals in the last 12 months yet. Close one from a deal page and it shows here.</Empty> : (
         <figure className="rounded-card bg-surface-2 p-5">
           <div className="flex h-44 items-end gap-0.5" role="img" aria-label={`Earned by month, total ${money(total)}. Table below.`}>
-            {bars.map((b) => (
+            {bars.map((b, i) => (
               <div key={b.month} tabIndex={0} className="group relative flex h-full flex-1 items-end outline-none">
-                <div className="w-full rounded-t-[4px] bg-accent transition-opacity group-hover:opacity-80 group-focus-visible:opacity-80" style={{ height: `${b.agent ? Math.max((b.agent / max) * 100, 2) : 0}%` }} />
+                <div className="bar-grow w-full rounded-t-[4px] bg-accent transition-opacity group-hover:opacity-80 group-focus-visible:opacity-80" style={{ "--i": i, height: `${b.agent ? Math.max((b.agent / max) * 100, 2) : 0}%` } as React.CSSProperties} />
                 <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 rounded-lg bg-surface-light px-2.5 py-1.5 text-xs whitespace-nowrap text-on-light group-hover:block group-focus-visible:block">
                   {monthName(b.month)}: {money(b.agent)} · {b.deals} deal{b.deals === 1 ? "" : "s"}
                 </span>
@@ -286,7 +286,7 @@ function Stat({ label, value, sub, accent, warn }: { label: string; value: strin
   return (
     <div className="rounded-card bg-surface-2 p-4">
       <dt className="text-sm text-muted">{label}</dt>
-      <dd className={`mt-1 text-2xl font-light tabular-nums ${accent ? "text-accent-ink" : ""}`}>{value}</dd>
+      <dd className={`mt-1 text-2xl font-light tabular-nums ${accent ? "text-accent-ink" : ""}`}><Roll value={value} /></dd>
       {sub && <dd className={`text-xs ${warn ? "text-score-1" : "text-muted"}`}>{sub}</dd>}
     </div>
   );

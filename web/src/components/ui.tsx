@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { ViewTransition, type ReactNode } from "react";
+import { ViewTransition, type CSSProperties, type ReactNode } from "react";
 
 const avatarTones = ["#c5f36a", "#f5d35d", "#9fd3f5", "#f5a25d", "#d4b5f5", "#7be07b"];
 
@@ -49,6 +49,20 @@ export function scoreLabel(score: number) {
  */
 export function Reveal({ children }: { children: ReactNode }) {
   return <div className="animate-rise">{children}</div>;
+}
+
+/** A figure whose digits roll into place like an odometer (`.roll` in globals.css). Screen readers get the plain value. */
+export function Roll({ value }: { value: string }) {
+  return (
+    <>
+      <span className="sr-only">{value}</span>
+      <span aria-hidden>
+        {[...value].map((c, i) => /\d/.test(c)
+          ? <span key={i} className="roll"><span>{c}</span><span style={{ "--d": c, "--i": i } as CSSProperties}>0123456789</span></span>
+          : <span key={i}>{c}</span>)}
+      </span>
+    </>
+  );
 }
 
 /** Lead avatar that morphs between the lead card and the profile header. */
