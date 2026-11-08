@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { AI_KEY_MISSING, AiError, chat, extractJson } from "./ai-server";
 import { LEAD_FIELDS, toImportRow, type ImportRow, type LeadField } from "./csv";
 import * as mock from "./data";
-import { getAppBrand, getCampaign, getMe, isOwnerOrAdmin, teamZone, dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, ROUTING, type Routing, supabase, teamToday } from "./db";
+import { getAppBrand, getCampaign, getMe, isOwnerOrAdmin, teamZone, dbEnabled, getAnalytics, getFarmData, likeSafe, listDeals, meterAi, requirePlan, ROUTING, type Routing, supabase, teamToday } from "./db";
 import { brandColorError } from "./brand";
 import { cleanFeatures, cleanSections, RADII, THEMES, type Radius, type Theme } from "./features";
 import { cleanDomain, clientBase, domainToken } from "./domain";
@@ -36,6 +36,7 @@ import { feesFromForm, HOME_TYPES, PARKING } from "./rental-feed";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTag, normTags, safeNext } from "./search";
 import { LEGAL } from "./legal";
+import { BILLING_LIVE, isPlan, planName } from "./plans";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -849,6 +850,7 @@ export async function bulkSetOwner(ids: string[], userId: string | null): Promis
 }
 
 export async function setRouting(mode: Routing) {
+  if (mode !== "off") { const no = await requirePlan("routing"); if (no) throw new Error(no); }
   if (!dbEnabled || !ROUTING.includes(mode)) return;
   const db = await authed();
   const { data } = await db.from("organizations").update({ routing: mode }).eq("id", (await db.rpc("active_org")).data).select("id");
@@ -864,6 +866,7 @@ export async function setInRotation(userId: string, on: boolean) {
 }
 
 export async function createOffice(_: FormState, f: FormData): Promise<FormState> {
+  { const no = await requirePlan("offices"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const name = str(f, "name").slice(0, 100);
   if (!name) return { error: "Name the office." };
@@ -882,6 +885,7 @@ export async function deleteOffice(id: string) {
 
 /** Place a member in an office (null = none). Owners and admins only, checked in the database. */
 export async function setOffice(userId: string, officeId: string | null) {
+  if (officeId !== null) { const no = await requirePlan("offices"); if (no) throw new Error(no); }
   if (!dbEnabled || !UUID.test(userId) || (officeId !== null && !UUID.test(officeId))) return;
   const { data } = await (await authed()).rpc("set_office", { p_user: userId, p_office: officeId });
   if (!data) throw new Error(NOT_ALLOWED);
@@ -917,6 +921,7 @@ export async function revokeApiKey(id: string): Promise<FormState> {
 }
 
 export async function setBranding(color: string | null, hide: boolean, radius: Radius = "pill", theme: Theme = "dark"): Promise<FormState> {
+  if (color !== null || hide || radius !== "pill") { const no = await requirePlan("whiteLabel"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const c = color?.toLowerCase() ?? null;
   const bad = c && brandColorError(c);
@@ -940,6 +945,7 @@ function logoType(b: Uint8Array): "png" | "jpg" | "webp" | null {
 }
 
 export async function uploadLogo(form: FormData): Promise<FormState> {
+  { const no = await requirePlan("whiteLabel"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const file = form.get("logo");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose an image." };
@@ -1850,6 +1856,7 @@ export async function retryRun(id: number) {
 }
 
 export async function addTerritory(_: FormState, f: FormData): Promise<FormState> {
+  { const no = await requirePlan("routing"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const area = str(f, "area").slice(0, 80), user_id = str(f, "user_id");
   if (!area || !UUID.test(user_id)) return { error: "Name the area and pick the agent." };
@@ -2179,6 +2186,7 @@ export async function scheduleTour(_: FormState, f: FormData): Promise<FormState
 
 /** Owners/admins claim a domain for client pages. It only goes live after verifyCustomDomain sees their TXT record. */
 export async function setCustomDomain(input: string): Promise<FormState> {
+  { const no = await requirePlan("whiteLabel"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const appHost = process.env.SITE_URL ? new URL(process.env.SITE_URL).host : "";
   const domain = input.trim() ? cleanDomain(input, appHost) : null;
@@ -2194,6 +2202,7 @@ export async function setCustomDomain(input: string): Promise<FormState> {
 }
 
 export async function verifyCustomDomain(): Promise<FormState> {
+  { const no = await requirePlan("whiteLabel"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return { error: "Set SUPABASE_SERVICE_ROLE_KEY on the server to verify domains." };
@@ -2409,6 +2418,7 @@ export async function applyQuickUpdate(leadId: string, actions: QuickAction[]): 
 // Every permission is checked in the database functions (agency staff only, same agency); these only validate input.
 
 export async function createAgency(name: string): Promise<FormState> {
+  { const no = await requirePlan("agency"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const n = name.trim();
   if (n.length < 2 || n.length > 80) return { error: "Give your agency a name (2–80 characters)." };
@@ -2429,6 +2439,7 @@ export async function enterSubaccount(orgId: string): Promise<FormState> {
 }
 
 export async function createSubaccount(agencyId: string, name: string, snapshotId: string | null, ownerEmail: string): Promise<FormState> {
+  { const no = await requirePlan("agency"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const n = name.trim(), email = ownerEmail.trim().toLowerCase();
   if (!UUID.test(agencyId) || n.length < 2 || n.length > 80) return { error: "Give the sub-account a name (2–80 characters)." };
@@ -2446,6 +2457,7 @@ export async function createSubaccount(agencyId: string, name: string, snapshotI
 }
 
 export async function saveSnapshot(orgId: string, name: string): Promise<FormState> {
+  { const no = await requirePlan("agency"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const n = name.trim();
   if (!UUID.test(orgId) || n.length < 2 || n.length > 80) return { error: "Pick a sub-account and name the snapshot." };
@@ -2456,6 +2468,7 @@ export async function saveSnapshot(orgId: string, name: string): Promise<FormSta
 }
 
 export async function applySnapshot(snapshotId: string, orgId: string): Promise<FormState> {
+  { const no = await requirePlan("agency"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   if (!UUID.test(snapshotId) || !UUID.test(orgId)) return { error: "Pick a snapshot and a sub-account." };
   const { data, error } = await (await authed()).rpc("agency_snapshot_apply", { p_snapshot: snapshotId, p_org: orgId });
@@ -2474,6 +2487,7 @@ export async function deleteSnapshot(id: string): Promise<FormState> {
 
 /** Agency name and the default color for sub-accounts that haven't set their own. */
 export async function setAgencyBrand(agencyId: string, name: string, color: string | null): Promise<FormState> {
+  { const no = await requirePlan("agency"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const n = name.trim(), c = color?.toLowerCase() || null;
   if (!UUID.test(agencyId) || n.length < 2 || n.length > 80) return { error: "Name must be 2–80 characters." };
@@ -2493,6 +2507,7 @@ const agencyRole = async (db: Awaited<ReturnType<typeof authed>>, agencyId: stri
 
 /** Owner invites agency staff; returns the link to send them (no email service is connected yet). */
 export async function inviteAgencyStaff(agencyId: string, email: string): Promise<FormState & { link?: string }> {
+  { const no = await requirePlan("agency"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const e = email.trim().toLowerCase();
   if (!UUID.test(agencyId) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e) || e.length > 320) return { error: "Enter their work email." };
@@ -2531,6 +2546,7 @@ export async function setSubBilling(orgId: string, status: string, price: string
 }
 
 export async function uploadAgencyLogo(agencyId: string, form: FormData): Promise<FormState> {
+  { const no = await requirePlan("agency"); if (no) return { error: no }; }
   if (!dbEnabled || !UUID.test(agencyId)) return NO_DB;
   const file = form.get("logo");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose an image." };
@@ -2566,6 +2582,7 @@ async function domainTaken(domain: string): Promise<boolean> {
 
 /** The agency's own address for the whole app (sign-in included), e.g. app.youragency.com. */
 export async function setAgencyDomain(agencyId: string, input: string): Promise<FormState> {
+  { const no = await requirePlan("agency"); if (no) return { error: no }; }
   if (!dbEnabled || !UUID.test(agencyId)) return NO_DB;
   const appHost = process.env.SITE_URL ? new URL(process.env.SITE_URL).host : "";
   const domain = input.trim() ? cleanDomain(input, appHost) : null;
@@ -2581,6 +2598,7 @@ export async function setAgencyDomain(agencyId: string, input: string): Promise<
 }
 
 export async function verifyAgencyDomain(agencyId: string): Promise<FormState> {
+  { const no = await requirePlan("agency"); if (no) return { error: no }; }
   if (!dbEnabled || !UUID.test(agencyId)) return NO_DB;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return { error: "Set SUPABASE_SERVICE_ROLE_KEY on the server to verify domains." };
@@ -2622,6 +2640,7 @@ export async function saveSender(_: FormState, f: FormData): Promise<FormState> 
 
 /** New campaign: blank, or this month's market update drafted from the team's own numbers. */
 export async function createCampaign(kind: "blank" | "market"): Promise<FormState> {
+  { const no = await requirePlan("email"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   const db = await authed();
   let row = { name: "New email", subject: "", preheader: "", body: "", audience: {}, repeat_monthly: false };
@@ -2638,6 +2657,7 @@ export async function createCampaign(kind: "blank" | "market"): Promise<FormStat
 }
 
 export async function saveCampaign(id: string, c: { name: string; subject: string; preheader: string; body: string; audience: unknown; repeatMonthly: boolean }): Promise<FormState> {
+  { const no = await requirePlan("email"); if (no) return { error: no }; }
   if (!dbEnabled || !UUID.test(id)) return NO_DB;
   const name = c.name.trim().slice(0, 120);
   if (!name) return { error: "Name the campaign." };
@@ -2670,6 +2690,7 @@ export async function previewCampaign(c: { subject: string; preheader: string; b
 
 /** Send the current draft to yourself. */
 export async function sendCampaignTest(id: string): Promise<FormState> {
+  { const no = await requirePlan("email"); if (no) return { error: no }; }
   if (!dbEnabled || !UUID.test(id)) return NO_DB;
   const missing = emailMissing();
   if (missing.length) return { error: `Email isn't connected yet. Add ${missing.join(", ")} on the server.` };
@@ -2686,6 +2707,7 @@ export async function sendCampaignTest(id: string): Promise<FormState> {
 
 /** Send now (queues everyone, then sends straight away) or schedule for later. */
 export async function sendCampaign(id: string, at: string | null): Promise<FormState> {
+  { const no = await requirePlan("email"); if (no) return { error: no }; }
   if (!dbEnabled || !UUID.test(id)) return NO_DB;
   const when = at ? new Date(at) : null;
   if (when && (Number.isNaN(when.getTime()) || when.getTime() > Date.now() + 366 * 86_400_000)) return { error: "Pick a date within the next year." };
@@ -2738,6 +2760,7 @@ export async function replyChat(id: string, text: string): Promise<FormState> {
 
 /** What the website chat's AI does for the whole team (owners and admins). */
 export async function setChatMode(mode: string): Promise<FormState> {
+  if (mode !== "off") { const no = await requirePlan("chatAssistant"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
   if (!["off", "answer", "book"].includes(mode)) return { error: "Pick an option." };
   const db = await authed();
@@ -2745,4 +2768,19 @@ export async function setChatMode(mode: string): Promise<FormState> {
   if (!data?.length) return { error: "Only owners and admins can change this." };
   revalidatePath("/inbox/chats");
   return { ok: "Saved" };
+}
+
+/**
+ * Change the team's plan. Early access only: billing isn't live, so owners and admins switch freely (the database
+ * allows only them). Once billing is live, plans change through checkout instead and this refuses.
+ */
+export async function setPlan(plan: string, interval: string): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (BILLING_LIVE) return { error: "Change plans from billing." };
+  if (!isPlan(plan) || (interval !== "month" && interval !== "year")) return { error: "Pick a plan." };
+  const db = await authed();
+  const { data } = await db.from("organizations").update({ plan, plan_interval: interval }).eq("id", (await db.rpc("active_org")).data).select("id");
+  if (!data?.length) return { error: "Only owners and admins can change the plan." };
+  revalidatePath("/", "layout");
+  return { ok: `You're on ${planName(plan)}.` };
 }

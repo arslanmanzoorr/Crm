@@ -16,6 +16,7 @@ import { areaKey, campaignResults, type FarmListing, type FarmPerson } from "./f
 import { scrubbed } from "./consent";
 import { cleanFeatures, cleanSections, homeLayout, type Feature, type Radius, type Section, type Theme } from "./features";
 import { cleanTour, questsFor, type QuestId, type TourState } from "./tour";
+import { allows, isPlan, PAID_ROLES, upgradeMessage, type Capability, type PlanKey } from "./plans";
 import type { DormantLead } from "./reactivate";
 import type { Fee } from "./rental-feed";
 export { likeSafe };
@@ -297,6 +298,8 @@ const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT ?? 200);
  */
 export async function meterAi(task: string): Promise<string | null> {
   if (!dbEnabled) return null;
+  // "email" is the send-a-lead-email rate limit, not AI: it stays in every plan.
+  if (task !== "email") { const no = await requirePlan("ai"); if (no) return no; }
   const db = await supabase();
   const since = new Date(Date.now() - 864e5).toISOString();
   const { count, error } = await db.from("ai_usage").select("id", { count: "exact", head: true }).gte("ts", since);
@@ -305,6 +308,13 @@ export async function meterAi(task: string): Promise<string | null> {
   const { data } = await db.auth.getUser();
   await db.from("ai_usage").insert({ task, user_id: data.user?.id });
   return null;
+}
+
+/** Null when the active team's plan includes `cap`; otherwise the message to show. Server-side: the real gate. */
+export async function requirePlan(cap: Capability): Promise<string | null> {
+  if (!dbEnabled) return null;
+  const b = await getAppBrand();
+  return b && allows(b.plan, cap) ? null : upgradeMessage(cap);
 }
 
 /** Fail closed: a production deploy without Supabase must not serve the demo as if it were the product. */
@@ -1030,6 +1040,7 @@ const logoUrl = (path: string | null | undefined) => (path ? `${process.env.NEXT
 export type AppBrand = {
   color: string | null; radius: Radius; logo: string | null; off: Feature[]; name: string; theme: Theme; domain: string | null; tour: TourState; role: string | null;
   agency: { id: string; name: string } | null; viaAgency: boolean; product: string | null;
+  plan: PlanKey; interval: "month" | "year";
 };
 
 /** Theme, logo, switched-off modules and verified domain for the app shell; null when signed out or without a database. */
@@ -1037,8 +1048,9 @@ export const getAppBrand = cache(async (): Promise<AppBrand | null> => {
   if (!dbEnabled) return null;
   const { data } = await (await supabase()).rpc("app_brand");
   if (!data) return null;
-  const b = data as Omit<AppBrand, "off" | "tour" | "viaAgency"> & { off: unknown; tour: unknown; via_agency: boolean | null };
-  return { ...b, logo: logoUrl(b.logo), off: cleanFeatures(b.off), tour: cleanTour(b.tour), agency: b.agency ?? null, viaAgency: !!b.via_agency, product: b.product ?? null };
+  const b = data as Omit<AppBrand, "off" | "tour" | "viaAgency" | "plan" | "interval"> & { off: unknown; tour: unknown; via_agency: boolean | null; plan: unknown; plan_interval: unknown };
+  return { ...b, logo: logoUrl(b.logo), off: cleanFeatures(b.off), tour: cleanTour(b.tour), agency: b.agency ?? null, viaAgency: !!b.via_agency, product: b.product ?? null,
+    plan: isPlan(b.plan) ? b.plan : "starter", interval: b.plan_interval === "year" ? "year" : "month" }; // an unknown plan fails closed
 });
 
 /** This person's own theme choice; null = follow the team. */
@@ -1295,4 +1307,13 @@ export async function getWebChats(): Promise<{ chats: WebChatRow[]; mode: ChatMo
       messages: c.web_chat_messages.map((m) => ({ id: m.id, from: m.sender, text: m.body, at: m.created_at })),
     })),
   };
+}
+
+/** Paid seats on the active team: owners, admins and agents (assistants are free). */
+export async function getPaidSeats(): Promise<number> {
+  if (!dbEnabled) return 1;
+  const db = await supabase();
+  const { count } = await db.from("memberships").select("user_id", { count: "exact", head: true })
+    .eq("org_id", (await db.rpc("active_org")).data).in("role", [...PAID_ROLES]);
+  return Math.max(count ?? 1, 1);
 }

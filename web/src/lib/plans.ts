@@ -63,3 +63,28 @@ export type PlanKey = (typeof PLANS)[number]["key"];
 
 /** Price per agent for one billing period, in whole US dollars. */
 export const price = (monthly: number, yearly: boolean) => (yearly ? monthly * YEARLY_MONTHS : monthly);
+
+const RANK: Record<PlanKey, number> = { starter: 0, pro: 1, team: 2 };
+/** The lowest plan that includes each paid capability. Everything not listed here is in every plan. */
+export const NEEDS = {
+  ai: "pro", chatAssistant: "pro", email: "pro", farm: "pro", marketing: "pro",
+  routing: "team", offices: "team", agency: "team", whiteLabel: "team",
+} as const satisfies Record<string, PlanKey>;
+export type Capability = keyof typeof NEEDS;
+
+export const allows = (plan: PlanKey, cap: Capability) => RANK[plan] >= RANK[NEEDS[cap]];
+export const isPlan = (v: unknown): v is PlanKey => typeof v === "string" && v in RANK;
+export const planName = (k: PlanKey) => PLANS.find((p) => p.key === k)!.name;
+
+/** Pages that belong to a paid capability (the proxy sends teams without it to /billing). */
+export function capabilityFor(path: string): Capability | null {
+  const on = (p: string) => path === p || path.startsWith(p + "/");
+  if (on("/email")) return "email";
+  if (on("/farm")) return "farm";
+  if (on("/studio") || on("/publish") || on("/api/publish")) return "marketing";
+  if (on("/agency")) return "agency";
+  return null;
+}
+
+/** The message a server action returns when the team's plan doesn't include something. */
+export const upgradeMessage = (cap: Capability) => `This is part of the ${planName(NEEDS[cap])} plan. An owner or admin can change plans in Account, Plan and billing.`;

@@ -110,7 +110,9 @@ Migrations are in `supabase/migrations/`, applied in order:
 | `0084_dispatch_secret_hash.sql` | The dispatch secret may also be registered by SHA-256 hash in `private.config` (`email_dispatch_sha256`) |
 | `0085_pg_net_schema.sql` | `pg_net` moved to the `extensions` schema |
 | `0086_web_chat_conversations.sql` | Website chat as saved conversations: `organizations.chat_ai` (off / answer / book), `web_chats` (visitor token stored as a hash, human takeover, wants-a-person flag, linked to the lead after booking) and `web_chat_messages` (visitor / ai / agent), read-only to members; keyed public functions `chat_mode`, `chat_open`, `chat_say` (AI messages dropped once a person has the chat), `chat_read`, `chat_want_person`, `chat_link` (only a lead that just booked); team functions `chat_takeover`, `chat_reply`; anonymous chats deleted after 90 days |
-| `0087_chat_ai_opt_in.sql` | **Not applied yet.** Website chat assistant is opt-in: default `chat_ai` becomes `off`, and teams still on the old `answer` default move to `off` (teams that chose `book` keep it) |
+| `0087_chat_ai_opt_in.sql` | Website chat assistant is opt-in: default `chat_ai` becomes `off`, and teams still on the old `answer` default move to `off` (teams that chose `book` keep it) |
+| `0088_plans.sql` | Plans: `organizations.plan` (the unused 0001 column, now starter / pro / team, default team during early access) and `plan_interval` (month / year); owners and admins may switch while billing is not live (revoke that grant when billing goes live); `app_brand` returns the plan; on Starter the website chat assistant reads as off (`chat_state`, `chat_say`, `chat_mode`, `chat_open`) |
+| `0089_plan_gates.sql` | Plans enforced where settings are read: white-label colors, logo, button shape, custom domain and no-"Powered by" only on Team (`app_brand`, `public_brand`, `domain_allows`, email brand); lead routing only on Team (`route_lead`); queued email from a Starter team is skipped with a reason (`email_claim`) |
 
 After `0010`, store the hash of your form key (per environment):
 

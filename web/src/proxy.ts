@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { clientPage } from "@/lib/domain";
 import { featureFor } from "@/lib/features";
 import { LEGAL } from "@/lib/legal";
+import { allows, capabilityFor, isPlan, upgradeMessage } from "@/lib/plans";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -57,10 +58,17 @@ export async function proxy(req: NextRequest) {
     && data.user.user_metadata?.terms_version !== LEGAL.termsVersion)
     return NextResponse.redirect(new URL(`/accept?next=${encodeURIComponent(path + req.nextUrl.search)}`, req.url));
   // Modules the team's owner switched off are closed for everyone on the team, not just hidden from the menu.
+  // Pages outside the team's plan send people to Plan and billing, saying which plan includes it.
   const feature = data.user ? featureFor(path) : null;
-  if (feature) {
+  const cap = data.user ? capabilityFor(path) : null;
+  if (feature || cap) {
     const { data: brand } = await db.rpc("app_brand");
-    if ((brand as { off?: string[] } | null)?.off?.includes(feature)) return NextResponse.redirect(new URL("/", req.url));
+    const b = brand as { off?: string[]; plan?: unknown } | null;
+    if (feature && b?.off?.includes(feature)) return NextResponse.redirect(new URL("/", req.url));
+    if (cap && !allows(isPlan(b?.plan) ? b.plan : "starter", cap))
+      return path.startsWith("/api/")
+        ? NextResponse.json({ error: upgradeMessage(cap) }, { status: 402 })
+        : NextResponse.redirect(new URL(`/billing?need=${cap}`, req.url));
   }
   return res;
 }

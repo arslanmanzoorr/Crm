@@ -1,5 +1,5 @@
 import { AI_KEY_MISSING, AiError, chat } from "@/lib/ai-server";
-import { meterAi } from "@/lib/db";
+import { meterAi, requirePlan } from "@/lib/db";
 
 const MAX_BODY = 64_000; // chars; a long thread is ~20k
 
@@ -42,6 +42,8 @@ export async function POST(req: Request) {
   const task = body.task as keyof typeof tasks;
   if (typeof task !== "string" || !Object.hasOwn(tasks, task)) return Response.json({ error: "Unknown task" }, { status: 400 });
   if (!process.env.OPENROUTER_API_KEY) return Response.json({ error: AI_KEY_MISSING }, { status: 503 });
+  const notInPlan = await requirePlan("ai");
+  if (notInPlan) return Response.json({ error: notInPlan }, { status: 402 });
   const limited = await meterAi(task);
   if (limited) return Response.json({ error: limited }, { status: 429 });
   const data = body.data;
