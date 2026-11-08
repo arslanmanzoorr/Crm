@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { InstallPlaybook } from "@/components/site/install-playbook";
-import { CtaTicker, Reveal, SiteFooter, SiteNav } from "@/components/site/signal";
+import { ClosingCta, Reveal, SiteFooter, SiteNav } from "@/components/site/signal";
 import { S } from "@/lib/site-theme";
 import { dbEnabled, supabase } from "@/lib/db";
 import { siteFont } from "@/lib/site-font";
@@ -69,7 +69,7 @@ async function Playbook({ params }: { params: PageProps<"/store/[key]">["params"
           </Reveal>
         </div>
       </article>
-      <CtaTicker />
+      <ClosingCta />
       <SiteFooter />
     </div>
   );

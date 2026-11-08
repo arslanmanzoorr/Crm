@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CtaTicker, Reveal, SiteFooter, SiteNav } from "@/components/site/signal";
+import { ClosingCta, Reveal, SiteFooter, SiteNav } from "@/components/site/signal";
 import { S } from "@/lib/site-theme";
 import { StoreGrid } from "@/components/site/store-grid";
 import { siteFont } from "@/lib/site-font";
@@ -21,7 +21,7 @@ export default function StorePage() {
         </Reveal>
         <div className="mt-14 border-t border-black/15 pt-10"><StoreGrid items={STORE} categories={Object.values(CATEGORIES)} /></div>
       </section>
-      <CtaTicker />
+      <ClosingCta />
       <SiteFooter />
     </div>
   );

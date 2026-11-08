@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PricingPlans } from "@/components/site/pricing-plans";
-import { CtaTicker, Reveal, SiteFooter, SiteNav } from "@/components/site/signal";
+import { ClosingCta, Reveal, SiteFooter, SiteNav } from "@/components/site/signal";
 import { LEGAL } from "@/lib/legal";
 import { BILLING_LIVE, TRIAL_DAYS, YEARLY_MONTHS } from "@/lib/plans";
 import { siteFont } from "@/lib/site-font";
@@ -57,7 +57,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <CtaTicker />
+      <ClosingCta />
       <SiteFooter />
     </div>
   );

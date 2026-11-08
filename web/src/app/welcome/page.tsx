@@ -2,7 +2,7 @@ import { ArrowRight, Check, FileLock2, Lock, PhoneOff, Scale, Sparkles } from "l
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PlaybookPreview } from "@/components/site/playbook-preview";
-import { CircleReveal, CtaTicker, Letters, LiftCard, Panels, Reveal, SiteFooter, SiteNav, type Panel } from "@/components/site/signal";
+import { CircleReveal, ClosingCta, Letters, LiftCard, Panels, Reveal, SiteFooter, SiteNav, type Panel } from "@/components/site/signal";
 import { btnGhost, btnPrimary, S } from "@/lib/site-theme";
 import { siteFont } from "@/lib/site-font";
 import { STORE } from "@/lib/store";
@@ -119,7 +119,7 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <CtaTicker />
+      <ClosingCta />
       <SiteFooter />
     </div>
   );

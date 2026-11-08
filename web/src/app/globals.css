@@ -314,8 +314,6 @@ html[data-intro="seen"] .intro { display: none; }
 /* Scroll strips (tables, chip rows) contain their visually hidden labels, so sr-only text can't widen the page. */
 @layer base { .overflow-x-auto { position: relative; } }
 
-/* Marketing site: the capability strip loops by translating exactly one copy of the row. */
-@keyframes site-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 /* Marketing pages ([data-site]) run full bleed: the app column's padding and width cap step aside. */
 main:has([data-site]) { padding: 0; }

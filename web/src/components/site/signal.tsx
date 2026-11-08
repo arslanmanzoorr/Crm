@@ -143,17 +143,22 @@ export function Panels({ items }: { items: Panel[] }) {
   );
 }
 
-/** Closing band: a slow "Create account" ticker that pauses on hover. */
-export function CtaTicker() {
+/** Closing band: one line that names the moment, one honest promise, two ways forward. */
+export function ClosingCta() {
   return (
-    <section aria-label="Create an account" className="overflow-hidden bg-[#111111] py-14">
-      <Link href="/login" className="group flex w-max motion-safe:animate-[site-marquee_26s_linear_infinite] hover:[animation-play-state:paused] focus-visible:[animation-play-state:paused]">
-        {[0, 1].map((k) => (
-          <span key={k} aria-hidden={k === 1} className="flex shrink-0 items-center gap-10 pr-10 text-[clamp(3rem,8vw,7rem)] font-extrabold tracking-[-0.04em] text-white">
-            Create account <ArrowRight aria-hidden className="size-[0.7em]" style={{ color: S.accent }} /> Create account <ArrowRight aria-hidden className="size-[0.7em]" style={{ color: S.accent }} />
-          </span>
-        ))}
-      </Link>
+    <section aria-labelledby="closing-cta" className="bg-[#111111] text-white">
+      <Reveal className="mx-auto grid max-w-[1240px] gap-10 px-5 py-24 sm:px-8 sm:py-28 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+        <h2 id="closing-cta" className="text-[clamp(2.75rem,7vw,6rem)] leading-[0.95] font-extrabold tracking-[-0.045em]">
+          Your next lead is <span style={{ color: S.accent }}>already typing.</span>
+        </h2>
+        <div className="flex flex-col gap-6">
+          <p className="max-w-[40ch] text-lg text-white/70">Be the agent who answers first. Estos drafts the follow-up; you decide what goes out.</p>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/login" className={btnPrimary}>Create account <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" /></Link>
+            <Link href="/pricing" className="inline-flex min-h-12 items-center rounded-[6px] border border-white/25 px-6 font-medium transition hover:border-white/70">See pricing</Link>
+          </div>
+        </div>
+      </Reveal>
     </section>
   );
 }
