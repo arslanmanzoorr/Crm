@@ -67,13 +67,14 @@ async function Shell() {
 }
 
 /**
- * First app load in a browser session: the logo, then a circle opens onto the app (pure CSS, `.intro`).
+ * First app load in a browser session: the logo collapses into the sidebar logo, then the app opens out from it (pure CSS, `.intro`).
  * The inline script runs as the HTML streams in and hides it for the rest of the session.
  */
 function Intro({ name }: { name: string }) {
   return (
     <>
       <div className="intro" aria-hidden><span>{name}<span>.</span></span></div>
+      <div className="intro-orb" aria-hidden />
       <script dangerouslySetInnerHTML={{ __html: `try{sessionStorage.getItem("estos:intro")?document.documentElement.dataset.intro="seen":sessionStorage.setItem("estos:intro","1")}catch(e){document.documentElement.dataset.intro="seen"}` }} />
     </>
   );

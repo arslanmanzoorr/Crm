@@ -201,7 +201,9 @@ nav[data-slide] [aria-current="page"] [data-pill] {
   background: transparent;
 }
 
-/* First app load in a browser session: the logo, then a circle opens onto the app (<Intro>). */
+/* First app load in a browser session (<Intro>): the logo rises, then the whole logo screen collapses into a lime
+   circle that lands on the sidebar logo, and the app opens out from that spot behind a lime ring. Phones have no
+   sidebar logo, so there it collapses to the centre. */
 @property --ring {
   syntax: "<length>";
   inherits: false;
@@ -212,6 +214,16 @@ nav[data-slide] [aria-current="page"] [data-pill] {
   inherits: false;
   initial-value: 0%;
 }
+:root {
+  --intro-x: 50vw;
+  --intro-y: 50vh;
+}
+@media (min-width: 768px) {
+  :root {
+    --intro-x: 48px; /* centre of the sidebar logo: w-24 rail, py-6, size-11 */
+    --intro-y: 46px;
+  }
+}
 .intro {
   position: fixed;
   inset: 0;
@@ -219,21 +231,64 @@ nav[data-slide] [aria-current="page"] [data-pill] {
   display: grid;
   place-items: center;
   /* A lime ring rides the edge of the opening circle (no ring until it starts opening). */
-  background: radial-gradient(circle at 50% 50%, var(--color-accent) calc(var(--hole) + var(--ring)), var(--color-bg) calc(var(--hole) + var(--ring)));
+  background: radial-gradient(circle at var(--intro-x) var(--intro-y), var(--color-accent) calc(var(--hole) + var(--ring)), var(--color-bg) calc(var(--hole) + var(--ring)));
   pointer-events: none;
-  mask: radial-gradient(circle at 50% 50%, transparent var(--hole), #000 var(--hole));
-  animation: intro-open 750ms cubic-bezier(0.7, 0, 0.2, 1) 950ms both;
+  mask: radial-gradient(circle at var(--intro-x) var(--intro-y), transparent var(--hole), #000 var(--hole));
+  animation: intro-open 800ms cubic-bezier(0.65, 0, 0.2, 1) 1380ms both;
 }
 .intro > span {
   font-size: clamp(56px, 9vw, 104px);
   font-weight: 600;
   letter-spacing: -0.05em;
-  animation: rise 700ms var(--ease-out-expo) 80ms both;
+  animation:
+    rise 700ms var(--ease-out-expo) 80ms both,
+    intro-collapse 520ms cubic-bezier(0.7, 0, 0.3, 1) 950ms forwards;
 }
 .intro > span > span {
   display: inline-block;
   color: var(--color-accent);
   animation: pop 500ms var(--ease-out-expo) 520ms both;
+}
+/* The circle the logo collapses into; outside the masked overlay so the opening hole doesn't cut it. */
+.intro-orb {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 101;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  pointer-events: none;
+  opacity: 0;
+  animation: intro-orb 1500ms var(--ease-out-expo) 950ms forwards;
+}
+@keyframes intro-collapse {
+  to {
+    transform: translate(calc(var(--intro-x) - 50vw), calc(var(--intro-y) - 50vh)) scale(0.08);
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+@keyframes intro-orb {
+  0% {
+    opacity: 0;
+    transform: translate(50vw, 50vh) scale(2.4);
+  }
+  10% {
+    opacity: 1;
+  }
+  30%,
+  45% {
+    opacity: 1;
+    transform: translate(var(--intro-x), var(--intro-y)) scale(1);
+  }
+  70%,
+  to {
+    opacity: 0;
+    transform: translate(var(--intro-x), var(--intro-y)) scale(1);
+  }
 }
 @keyframes intro-open {
   3% {
@@ -245,7 +300,7 @@ nav[data-slide] [aria-current="page"] [data-pill] {
     visibility: hidden;
   }
 }
-html[data-intro="seen"] .intro { display: none; }
+html[data-intro="seen"] :is(.intro, .intro-orb) { display: none; }
 
 /* Reduced motion: no travel, keep the state change visible through opacity and color */
 @media (prefers-reduced-motion: reduce) {
@@ -270,7 +325,8 @@ html[data-intro="seen"] .intro { display: none; }
   nav[data-slide] .nav-pill {
     transition: none !important;
   }
-  .intro {
+  .intro,
+  .intro-orb {
     display: none;
   }
   ::view-transition-group(*),
