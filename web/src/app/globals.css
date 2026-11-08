@@ -201,22 +201,14 @@ nav[data-slide] [aria-current="page"] [data-pill] {
   background: transparent;
 }
 
-/* First app load in a browser session (<Intro>): the logo rises, then the whole logo screen collapses into a lime
-   circle that lands on the sidebar logo, and the app opens out from that spot behind a lime ring. Phones have no
+/* First app load in a browser session (<Intro>): the logo rises, then the logo screen itself shrinks into a circle
+   that lands on the sidebar logo, with a lime ring on its edge. The circle's centre, its radius and the logo all run
+   on one clock and one curve, so the logo stays pinned to the centre and shrinks exactly with it. Phones have no
    sidebar logo, so there it collapses to the centre. */
-@property --ring {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-@property --hole {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 0%;
-}
 :root {
   --intro-x: 50vw;
   --intro-y: 50vh;
+  --intro-ease: cubic-bezier(0.7, 0, 0.25, 1);
 }
 @media (min-width: 768px) {
   :root {
@@ -224,83 +216,61 @@ nav[data-slide] [aria-current="page"] [data-pill] {
     --intro-y: 46px;
   }
 }
+/* Lime layer = the ring: 6px wider than the dark screen inside it; ends as the 44px lime disc of the sidebar logo. */
 .intro {
   position: fixed;
   inset: 0;
   z-index: 100;
+  pointer-events: none;
+  background: var(--color-accent);
+  clip-path: circle(75vmax at 50vw 50vh);
+  animation:
+    intro-ring 800ms var(--intro-ease) 1000ms forwards,
+    intro-out 220ms ease-out 1950ms forwards;
+}
+.intro > div {
+  position: absolute;
+  inset: 0;
   display: grid;
   place-items: center;
-  /* A lime ring rides the edge of the opening circle (no ring until it starts opening). */
-  background: radial-gradient(circle at var(--intro-x) var(--intro-y), var(--color-accent) calc(var(--hole) + var(--ring)), var(--color-bg) calc(var(--hole) + var(--ring)));
-  pointer-events: none;
-  mask: radial-gradient(circle at var(--intro-x) var(--intro-y), transparent var(--hole), #000 var(--hole));
-  animation: intro-open 800ms cubic-bezier(0.65, 0, 0.2, 1) 1380ms both;
+  background: var(--color-bg);
+  clip-path: circle(calc(75vmax - 6px) at 50vw 50vh);
+  animation:
+    intro-screen 800ms var(--intro-ease) 1000ms forwards,
+    intro-out 160ms ease-out 1790ms forwards;
 }
-.intro > span {
+.intro span {
+  display: inline-block;
+}
+.intro > div > span {
   font-size: clamp(56px, 9vw, 104px);
   font-weight: 600;
   letter-spacing: -0.05em;
   animation:
     rise 700ms var(--ease-out-expo) 80ms both,
-    intro-collapse 520ms cubic-bezier(0.7, 0, 0.3, 1) 950ms forwards;
+    intro-logo 800ms var(--intro-ease) 1000ms forwards;
 }
-.intro > span > span {
-  display: inline-block;
+.intro > div > span > span {
   color: var(--color-accent);
   animation: pop 500ms var(--ease-out-expo) 520ms both;
 }
-/* The circle the logo collapses into; outside the masked overlay so the opening hole doesn't cut it. */
-.intro-orb {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 101;
-  width: 44px;
-  height: 44px;
-  margin: -22px 0 0 -22px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  pointer-events: none;
-  opacity: 0;
-  animation: intro-orb 1500ms var(--ease-out-expo) 950ms forwards;
+@keyframes intro-ring {
+  to { clip-path: circle(22px at var(--intro-x) var(--intro-y)); }
 }
-@keyframes intro-collapse {
-  to {
-    transform: translate(calc(var(--intro-x) - 50vw), calc(var(--intro-y) - 50vh)) scale(0.08);
-    opacity: 0;
-    filter: blur(6px);
-  }
+@keyframes intro-screen {
+  to { clip-path: circle(16px at var(--intro-x) var(--intro-y)); }
 }
-@keyframes intro-orb {
-  0% {
-    opacity: 0;
-    transform: translate(50vw, 50vh) scale(2.4);
-  }
-  10% {
-    opacity: 1;
-  }
-  30%,
-  45% {
-    opacity: 1;
-    transform: translate(var(--intro-x), var(--intro-y)) scale(1);
-  }
-  70%,
+/* Same start, end and curve as the circle: scale = final radius / start radius, so it shrinks in step. */
+@keyframes intro-logo {
+  to { transform: translate(calc(var(--intro-x) - 50vw), calc(var(--intro-y) - 50vh)) scale(0.02); }
+}
+@keyframes intro-out {
   to {
     opacity: 0;
-    transform: translate(var(--intro-x), var(--intro-y)) scale(1);
-  }
-}
-@keyframes intro-open {
-  3% {
-    --ring: 10px;
-  }
-  to {
-    --ring: 10px;
-    --hole: 101%;
     visibility: hidden;
   }
 }
-html[data-intro="seen"] :is(.intro, .intro-orb) { display: none; }
+html[data-intro="seen"] .intro { display: none; }
 
 /* Reduced motion: no travel, keep the state change visible through opacity and color */
 @media (prefers-reduced-motion: reduce) {
@@ -325,8 +295,7 @@ html[data-intro="seen"] :is(.intro, .intro-orb) { display: none; }
   nav[data-slide] .nav-pill {
     transition: none !important;
   }
-  .intro,
-  .intro-orb {
+  .intro {
     display: none;
   }
   ::view-transition-group(*),
