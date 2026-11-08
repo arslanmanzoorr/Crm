@@ -77,7 +77,7 @@ a {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
 }
-input:focus-visible,
+input:not([type="checkbox"], [type="radio"]):focus-visible,
 textarea:focus-visible,
 select:focus-visible {
   outline: none;

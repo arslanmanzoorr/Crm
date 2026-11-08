@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { clientPage } from "@/lib/domain";
 import { featureFor } from "@/lib/features";
+import { LEGAL } from "@/lib/legal";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -51,6 +52,10 @@ export async function proxy(req: NextRequest) {
         ? NextResponse.json({ error: "Enter your sign-in code first." }, { status: 401 })
         : NextResponse.redirect(new URL(`/mfa?next=${encodeURIComponent(path + req.nextUrl.search)}`, req.url));
   }
+  // Everyone works under the current Terms and Privacy Policy: no recorded acceptance of this version, accept first.
+  if (data.user && !PUBLIC.some((p) => path.startsWith(p)) && !path.startsWith("/api/") && path !== "/accept" && path !== "/mfa"
+    && data.user.user_metadata?.terms_version !== LEGAL.termsVersion)
+    return NextResponse.redirect(new URL(`/accept?next=${encodeURIComponent(path + req.nextUrl.search)}`, req.url));
   // Modules the team's owner switched off are closed for everyone on the team, not just hidden from the menu.
   const feature = data.user ? featureFor(path) : null;
   if (feature) {

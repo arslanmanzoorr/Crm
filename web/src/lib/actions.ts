@@ -35,6 +35,7 @@ import { checkSuggestions, type Change, type Suggestion } from "./profile-update
 import { feesFromForm, HOME_TYPES, PARKING } from "./rental-feed";
 import { BUYING_TYPES, matchListing } from "./match";
 import { normTag, normTags, safeNext } from "./search";
+import { LEGAL } from "./legal";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -118,6 +119,15 @@ export async function mfaRemove(factorId: string): Promise<FormState> {
   return { ok: "Removed." };
 }
 
+/**
+ * Where to land after signing in: the accept screen first when this account hasn't accepted the current Terms.
+ * Server-action redirects render the target directly and skip the proxy, so the gate is applied here as well.
+ */
+async function landing(db: Awaited<ReturnType<typeof supabase>>, next: string) {
+  const { data } = await db.auth.getUser();
+  return data.user?.user_metadata?.terms_version === LEGAL.termsVersion ? next : `/accept?next=${encodeURIComponent(next)}`;
+}
+
 /** Second step of sign-in: the code from the authenticator app. */
 export async function mfaVerify(_: FormState, f: FormData): Promise<FormState> {
   if (!dbEnabled) return NO_DB;
@@ -126,9 +136,25 @@ export async function mfaVerify(_: FormState, f: FormData): Promise<FormState> {
   const db = await authed();
   const { data } = await db.auth.mfa.listFactors();
   const factor = data?.totp.find((x) => x.status === "verified");
-  if (!factor) redirect(safeNext(str(f, "next")));
+  if (!factor) redirect(await landing(db, safeNext(str(f, "next"))));
   const { error } = await db.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
   if (error) return { error: "That code didn't match. Try the current code from your app." };
+  redirect(await landing(db, safeNext(str(f, "next"))));
+}
+
+/**
+ * Proof of agreement, kept on the account: which version of the Terms and Privacy Policy, when (server clock), and the
+ * separate, optional product-email choice. The proxy sends anyone without the current version to /accept.
+ */
+const termsRecord = (f: FormData) => ({ terms_version: LEGAL.termsVersion, terms_accepted_at: new Date().toISOString(), marketing_opt_in: f.get("marketing") === "on" });
+
+/** /accept: record agreement to the current Terms and Privacy Policy, then carry on. */
+export async function acceptTerms(_: FormState, f: FormData): Promise<FormState> {
+  if (!dbEnabled) return NO_DB;
+  if (f.get("agree") !== "on") return { error: "Tick the box to agree to the Terms of Service and Privacy Policy." };
+  const db = await authed();
+  const { error } = await db.auth.updateUser({ data: termsRecord(f) });
+  if (error) return { error: "Couldn't save that. Try again." };
   redirect(safeNext(str(f, "next")));
 }
 
@@ -141,15 +167,16 @@ export async function authenticate(_: FormState, f: FormData): Promise<FormState
   if (f.get("mode") !== "signup") {
     const { error } = await db.auth.signInWithPassword(creds);
     if (error) return { error: error.message };
-    redirect(next);
+    redirect(await landing(db, next));
   }
+  if (f.get("agree") !== "on") return { error: "To create an account, tick the box to agree to the Terms of Service and Privacy Policy." };
   if (creds.password.length < 8 || creds.password.length > 72) return { error: "Use a password of 8 to 72 characters." };
   // Fixed site URL in production: never build email links from a request header.
   const origin = process.env.SITE_URL ?? (process.env.NODE_ENV === "development" ? (await headers()).get("origin") ?? "" : "");
   if (!origin) return { error: "Sign-up is not configured yet (SITE_URL)." };
-  const { data, error } = await db.auth.signUp({ ...creds, options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` } });
+  const { data, error } = await db.auth.signUp({ ...creds, options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`, data: termsRecord(f) } });
   if (error) return { error: error.message };
-  if (data.session) redirect(next);
+  if (data.session) redirect(await landing(db, next));
   return { ok: "Check your email for a confirmation link." };
 }
 

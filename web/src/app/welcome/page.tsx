@@ -57,9 +57,9 @@ export default function WelcomePage() {
               <div className="h-full rounded-[8px] bg-[#111111] p-8 text-white sm:p-10">
                 <Sparkles aria-hidden className="size-7" style={{ color: S.accent }} />
                 <h3 className="mt-6 max-w-[16ch] text-3xl font-bold tracking-tight sm:text-4xl">AI drafts. You decide what gets sent.</h3>
-                <p className="mt-4 max-w-[46ch] text-white/70">Replies, call openers, listing copy and daily plans come with their reasons. Nothing reaches a client until a person sends it.</p>
+                <p className="mt-4 max-w-[46ch] text-white/70">Replies, call openers, listing copy and daily plans come with their reasons and are marked as AI-written. Messages to your leads go out when a person sends them. The one exception is the website chat assistant: it tells visitors its answers are automated, and you can switch it off or take over any chat.</p>
                 <ul className="mt-8 grid gap-2.5 text-sm text-white/85 sm:grid-cols-2">
-                  {["Replies in the language the lead writes in", "Suggests only homes from your own listings", "Profile updates quote the lead's own words", "Every AI call is logged and capped"].map((t) => (
+                  {["Replies in the language the lead writes in", "Suggests only homes from your own listings", "Profile updates quote the lead's own words", "AI use is logged and has daily limits"].map((t) => (
                     <li key={t} className="flex gap-2"><Check aria-hidden className="mt-0.5 size-4 shrink-0" style={{ color: S.accent }} />{t}</li>
                   ))}
                 </ul>
@@ -68,8 +68,8 @@ export default function WelcomePage() {
             <Reveal delay={0.06} className="md:col-span-2">
               <div className="h-full rounded-[8px] p-7" style={{ background: S.accent, color: S.ink }}>
                 <Scale aria-hidden className="size-6" />
-                <h3 className="mt-5 text-xl font-bold">Fair Housing checks</h3>
-                <p className="mt-2 text-sm">Listing copy and AI answers describe the home, never who should live there.</p>
+                <h3 className="mt-5 text-xl font-bold">Fair Housing guardrails</h3>
+                <p className="mt-2 text-sm">AI writing is instructed to describe the home, never who should live there. You review what goes out.</p>
               </div>
             </Reveal>
             <Reveal delay={0.1} className="md:col-span-2">

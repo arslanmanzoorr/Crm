@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { CSSProperties } from "react";
 import { ActionForm, Field, primaryBtn } from "@/components/forms";
+import { TermsConsent } from "@/components/terms-consent";
 import { authenticate, googleSignIn } from "@/lib/actions";
 
 type Brand = { name: string; color: string | null; logo: string | null } | null;
@@ -39,6 +41,7 @@ export function Login({ brand }: { brand: Brand }) {
             <input type="hidden" name="next" value={next} />
             <Field label="Email" name="email" type="email" autoComplete="email" required />
             <Field label="Password" name="password" type="password" autoComplete="current-password" minLength={8} required />
+            <TermsConsent required={false} />
             <div className="flex gap-2">
               <button name="mode" value="signin" disabled={pending} className={primaryBtn}>Sign in</button>
               <button name="mode" value="signup" disabled={pending} className="min-h-11 rounded-full bg-surface-light px-5 text-sm font-medium text-on-light hover:bg-white disabled:opacity-60">
@@ -48,6 +51,7 @@ export function Login({ brand }: { brand: Brand }) {
           </>
         )}
       </ActionForm>
+      <p className="text-center text-xs text-muted"><Link href="/legal/terms" className="underline hover:text-ink">Terms</Link> · <Link href="/legal/privacy" className="underline hover:text-ink">Privacy</Link> · <Link href="/legal" className="underline hover:text-ink">Legal</Link></p>
     </div>
   );
 }

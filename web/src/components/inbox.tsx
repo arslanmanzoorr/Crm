@@ -23,6 +23,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false); // phones: list or conversation, never both
   const [draft, setDraft] = useState("");
+  const [aiWritten, setAiWritten] = useState(false); // the box holds an AI draft: say so until it is sent or cleared
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [pending, start] = useTransition();
@@ -50,6 +51,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
     setBusy(true);
     setErr("");
     try {
+      setAiWritten(true);
       setDraft(await askAi("reply", { channel: t.channel, lead: { name: t.name, ...t.lead }, matchingListings: t.homes ?? [], messages: t.messages.slice(-20) }));
     } catch (e) {
       setErr((e as Error).message);
@@ -70,6 +72,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
       try {
         await logMessage(t.leadId, t.channel, text, direction);
         setDraft("");
+        setAiWritten(false);
       } catch {
         setErr("Couldn't save the message. Your text is still here; try again.");
       }
@@ -90,7 +93,7 @@ export function Inbox({ threads }: { threads: Thread[] }) {
             <button
               key={x.leadId + x.channel}
               type="button"
-              onClick={() => { setActive(i); setOpen(true); setDraft(""); setErr(""); }}
+              onClick={() => { setActive(i); setOpen(true); setDraft(""); setAiWritten(false); setErr(""); }}
               aria-current={sel ? "true" : undefined}
               className={`flex min-h-16 items-center gap-3 rounded-card p-3 text-left transition duration-150 ${sel ? "bg-surface-light text-on-light" : "bg-surface-2 hover:bg-surface-3"}`}
             >
@@ -132,9 +135,10 @@ export function Inbox({ threads }: { threads: Thread[] }) {
 
         <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] -mx-4 -mb-4 flex flex-col gap-2 rounded-b-card bg-surface-2 px-4 pt-2 pb-4 lg:static">
           {err && <p role="alert" className="text-sm text-score-1">{err}</p>}
+          {aiWritten && draft && <p className="text-xs text-muted"><span className="font-medium text-accent-ink">AI draft</span> · read and edit it before you send</p>}
           <textarea
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => { setDraft(e.target.value); if (!e.target.value) setAiWritten(false); }}
             rows={2}
             placeholder={`Write to ${t.name.split(" ")[0]}, or paste their reply`}
             aria-label="Message"

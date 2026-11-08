@@ -36,6 +36,8 @@ export async function chat(o: { system: string; user: string; maxTokens: number;
       // Thinking off: these are short tasks, and reasoning models (DeepSeek, Nemotron) otherwise spend the whole
       // budget thinking and return nothing. Models without reasoning ignore it.
       reasoning: { enabled: false },
+      // Customer data never trains models: OpenRouter only routes to providers that neither store nor train on prompts.
+      provider: { data_collection: "deny" },
       messages: [{ role: "system", content: system }, { role: "user", content:
         o.image ? [{ type: "text", text: o.user }, { type: "image_url", image_url: { url: o.image } }]
         : o.pdf ? [{ type: "text", text: o.user }, { type: "file", file: { filename: o.pdf.name, file_data: o.pdf.data } }]

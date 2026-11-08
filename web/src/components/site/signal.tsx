@@ -11,6 +11,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
 import { btnPrimary, S } from "@/lib/site-theme";
+import { CookieNotice } from "@/components/cookie-notice";
+import { LEGAL, operator } from "@/lib/legal";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -53,10 +55,17 @@ export function SiteFooter() {
           <Link href="/welcome#product" className="hover:text-white">Product</Link>
           <Link href="/store" className="hover:text-white">Store</Link>
           <Link href="/welcome#trust" className="hover:text-white">Security</Link>
+          <Link href="/legal/terms" className="hover:text-white">Terms</Link>
+          <Link href="/legal/privacy" className="hover:text-white">Privacy</Link>
+          <Link href="/legal" className="hover:text-white">Legal</Link>
           <Link href="/login" className="hover:text-white">Sign in</Link>
         </nav>
-        <p>&copy; 2026 Estos</p>
+        <p>
+          &copy; 2026 {operator}{LEGAL.address && <> · {LEGAL.address}</>}
+          <br /><a href={`mailto:${LEGAL.support}`} className="hover:text-white">{LEGAL.support}</a>
+        </p>
       </div>
+      <CookieNotice />
     </footer>
   );
 }
