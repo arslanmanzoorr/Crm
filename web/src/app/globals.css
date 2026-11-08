@@ -193,6 +193,14 @@ dialog.palette::backdrop {
   from { transform: scaleY(0); }
 }
 
+/* Sidebar: one highlight slides to the active item; once it is placed, the items stop drawing their own. */
+nav[data-slide] .nav-pill {
+  transition: transform 520ms var(--ease-out-expo), width 520ms var(--ease-out-expo), height 520ms var(--ease-out-expo);
+}
+nav[data-slide] [aria-current="page"] [data-pill] {
+  background: transparent;
+}
+
 /* First app load in a browser session: the logo, then a circle opens onto the app (<Intro>). */
 @property --ring {
   syntax: "<length>";
@@ -258,6 +266,9 @@ html[data-intro="seen"] .intro { display: none; }
   .roll > :last-child,
   .bar-grow {
     animation: none !important;
+  }
+  nav[data-slide] .nav-pill {
+    transition: none !important;
   }
   .intro {
     display: none;

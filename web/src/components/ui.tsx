@@ -154,7 +154,7 @@ export function NotchCard({
     light: "bg-surface-light text-on-light",
   }[tone];
   return (
-    <article className={`group relative rounded-card p-5 transition duration-200 ease-out hover:-translate-y-0.5 has-[a:focus-visible]:-translate-y-0.5 ${surface} ${className}`}>
+    <article className={`group relative min-w-0 rounded-card p-5 transition duration-200 ease-out hover:-translate-y-0.5 has-[a:focus-visible]:-translate-y-0.5 ${surface} ${className}`}>
       {/* notch: a page-colored bite with two inverted corners for a smooth curve; only when there's an arrow to hold */}
       {href && <>
       <span aria-hidden className="absolute -top-px -right-px size-16 rounded-bl-[22px] bg-bg" />
