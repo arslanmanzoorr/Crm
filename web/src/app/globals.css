@@ -195,7 +195,7 @@ dialog.palette::backdrop {
 
 /* Sidebar: one highlight slides to the active item; once it is placed, the items stop drawing their own. */
 nav[data-slide] .nav-pill {
-  transition: transform 520ms var(--ease-out-expo), width 520ms var(--ease-out-expo), height 520ms var(--ease-out-expo);
+  transition: transform 520ms var(--ease-out-expo); /* every nav pill is the same size, so only the position moves */
 }
 nav[data-slide] [aria-current="page"] [data-pill] {
   background: transparent;
