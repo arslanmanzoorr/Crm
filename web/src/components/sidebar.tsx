@@ -67,10 +67,10 @@ export function Sidebar({ logo = null, team = "Estos", off = [], agency = false 
       ref={navRef}
       data-tour="nav"
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-line/5 bg-bg/95 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur md:sticky md:top-0 md:h-screen md:w-24 md:overflow-y-auto md:flex-col md:justify-start md:gap-2 md:border-0 md:bg-transparent md:py-6"
+      className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-line/5 bg-bg/95 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur md:sticky md:top-0 md:h-screen md:w-24 md:overflow-y-auto md:flex-col md:justify-start md:gap-0.5 md:border-0 md:bg-transparent md:py-5"
     >
       <span ref={pillRef} aria-hidden className="nav-pill pointer-events-none absolute top-0 left-0 rounded-full bg-surface-light opacity-0" />
-      <Link href="/" aria-label={`${team} home`} className={`mx-auto mb-6 hidden size-11 shrink-0 place-items-center overflow-hidden rounded-full text-lg font-semibold text-on-light md:grid ${logo ? "bg-surface-light" : "bg-accent"}`}>
+      <Link href="/" aria-label={`${team} home`} className={`mx-auto mb-4 hidden size-11 shrink-0 place-items-center overflow-hidden rounded-full text-lg font-semibold text-on-light md:grid ${logo ? "bg-surface-light" : "bg-accent"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- team logo from public Storage; next/image would need the host allow-listed */}
         {logo ? <img src={logo} alt="" className="size-full object-contain p-1" /> : (team[0] ?? "E").toUpperCase()}
       </Link>

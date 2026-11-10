@@ -52,6 +52,7 @@ a {
   text-underline-offset: 3px;
 }
 
+
 /* White-label button shape: pill-shaped controls follow the team's choice (--radius-btn, set per team) */
 :where(button, a, input, select, textarea, summary, label)[class~="rounded-full"] {
   border-radius: var(--radius-btn, 9999px);
@@ -212,8 +213,8 @@ nav[data-slide] [aria-current="page"] [data-pill] {
 }
 @media (min-width: 768px) {
   :root {
-    --intro-x: 48px; /* centre of the sidebar logo: w-24 rail, py-6, size-11 */
-    --intro-y: 46px;
+    --intro-x: 48px; /* centre of the sidebar logo: w-24 rail, py-5, size-11 */
+    --intro-y: 42px;
   }
 }
 /* Lime layer = the ring: 6px wider than the dark screen inside it; ends as the 44px lime disc of the sidebar logo. */
@@ -318,3 +319,24 @@ html[data-intro="seen"] .intro { display: none; }
 /* Marketing pages ([data-site]) run full bleed: the app column's padding and width cap step aside. */
 main:has([data-site]) { padding: 0; }
 main:has([data-site]) > div { max-width: none; }
+
+@layer base {
+  /* Grid items may shrink below their content: a long address truncates instead of widening the page on a phone. */
+  .grid > * {
+    min-width: 0;
+  }
+  /* Display type: balanced line breaks, tighter tracking at heading sizes. */
+  h1,
+  h2 {
+    text-wrap: balance;
+  }
+  h1 {
+    letter-spacing: -0.025em;
+  }
+  /* Surfaces get an edge on the near-black page: a 1px hairline and a soft offset shadow. Notched cards draw their own. */
+  .rounded-card:is(.bg-surface-1, .bg-surface-2):not([data-notch]) {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklab, var(--color-line) 7%, transparent),
+      0 1px 2px rgb(0 0 0 / 0.2);
+  }
+}

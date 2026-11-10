@@ -32,9 +32,12 @@ export function DoneToggle({ task }: { task: Task }) {
           setOptimistic(null);
         });
       }}
-      className={`relative z-10 grid size-11 shrink-0 place-items-center rounded-full transition duration-200 ${done ? "bg-accent text-on-light" : "ring-2 ring-current/40 ring-inset hover:ring-current"}`}
+      className="group relative z-10 grid size-11 shrink-0 place-items-center rounded-full"
     >
-      {done && <Check aria-hidden className="size-5 animate-pop" />}
+      {/* 44px target, 24px mark: the circle reads as a checkbox, not a second avatar */}
+      <span className={`grid size-6 place-items-center rounded-full transition duration-200 ${done ? "bg-accent text-on-light" : "ring-[1.5px] ring-current/35 ring-inset group-hover:bg-accent/15 group-hover:ring-accent"}`}>
+        {done && <Check aria-hidden className="size-4 animate-pop" />}
+      </span>
     </button>
   );
 }

@@ -62,7 +62,7 @@ export function Today({ leads, tasks }: { leads: Lead[]; tasks: Task[] }) {
   );
 }
 
-const actionBtn = "flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-surface-light px-4 text-sm font-medium text-on-light hover:bg-white";
+const actionBtn = "flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm font-medium text-ink transition duration-150 hover:bg-accent hover:text-on-light";
 
 function TaskRow({ task, overdue }: { task: Task; overdue: boolean }) {
   const href = task.kind === "email" ? task.email && `mailto:${task.email}` : task.phone && `tel:${task.phone}`;

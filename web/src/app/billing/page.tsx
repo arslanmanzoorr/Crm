@@ -40,7 +40,7 @@ async function Body({ searchParams }: { searchParams: PageProps<"/billing">["sea
         </p>
       )}
       {!BILLING_LIVE && (
-        <p className="max-w-3xl rounded-card border-l-4 border-accent bg-surface-2 p-5 text-sm">
+        <p className="max-w-3xl rounded-card bg-surface-2 p-5 text-sm">
           <b className="font-medium">Early access: free.</b> Switch plans as often as you like to see what each includes. The prices show what the plan
           will cost when billing starts. We&apos;ll give at least 30 days&apos; notice, new teams will get a {TRIAL_DAYS}-day trial, and nobody is charged without
           choosing a plan and agreeing to it.

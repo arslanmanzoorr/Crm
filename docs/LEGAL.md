@@ -48,5 +48,5 @@ the pages show them automatically (until then they are left out, never guessed).
 - **The database is in Frankfurt, Germany** (AWS eu-central-1), while the app runs in the US. The policies now say so.
   Moving the Supabase project to a US region would make every page faster for US users.
 - **The website chat assistant was on by default**, though the brief asked for opt-in. Migration `0087_chat_ai_opt_in.sql` turns it off
-  by default. It is **not applied yet**: the Supabase connection in the last session pointed at a different account.
+  by default; applied 2026-11-08 (test teams moved to "People only", the demo team kept its explicit choice).
 - Acceptance is stored on the account record. Once database access is back, an append-only acceptances table would make the record tamper-proof.

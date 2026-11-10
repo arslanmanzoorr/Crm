@@ -30,14 +30,14 @@ export function PeopleLinks({ contactId, links, people }: { contactId: string; l
       <ActionForm action={linkContacts.bind(null, contactId)} className="flex flex-wrap items-start gap-2">
         {(p) => (
           <>
-            <select name="other" required defaultValue="" aria-label="Person" className={`${inputAuto} min-w-0 flex-1`}>
+            <select name="other" required defaultValue="" aria-label="Person" className={`${inputAuto} min-w-44 flex-1`}>
               <option value="" disabled>Link someone…</option>
               {people.filter((x) => x.id !== contactId && !linked.has(x.id)).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
             </select>
             <select name="kind" defaultValue="household" aria-label="Relationship" className={inputAuto}>
               {Object.entries(KINDS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <input name="note" maxLength={200} placeholder="e.g. spouse, co-buyer" aria-label="Note" className={`${inputAuto} min-w-0 flex-1`} />
+            <input name="note" maxLength={200} placeholder="e.g. spouse, co-buyer" aria-label="Note" className={`${inputAuto} min-w-44 flex-1`} />
             <button disabled={p} className={primaryBtn}>{p ? "…" : "Link"}</button>
           </>
         )}

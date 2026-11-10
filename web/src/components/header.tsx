@@ -53,7 +53,7 @@ export function ScheduleTimeline({ tasks }: { tasks: Task[] }) {
           );
         })}
         {inHours(minutes(now)) && <span aria-hidden className="absolute inset-y-1 w-0.5 rounded-full bg-on-light" style={{ left: `${pct(minutes(now))}%` }} />}
-        {today.length === 0 && <span className="absolute inset-0 grid place-items-center text-sm font-medium">Nothing scheduled today</span>}
+        {today.length === 0 && <span className="absolute inset-0 grid place-items-center px-3 text-sm font-medium"><span className="truncate">Nothing scheduled<span className="hidden sm:inline"> today</span></span></span>}
         {outside > 0 && pinned.length === 0 && <span className="absolute inset-0 grid place-items-center text-sm font-medium">{outside} outside 8am–8pm</span>}
       </div>
     </section>

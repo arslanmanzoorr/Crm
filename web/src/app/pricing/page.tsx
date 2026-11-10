@@ -34,7 +34,7 @@ export default function PricingPage() {
           <p className="mt-6 max-w-[52ch] text-xl" style={{ color: S.muted }}>No setup fees, no contracts. Pay monthly, or yearly and get {12 - YEARLY_MONTHS} months free.</p>
         </Reveal>
         {!BILLING_LIVE && (
-          <p className="mt-10 max-w-[70ch] rounded-[8px] border-l-4 bg-white p-5 text-sm ring-1 ring-black/10" style={{ borderColor: S.accent }}>
+          <p className="mt-10 max-w-[70ch] rounded-[8px] bg-white p-5 text-sm ring-1 ring-black/10">
             <b>Early access: {LEGAL.product} is free while we finish billing.</b> These are the prices paid plans will launch with. We&apos;ll give at least 30 days&apos; notice before
             billing starts, and nobody is charged without choosing a plan and agreeing to it first.
           </p>
