@@ -1,4 +1,4 @@
-import { Building2, Calculator, Compass, Scale, Mail, RotateCcw, CircleCheck, CircleDashed, ChartNoAxesCombined, MapPinned, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
+import { Bot, Building2, Calculator, Compass, Scale, Mail, RotateCcw, CircleCheck, CircleDashed, ChartNoAxesCombined, MapPinned, Receipt, Contact, Workflow, CalendarDays, ChartColumn, ChevronRight, Clapperboard, Download, HeartHandshake, LogOut, Send, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -103,6 +103,7 @@ export default function AccountPage({ searchParams }: PageProps<"/account">) {
         <h2 id="tools" className="text-sm text-muted">Team and tools</h2>
         <div className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
           <TakeTourButton className={row}><Compass aria-hidden className="size-5 text-muted" /><span className="flex-1">Take the tour <span className="block text-xs text-muted">A 2-minute walkthrough of Estos</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></TakeTourButton>
+          <Link href="/account/ai" className={row}><Bot aria-hidden className="size-5 text-muted" /><span className="flex-1">Connect your AI <span className="block text-xs text-muted">Use Estos from Claude, ChatGPT or Cursor</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/billing" className={row}><Receipt aria-hidden className="size-5 text-muted" /><span className="flex-1">Plan and billing <span className="block text-xs text-muted">Your plan, seats and price</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/legal" className={row}><Scale aria-hidden className="size-5 text-muted" /><span className="flex-1">Legal and privacy <span className="block text-xs text-muted">Terms, Privacy Policy, subprocessors and your data rights</span></span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>
           <Link href="/showings" className={`${row} md:hidden`}><CalendarDays aria-hidden className="size-5 text-muted" /><span className="flex-1">Showings</span><ChevronRight aria-hidden className="size-4 text-muted" /></Link>

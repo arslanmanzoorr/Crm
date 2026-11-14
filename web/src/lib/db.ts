@@ -1019,6 +1019,24 @@ export async function getApiKeys(): Promise<ApiKey[]> {
   return (data ?? []).map((k) => ({ id: k.id, name: k.name, prefix: k.prefix, createdAt: k.created_at, lastUsedAt: k.last_used_at }));
 }
 
+export type McpToken = { id: string; name: string; prefix: string; scope: "read" | "write"; createdAt: string; expiresAt: string; lastUsedAt: string | null };
+
+/** The signed-in person's own live MCP tokens. */
+export async function getMcpTokens(): Promise<McpToken[]> {
+  if (!dbEnabled) return [];
+  const { data } = await (await supabase()).from("mcp_tokens").select("id,name,prefix,scope,created_at,expires_at,last_used_at")
+    .is("revoked_at", null).gt("expires_at", new Date().toISOString()).order("created_at");
+  return (data ?? []).map((t) => ({ id: t.id, name: t.name, prefix: t.prefix, scope: t.scope, createdAt: t.created_at, expiresAt: t.expires_at, lastUsedAt: t.last_used_at }));
+}
+
+/** Apps connected with Estos sign-in (OAuth), or null while the OAuth server is off. */
+export async function getOAuthApps(): Promise<{ id: string; name: string; uri: string; grantedAt: string }[] | null> {
+  if (!dbEnabled) return null;
+  const { data, error } = await (await supabase()).auth.oauth.listGrants();
+  if (error || !data) return null;
+  return data.map((g) => ({ id: g.client.id, name: g.client.name, uri: g.client.uri, grantedAt: g.granted_at }));
+}
+
 export type Branding = {
   color: string | null; hide: boolean; radius: Radius; logo: string | null; off: Feature[]; theme: Theme;
   domain: string | null; domainVerified: boolean; orgId: string | null;

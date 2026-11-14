@@ -45,6 +45,15 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // MCP OAuth discovery: the well-known documents live under /api/mcp (path-suffixed forms included, RFC 8414/9728).
+  async rewrites() {
+    return [
+      { source: "/.well-known/oauth-protected-resource", destination: "/api/mcp/resource" },
+      { source: "/.well-known/oauth-protected-resource/:path*", destination: "/api/mcp/resource" },
+      { source: "/.well-known/oauth-authorization-server", destination: "/api/mcp/authorization-server" },
+      { source: "/.well-known/oauth-authorization-server/:path*", destination: "/api/mcp/authorization-server" },
+    ];
+  },
   async headers() {
     // Public lead forms (/f/<id>) may be embedded in an agent's own website; everything else may not be framed.
     const embeddable = securityHeaders

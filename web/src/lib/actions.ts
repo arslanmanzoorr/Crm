@@ -920,6 +920,47 @@ export async function revokeApiKey(id: string): Promise<FormState> {
   return { ok: "Revoked" };
 }
 
+/** New personal MCP token for the signed-in person, returned once in plain text; only its hash is stored. */
+export async function createMcpToken(name: string, scope: "read" | "write", days: 30 | 90 | 365): Promise<{ token: string } | { error: string }> {
+  if (!dbEnabled) return NO_DB as { error: string };
+  const n = name.trim();
+  if (!n || n.length > 80) return { error: "Name the connection (up to 80 characters), e.g. \"Claude on my laptop\"." };
+  if (scope !== "read" && scope !== "write") return { error: "Pick what it may do." };
+  if (![30, 90, 365].includes(days)) return { error: "Pick when it expires." };
+  const { data, error } = await (await authed()).rpc("create_mcp_token", { p_name: n, p_scope: scope, p_days: days });
+  if (error || typeof data !== "string") return { error: error?.message ?? "Couldn't create the token." };
+  revalidatePath("/account/ai");
+  return { token: data };
+}
+
+export async function revokeMcpToken(id: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(id)) return NO_DB;
+  const { data } = await (await authed()).from("mcp_tokens").update({ revoked_at: new Date().toISOString() }).eq("id", id).is("revoked_at", null).select("id");
+  if (!data?.length) return { error: "Token not found." };
+  revalidatePath("/account/ai");
+  return { ok: "Revoked" };
+}
+
+/** Disconnect an app connected with Estos sign-in: its consent, sessions and refresh tokens go. */
+export async function revokeOAuthApp(clientId: string): Promise<FormState> {
+  if (!dbEnabled || !UUID.test(clientId)) return NO_DB;
+  const { error } = await (await authed()).auth.oauth.revokeGrant({ clientId });
+  if (error) return { error: error.message };
+  revalidatePath("/account/ai");
+  return { ok: "Disconnected" };
+}
+
+/** The consent screen's answer for an AI app asking to connect with Estos sign-in. */
+export async function decideOAuth(authorizationId: string, approve: boolean) {
+  if (!dbEnabled || !/^[\w-]{1,128}$/.test(authorizationId)) return;
+  const db = await authed();
+  const { data, error } = approve
+    ? await db.auth.oauth.approveAuthorization(authorizationId, { skipBrowserRedirect: true })
+    : await db.auth.oauth.denyAuthorization(authorizationId, { skipBrowserRedirect: true });
+  if (error || !data?.redirect_url) throw new Error(error?.message ?? "This request has expired. Start connecting again from your AI app.");
+  redirect(data.redirect_url);
+}
+
 export async function setBranding(color: string | null, hide: boolean, radius: Radius = "pill", theme: Theme = "dark"): Promise<FormState> {
   if (color !== null || hide || radius !== "pill") { const no = await requirePlan("whiteLabel"); if (no) return { error: no }; }
   if (!dbEnabled) return NO_DB;
