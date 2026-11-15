@@ -40,8 +40,10 @@ import { OwnerSelect } from "@/components/owner-select";
 
 export const metadata: Metadata = { title: "Lead" };
 
-const contactBtn = "flex min-h-11 items-center gap-2 rounded-full bg-surface-light px-4 text-sm font-medium text-on-light hover:bg-white";
+const primaryBtn = "flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-medium text-on-light transition duration-150 hover:bg-accent-strong active:scale-[0.98]";
+const contactBtn = "flex min-h-11 items-center gap-2 rounded-full bg-surface-3 px-4 text-sm font-medium transition duration-150 hover:bg-surface-light hover:text-on-light";
 const blockedBtn = "flex min-h-11 cursor-not-allowed items-center gap-2 rounded-full bg-surface-2 px-4 text-sm text-muted";
+const quietBtn = "flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-muted transition duration-150 hover:bg-surface-2 hover:text-ink";
 
 export default function LeadPage({ params }: PageProps<"/leads/[id]">) {
   return (
@@ -74,6 +76,8 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
     { key: "sms", label: "Text", icon: MessageSquare, href: `sms:${lead.phone}`, why: b.sms },
     { key: "email", label: "Email", icon: Mail, href: `mailto:${lead.email}`, why: b.email },
   ];
+  const firstOpen = channels.find((ch) => !ch.why)?.key;
+  const nextTask = mine.filter((t) => !t.done && t.dueAt).sort((x, y) => x.dueAt!.localeCompare(y.dueAt!))[0];
 
   return (
     <Reveal>
@@ -81,7 +85,7 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
         <Link href="/leads" className="-my-2 flex min-h-11 w-fit items-center text-sm text-muted hover:text-accent-ink">← All leads</Link>
 
         <header className="flex flex-col gap-5 lg:flex-row lg:items-center">
-          <div className="flex min-w-0 flex-1 items-center gap-5">
+          <div className="flex min-w-0 flex-1 items-start gap-5 sm:items-center">
             <LeadAvatar id={lead.id} name={lead.name} size={80} />
             <div className="min-w-0">
               <h1 className="truncate text-4xl font-light">{lead.name}</h1>
@@ -99,19 +103,24 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
             </div>
           </div>
           <div className="flex flex-col gap-2 lg:items-end">
-            <div className="flex flex-wrap gap-2">
+            {/* The first channel the law allows right now is the one big button; the others sit beside it. */}
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               {channels.map(({ key, label, icon: Icon, href, why }) =>
                 why ? (
                   <button key={key} type="button" disabled aria-describedby="contact-blocked" className={blockedBtn}>
                     <Icon aria-hidden className="size-4" /> {label}
                   </button>
                 ) : (
-                  <a key={key} href={href} className={contactBtn}><Icon aria-hidden className="size-4" /> {label}</a>
+                  <a key={key} href={href} className={key === firstOpen ? primaryBtn : contactBtn}>
+                    <Icon aria-hidden className="size-4" /> {label}{key === firstOpen && ` ${lead.name.split(" ")[0]}`}
+                  </a>
                 ),
               )}
-              <Link href={`/leads/${lead.id}/edit`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><Pencil aria-hidden className="size-4" /> Edit</Link>
-              <Link href={`/deals/new?contact=${lead.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><Handshake aria-hidden className="size-4" /> Open deal</Link>
-              {["buyer", "investor"].includes(lead.type ?? "") && <Link href={`/offers/new?contact=${lead.id}`} className="flex min-h-11 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm hover:bg-surface-3"><FileSignature aria-hidden className="size-4" /> Write offer</Link>}
+            </div>
+            <div className="flex flex-wrap gap-1 lg:justify-end">
+              <Link href={`/leads/${lead.id}/edit`} className={quietBtn}><Pencil aria-hidden className="size-4" /> Edit</Link>
+              <Link href={`/deals/new?contact=${lead.id}`} className={quietBtn}><Handshake aria-hidden className="size-4" /> Open deal</Link>
+              {["buyer", "investor"].includes(lead.type ?? "") && <Link href={`/offers/new?contact=${lead.id}`} className={quietBtn}><FileSignature aria-hidden className="size-4" /> Write offer</Link>}
             </div>
             {signals.length > 0 && (
               <ul aria-label="Buying signals" className="flex flex-wrap gap-2">
@@ -133,23 +142,53 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
 
         <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="flex min-w-0 flex-col gap-6">
-            {["buyer", "investor"].includes(lead.type ?? "") && (() => {
-              const liveOffer = offers.find((o) => ["draft", "submitted", "countered"].includes(o.status));
-              const activeDeal = deals.find((d) => d.status === "active" && d.side === "buyer");
-              const r = readiness(financing ?? EMPTY_FINANCING,
-                { offerAmount: liveOffer?.amount ?? null, closeOn: activeDeal?.closeOn ?? null, today });
-              return (
-                <section aria-labelledby="financing" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 sm:p-6">
-                  <h2 id="financing" className="text-xl">Financing</h2>
-                  <ReadinessList r={r} />
-                  {financing?.lender && <p className="text-sm text-muted">Lender: <span className="text-ink">{financing.lender}</span>{financing.lenderPhone && <> · <a href={`tel:${financing.lenderPhone}`} className="hover:text-accent-ink">{financing.lenderPhone}</a></>}</p>}
-                  <details>
-                    <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">{financing ? "Update financing" : "Record financing"}</summary>
-                    <div className="mt-3"><FinancingForm contactId={lead.id} f={financing} lenders={partners.filter((p) => p.kind === "lender").map((p) => ({ id: p.id, label: [p.name, p.company].filter(Boolean).join(", ") }))} /></div>
-                  </details>
-                </section>
-              );
-            })()}
+            <section aria-labelledby="next-step" className="flex flex-col gap-2 rounded-card bg-surface-2 bg-gradient-to-br from-accent/[0.08] via-transparent to-transparent p-5 ring-1 ring-accent/20 sm:p-6">
+              <h2 id="next-step" className="text-sm text-accent-ink">Next step</h2>
+              <p className="text-2xl font-light text-balance sm:text-3xl">{lead.nextAction || "No next step yet"}</p>
+              <p className="max-w-prose text-sm text-muted">{lead.nextAction ? lead.intent : "Run Analyze with AI to read their timeline and plan one, or add a task below."}</p>
+              {nextTask && (
+                <p className="text-sm">
+                  <span className="text-muted">Task:</span> {nextTask.title} ·{" "}
+                  <span className={nextTask.dueAt! < new Date().toISOString() ? "text-score-1" : "text-muted"}>
+                    {nextTask.dueAt! < new Date().toISOString() ? "overdue since " : "due "}<LocalTime ts={nextTask.dueAt!} />
+                  </span>
+                </p>
+              )}
+            </section>
+            <section aria-labelledby="tasks" className="rounded-card bg-surface-2 p-5 sm:p-6">
+              <h2 id="tasks" className="mb-4 text-xl">Tasks</h2>
+              <TaskForm contactId={lead.id} />
+              <div className="mt-4"><TaskList tasks={mine} /></div>
+              {(() => {
+                const next = mine.find((t) => !t.done && (t.kind === "call" || t.kind === "email"));
+                return next && (
+                  <TaskPrep task={{ title: next.title, kind: next.kind as "call" | "email" }} lead={{ id: lead.id, name: lead.name }} blocked={next.kind === "call" ? b.call : b.email} data={{
+                    agent: me.name,
+                    task: { title: next.title, kind: next.kind, note: next.note },
+                    lead: { name: lead.name, type: lead.type, stage: lead.stage, budget: lead.budget, areas: lead.areas, wants: lead.preferences, intent: lead.intent, moveBy: lead.moveBy,
+                      consent: { call: c.call || scrubbed(c.dncCheckedOn, today), email: c.email, dnc: c.dnc } },
+                    recentTimeline: lead.activity.slice(0, 12).map((a) => ({ when: a.when, channel: a.channel, text: a.text.slice(0, 300), fromLead: !!a.inbound })),
+                  }} />
+                );
+              })()}
+            </section>
+            {dbEnabled && <QuickUpdate leadId={lead.id} first={lead.name.split(" ")[0]} />}
+            <section aria-labelledby="timeline" className="rounded-card bg-surface-2 p-5 sm:p-6">
+              <h2 id="timeline" className="mb-4 text-xl">Timeline</h2>
+              <ActivityForm contactId={lead.id} />
+              <ol className="flex flex-col gap-4">
+                {lead.activity.map((a, i) => (
+                  <li key={i} className="flex gap-4">
+                    <span className="w-24 shrink-0 pt-1 text-xs text-muted sm:w-28"><LocalTime ts={a.when} /></span>
+                    <span className="flex min-w-0 flex-col items-start gap-1">
+                      <Chip>{a.inbound ? `${a.channel} · from ${lead.name.split(" ")[0]}` : a.channel}</Chip>
+                      <span className="text-sm break-words">{a.text}</span>
+                    </span>
+                  </li>
+                ))}
+                {lead.activity.length === 0 && <li className="text-sm text-muted">Nothing logged yet. Notes, calls and messages you log appear here.</li>}
+              </ol>
+            </section>
             {["buyer", "investor", "renter"].includes(lead.type ?? "") && (
               <section aria-labelledby="showings" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 sm:p-6">
                 <h2 id="showings" className="text-xl">Showings</h2>
@@ -182,98 +221,40 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 </details>
               </section>
             )}
+            {["buyer", "investor"].includes(lead.type ?? "") && (() => {
+              const liveOffer = offers.find((o) => ["draft", "submitted", "countered"].includes(o.status));
+              const activeDeal = deals.find((d) => d.status === "active" && d.side === "buyer");
+              const r = readiness(financing ?? EMPTY_FINANCING,
+                { offerAmount: liveOffer?.amount ?? null, closeOn: activeDeal?.closeOn ?? null, today });
+              return (
+                <section aria-labelledby="financing" className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 sm:p-6">
+                  <h2 id="financing" className="text-xl">Financing</h2>
+                  <ReadinessList r={r} />
+                  {financing?.lender && <p className="text-sm text-muted">Lender: <span className="text-ink">{financing.lender}</span>{financing.lenderPhone && <> · <a href={`tel:${financing.lenderPhone}`} className="hover:text-accent-ink">{financing.lenderPhone}</a></>}</p>}
+                  <details>
+                    <summary className="min-h-11 cursor-pointer content-center text-sm text-accent-ink">{financing ? "Update financing" : "Record financing"}</summary>
+                    <div className="mt-3"><FinancingForm contactId={lead.id} f={financing} lenders={partners.filter((p) => p.kind === "lender").map((p) => ({ id: p.id, label: [p.name, p.company].filter(Boolean).join(", ") }))} /></div>
+                  </details>
+                </section>
+              );
+            })()}
             {gmail && !b.email && <EmailComposer contactId={lead.id} to={lead.email} from={gmail} />}
-            <section aria-labelledby="tasks" className="rounded-card bg-surface-2 p-5 sm:p-6">
-              <h2 id="tasks" className="mb-4 text-xl">Tasks</h2>
-              <TaskForm contactId={lead.id} />
-              <div className="mt-4"><TaskList tasks={mine} /></div>
-              {(() => {
-                const next = mine.find((t) => !t.done && (t.kind === "call" || t.kind === "email"));
-                return next && (
-                  <TaskPrep task={{ title: next.title, kind: next.kind as "call" | "email" }} lead={{ id: lead.id, name: lead.name }} blocked={next.kind === "call" ? b.call : b.email} data={{
-                    agent: me.name,
-                    task: { title: next.title, kind: next.kind, note: next.note },
-                    lead: { name: lead.name, type: lead.type, stage: lead.stage, budget: lead.budget, areas: lead.areas, wants: lead.preferences, intent: lead.intent, moveBy: lead.moveBy,
-                      consent: { call: c.call || scrubbed(c.dncCheckedOn, today), email: c.email, dnc: c.dnc } },
-                    recentTimeline: lead.activity.slice(0, 12).map((a) => ({ when: a.when, channel: a.channel, text: a.text.slice(0, 300), fromLead: !!a.inbound })),
-                  }} />
-                );
-              })()}
-            </section>
-
-            {dbEnabled && <QuickUpdate leadId={lead.id} first={lead.name.split(" ")[0]} />}
-
-            <section aria-labelledby="timeline" className="rounded-card bg-surface-2 p-5 sm:p-6">
-              <h2 id="timeline" className="mb-4 text-xl">Timeline</h2>
-              <ActivityForm contactId={lead.id} />
-              <ol className="flex flex-col gap-4">
-                {lead.activity.map((a, i) => (
-                  <li key={i} className="flex gap-4">
-                    <span className="w-24 shrink-0 pt-1 text-xs text-muted sm:w-28"><LocalTime ts={a.when} /></span>
-                    <span className="flex min-w-0 flex-col items-start gap-1">
-                      <Chip>{a.inbound ? `${a.channel} · from ${lead.name.split(" ")[0]}` : a.channel}</Chip>
-                      <span className="text-sm break-words">{a.text}</span>
-                    </span>
-                  </li>
-                ))}
-                {lead.activity.length === 0 && <li className="text-sm text-muted">Nothing logged yet. Notes, calls and messages you log appear here.</li>}
-              </ol>
-            </section>
           </div>
 
           <aside className="flex flex-col gap-6">
-            <section aria-labelledby="lead-docs" className="flex flex-col gap-2">
-              <h2 id="lead-docs" className="text-xl">Documents</h2>
-              <Documents parent={{ contact_id: lead.id }} docs={docs} />
+            <section aria-labelledby="ai-profile" className="flex flex-col gap-4 rounded-card bg-surface-light p-5 text-on-light sm:p-6">
+              <h2 id="ai-profile" className="text-2xl">AI profile</h2>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+                {!lead.nextAction && <><dt className="text-on-light/70">Intent</dt><dd>{lead.intent}</dd></>}
+                {lead.scoreWhy && <><dt className="text-on-light/70">Score {lead.score}</dt><dd>{lead.scoreWhy}</dd></>}
+                <dt className="text-on-light/70">Budget</dt><dd>{lead.budget || "—"}</dd>
+                <dt className="text-on-light/70">Areas</dt><dd>{lead.areas.join(", ") || "—"}</dd>
+                <dt className="text-on-light/70">Wants</dt><dd>{lead.preferences.join(", ") || "—"}</dd>
+                <dt className="text-on-light/70">Source</dt><dd>{lead.sources.join(", ") || "—"}</dd>
+              </dl>
+              <AnalyzeButton id={lead.id} />
+              <ProfileUpdates id={lead.id} />
             </section>
-            <section aria-labelledby="owned" className="flex flex-col gap-2">
-              <h2 id="owned" className="text-xl">Homes they own</h2>
-              <div className="rounded-card bg-surface-2 p-5"><OwnedHomes contactId={lead.id} homes={homes} updates={updates} lead={c.dnc ? undefined : { id: lead.id, name: lead.name, email: c.email }} /></div>
-            </section>
-            <section aria-labelledby="people" className="flex flex-col gap-2">
-              <h2 id="people" className="text-xl">People</h2>
-              <div className="rounded-card bg-surface-2 p-5"><PeopleLinks contactId={lead.id} links={links} people={people} /></div>
-            </section>
-            {["buyer", "investor", "renter"].includes(lead.type ?? "") && (
-              <section aria-labelledby="shortlist" className="flex flex-col gap-2">
-                <h2 id="shortlist" className="text-xl">Shortlist {shortlist.length > 0 && <span className="text-muted">({shortlist.length})</span>}</h2>
-                <div className="rounded-card bg-surface-2 px-5 py-2"><AgentShortlist contactId={lead.id} items={shortlist} /></div>
-              </section>
-            )}
-            <section aria-labelledby="portal" className="flex flex-col gap-2">
-              <h2 id="portal" className="text-xl">Client portal</h2>
-              <div className="rounded-card bg-surface-2 p-5"><PortalControls contactId={lead.id} link={portal} /></div>
-            </section>
-            <section aria-labelledby="referrals" className="flex flex-col gap-2">
-              <h2 id="referrals" className="text-xl">Referrals</h2>
-              <div className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 text-sm">
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-muted">Referred by</span>
-                  <ReferredBySelect contactId={lead.id} current={refs.referredBy?.id ?? ""} options={people} />
-                </label>
-                <div>
-                  <p className="text-muted">Has referred</p>
-                  {refs.referred.length === 0 ? <p>Nobody yet</p> : (
-                    <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{refs.referred.map((r) => <li key={r.id}><Link href={`/leads/${r.id}`} className="text-accent-ink hover:underline">{r.name}</Link></li>)}</ul>
-                  )}
-                </div>
-              </div>
-            </section>
-            {offers.length > 0 && (
-              <section aria-labelledby="offers" className="flex flex-col gap-2">
-                <h2 id="offers" className="text-xl">Offers</h2>
-                <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
-                  {offers.map((o) => (
-                    <li key={o.id}>
-                      <Link href={`/offers/${o.id}`} className="flex min-h-14 flex-col justify-center px-5 py-3 hover:bg-surface-3">
-                        <span className="truncate">{o.address}</span>
-                        <span className="text-sm text-muted">{STATUS_LABEL[o.status]} · {money(o.amount)}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
             {deals.length > 0 && (
               <section aria-labelledby="deals" className="flex flex-col gap-2">
                 <h2 id="deals" className="text-xl">Deals</h2>
@@ -291,20 +272,21 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 </ul>
               </section>
             )}
-            <section aria-labelledby="ai-profile" className="flex flex-col gap-4 rounded-card bg-surface-light p-5 text-on-light sm:p-6">
-              <h2 id="ai-profile" className="text-2xl">AI profile</h2>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-                <dt className="text-on-light/70">Intent</dt><dd>{lead.intent}</dd>
-                {lead.scoreWhy && <><dt className="text-on-light/70">Score {lead.score}</dt><dd>{lead.scoreWhy}</dd></>}
-                {lead.nextAction && <><dt className="text-on-light/70">Next</dt><dd className="font-medium">{lead.nextAction}</dd></>}
-                <dt className="text-on-light/70">Budget</dt><dd>{lead.budget || "—"}</dd>
-                <dt className="text-on-light/70">Areas</dt><dd>{lead.areas.join(", ") || "—"}</dd>
-                <dt className="text-on-light/70">Wants</dt><dd>{lead.preferences.join(", ") || "—"}</dd>
-                <dt className="text-on-light/70">Source</dt><dd>{lead.sources.join(", ") || "—"}</dd>
-              </dl>
-              <AnalyzeButton id={lead.id} />
-              <ProfileUpdates id={lead.id} />
-            </section>
+            {offers.length > 0 && (
+              <section aria-labelledby="offers" className="flex flex-col gap-2">
+                <h2 id="offers" className="text-xl">Offers</h2>
+                <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
+                  {offers.map((o) => (
+                    <li key={o.id}>
+                      <Link href={`/offers/${o.id}`} className="flex min-h-14 flex-col justify-center px-5 py-3 hover:bg-surface-3">
+                        <span className="truncate">{o.address}</span>
+                        <span className="text-sm text-muted">{STATUS_LABEL[o.status]} · {money(o.amount)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             {matches.length > 0 && (
               <section aria-labelledby="matches" className="flex flex-col gap-3">
                 <h2 id="matches" className="text-xl">Listings that fit</h2>
@@ -322,6 +304,43 @@ async function LeadView({ params }: { params: PageProps<"/leads/[id]">["params"]
                 ))}
               </section>
             )}
+            {["buyer", "investor", "renter"].includes(lead.type ?? "") && (
+              <section aria-labelledby="shortlist" className="flex flex-col gap-2">
+                <h2 id="shortlist" className="text-xl">Shortlist {shortlist.length > 0 && <span className="text-muted">({shortlist.length})</span>}</h2>
+                <div className="rounded-card bg-surface-2 px-5 py-2"><AgentShortlist contactId={lead.id} items={shortlist} /></div>
+              </section>
+            )}
+            <section aria-labelledby="portal" className="flex flex-col gap-2">
+              <h2 id="portal" className="text-xl">Client portal</h2>
+              <div className="rounded-card bg-surface-2 p-5"><PortalControls contactId={lead.id} link={portal} /></div>
+            </section>
+            <section aria-labelledby="lead-docs" className="flex flex-col gap-2">
+              <h2 id="lead-docs" className="text-xl">Documents</h2>
+              <Documents parent={{ contact_id: lead.id }} docs={docs} />
+            </section>
+            <section aria-labelledby="people" className="flex flex-col gap-2">
+              <h2 id="people" className="text-xl">People</h2>
+              <div className="rounded-card bg-surface-2 p-5"><PeopleLinks contactId={lead.id} links={links} people={people} /></div>
+            </section>
+            <section aria-labelledby="owned" className="flex flex-col gap-2">
+              <h2 id="owned" className="text-xl">Homes they own</h2>
+              <div className="rounded-card bg-surface-2 p-5"><OwnedHomes contactId={lead.id} homes={homes} updates={updates} lead={c.dnc ? undefined : { id: lead.id, name: lead.name, email: c.email }} /></div>
+            </section>
+            <section aria-labelledby="referrals" className="flex flex-col gap-2">
+              <h2 id="referrals" className="text-xl">Referrals</h2>
+              <div className="flex flex-col gap-3 rounded-card bg-surface-2 p-5 text-sm">
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-muted">Referred by</span>
+                  <ReferredBySelect contactId={lead.id} current={refs.referredBy?.id ?? ""} options={people} />
+                </label>
+                <div>
+                  <p className="text-muted">Has referred</p>
+                  {refs.referred.length === 0 ? <p>Nobody yet</p> : (
+                    <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">{refs.referred.map((r) => <li key={r.id}><Link href={`/leads/${r.id}`} className="text-accent-ink hover:underline">{r.name}</Link></li>)}</ul>
+                  )}
+                </div>
+              </div>
+            </section>
             <div className="self-start"><DeleteButton id={lead.id} what="lead" /></div>
           </aside>
         </div>
