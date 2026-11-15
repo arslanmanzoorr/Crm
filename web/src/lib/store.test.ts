@@ -12,6 +12,6 @@ test("every real playbook is in the store with a category and no raw placeholder
     assert.ok(s.category && s.when && s.span);
     for (const step of s.steps) assert.doesNotMatch(stepText(step), /\{/);
   }
-  assert.equal(storeItem("speed_to_lead")?.span, "7 days");
+  assert.equal(storeItem("speed_to_lead")?.span, "8 days");
   assert.equal(storeItem("nope"), undefined);
 });

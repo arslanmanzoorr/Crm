@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { LEGAL, operator } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Terms of Service" };
+export const metadata: Metadata = pageMeta("/legal/terms", "Terms of Service", "The terms for using Estos, the real estate CRM: accounts, early access, billing, acceptable use, your data, and how either side can end the agreement.");
 
 export default function TermsPage() {
   return (

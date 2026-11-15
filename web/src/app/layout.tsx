@@ -10,12 +10,14 @@ import { Paused } from "@/components/paused";
 import { getAppBrand, getPausedNotice } from "@/lib/db";
 import { themeCss } from "@/lib/theme";
 import { LEGAL } from "@/lib/legal";
+import { SUMMARY } from "@/lib/seo";
 import "./globals.css";
 
 const urbanist = Urbanist({
   variable: "--font-urbanist",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
+  preload: false, // marketing pages use their own font; the app shell loads this one on first use
 });
 
 export const viewport: Viewport = { themeColor: "#0e0e0e", viewportFit: "cover", colorScheme: "dark" };
@@ -23,7 +25,7 @@ export const viewport: Viewport = { themeColor: "#0e0e0e", viewportFit: "cover",
 export const metadata: Metadata = {
   metadataBase: new URL(LEGAL.site),
   title: { template: "%s · Estos", default: "Estos" },
-  description: "The CRM for real estate agents: leads, follow-ups, listings and marketing in one place.",
+  description: SUMMARY,
   applicationName: "Estos",
   openGraph: { type: "website", siteName: "Estos", locale: "en_US" },
   twitter: { card: "summary_large_image" },

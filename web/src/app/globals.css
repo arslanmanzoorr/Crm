@@ -141,14 +141,14 @@ dialog.palette::backdrop {
 
 /* Route entrance: the page's sections rise out of a blur one after another. Fill "backwards" only, so no transform
    lingers afterwards (a transformed ancestor would trap position: fixed children). */
-.page-in > * > * {
+.page-in > :not([data-site]) > * {
   animation: page-in 640ms var(--ease-out-expo) backwards;
 }
-.page-in > * > :nth-child(2) { animation-delay: 70ms; }
-.page-in > * > :nth-child(3) { animation-delay: 140ms; }
-.page-in > * > :nth-child(4) { animation-delay: 210ms; }
-.page-in > * > :nth-child(5) { animation-delay: 280ms; }
-.page-in > * > :nth-child(n + 6) { animation-delay: 350ms; }
+.page-in > :not([data-site]) > :nth-child(2) { animation-delay: 70ms; }
+.page-in > :not([data-site]) > :nth-child(3) { animation-delay: 140ms; }
+.page-in > :not([data-site]) > :nth-child(4) { animation-delay: 210ms; }
+.page-in > :not([data-site]) > :nth-child(5) { animation-delay: 280ms; }
+.page-in > :not([data-site]) > :nth-child(n + 6) { animation-delay: 350ms; }
 @keyframes page-in {
   from {
     opacity: 0;
@@ -286,7 +286,7 @@ html[data-intro="seen"] .intro { display: none; }
   dialog.palette[open] {
     animation: fade-in 150ms ease-out both !important;
   }
-  .page-in > * > * {
+  .page-in > :not([data-site]) > * {
     animation: fade-in 150ms ease-out backwards !important;
   }
   .roll > :last-child,

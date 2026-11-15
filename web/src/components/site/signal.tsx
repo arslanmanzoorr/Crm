@@ -11,6 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
 import { btnPrimary, S } from "@/lib/site-theme";
+import { BILLING_LIVE } from "@/lib/plans";
 import { CookieNotice } from "@/components/cookie-notice";
 import { LEGAL, operator } from "@/lib/legal";
 
@@ -72,10 +73,10 @@ export function SiteFooter() {
 }
 
 /** Fade-and-rise on first view. */
-export function Reveal({ children, delay = 0, className }: { children: ReactNode; delay?: number; className?: string }) {
+export function Reveal({ children, delay = 0, className, eager }: { children: ReactNode; delay?: number; className?: string; eager?: boolean }) {
   const reduce = useReducedMotion();
   return (
-    <motion.div className={className} initial={reduce ? false : { opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
+    <motion.div className={className} initial={reduce || eager ? false : { opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.8, delay, ease: EASE }}>
       {children}
     </motion.div>
@@ -89,8 +90,8 @@ export function Letters({ text, delay = 0 }: { text: string; delay?: number }) {
     <span className="inline-block">
       <span className="sr-only">{text}</span>
       {[...text].map((ch, i) => (
-        <motion.span key={i} aria-hidden className="inline-block whitespace-pre" initial={reduce ? false : { y: "-0.6em", opacity: 0, rotate: -6 }}
-          animate={{ y: 0, opacity: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 420, damping: 22, delay: delay + i * 0.025 }}>{ch}</motion.span>
+        <motion.span key={i} aria-hidden data-ch={ch} className="inline-block whitespace-pre before:content-[attr(data-ch)]" initial={reduce ? false : { y: "-0.6em", rotate: -6 }}
+          animate={{ y: 0, rotate: 0 }} transition={{ type: "spring", stiffness: 420, damping: 22, delay: delay + i * 0.025 }} />
       ))}
     </span>
   );
@@ -128,13 +129,11 @@ export function Panels({ items }: { items: Panel[] }) {
             className={`relative overflow-hidden rounded-[8px] text-left ${on ? "bg-[#111111] text-white lg:flex-[4]" : "bg-[#e8e8e8] lg:flex-1"}`}>
             <div className="flex h-full flex-col justify-between gap-6 p-6">
               <div className="flex items-center justify-between text-sm font-semibold tracking-wide uppercase"><span>{f.k}</span><ArrowUpRight aria-hidden className="size-5" style={{ color: on ? S.accent : S.ink }} /></div>
-              {on && (
-                <motion.div initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15, ease: EASE }}>
-                  <h3 className="max-w-[22ch] text-3xl font-bold tracking-tight">{f.h}</h3>
-                  <p className="mt-2 max-w-[48ch] text-white/70">{f.b}</p>
-                  <Image src={f.img} alt="" width={f.w} height={f.hh} sizes="(min-width: 1024px) 640px, 100vw" className="mt-6 h-auto max-h-[300px] w-auto max-w-full rounded-[6px] object-contain object-left-top" />
-                </motion.div>
-              )}
+              <motion.div className={on ? "" : "hidden"} initial={false} animate={on && !reduce ? { opacity: [0, 1], y: [12, 0] } : undefined} transition={{ duration: 0.5, delay: 0.15, ease: EASE }}>
+                <h3 className="max-w-[22ch] text-3xl font-bold tracking-tight">{f.h}</h3>
+                <p className="mt-2 max-w-[48ch] text-white/70">{f.b}</p>
+                <Image src={f.img} alt={`Estos ${f.k} screen: ${f.h}`} width={f.w} height={f.hh} sizes="(min-width: 1024px) 640px, 100vw" className="mt-6 h-auto max-h-[300px] w-auto max-w-full rounded-[6px] object-contain object-left-top" />
+              </motion.div>
             </div>
           </motion.button>
         );
@@ -154,7 +153,7 @@ export function ClosingCta() {
         <div className="flex flex-col gap-6">
           <p className="max-w-[40ch] text-lg text-white/70">Be the agent who answers first. Estos drafts the follow-up; you decide what goes out.</p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/login" className={btnPrimary}>Create account <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" /></Link>
+            <Link href="/login" className={btnPrimary}>{BILLING_LIVE ? "Create account" : "Start free"} <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" /></Link>
             <Link href="/pricing" className="inline-flex min-h-12 items-center rounded-[6px] border border-white/25 px-6 font-medium transition hover:border-white/70">See pricing</Link>
           </div>
         </div>

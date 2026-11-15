@@ -26,8 +26,9 @@ export function delayLabel(h: number): string {
 export function spanLabel(t: Template): string {
   const h = Math.max(0, ...t.steps.map((s) => s.after_hours));
   if (h < 24) return "Same day";
+  // Same counting as delayLabel, so "Runs for 8 days" matches a last step on "Day 8".
   const d = Math.round(h / 24);
-  return d < 14 ? `${d} days` : d < 60 ? `${Math.round(d / 7)} weeks` : `${Math.round(d / 30)} months`;
+  return d < 14 ? `${d + 1} days` : d < 60 ? `${Math.round(d / 7) + 1} weeks` : `${Math.round(d / 30)} months`;
 }
 
 export const STORE: StoreItem[] = TEMPLATES.map((t) => ({

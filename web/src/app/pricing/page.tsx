@@ -4,18 +4,21 @@ import { PricingPlans } from "@/components/site/pricing-plans";
 import { ClosingCta, Reveal, SiteFooter, SiteNav } from "@/components/site/signal";
 import { LEGAL } from "@/lib/legal";
 import { BILLING_LIVE, YEARLY_MONTHS } from "@/lib/plans";
-import { breadcrumbs, FAQ, jsonLd, og, organization, software } from "@/lib/seo";
+import { breadcrumbs, FAQ, jsonLd, og, organization, SITE, software, webPage, website } from "@/lib/seo";
 import { siteFont } from "@/lib/site-font";
 import { S } from "@/lib/site-theme";
 
+const TITLE = "Real estate CRM pricing: plans from $29 per agent · Estos";
+const DESCRIPTION = `Estos real estate CRM pricing per agent: Starter $29, Pro $59, Team $89 a month. Assistants free, no setup fees${BILLING_LIVE ? "" : ", and free during early access"}.`;
 export const metadata: Metadata = {
-  title: { absolute: "Pricing · Estos" },
-  description: "Simple per-agent pricing for the real estate CRM that writes the follow-up for you. Assistants free, no setup fees, cancel any time.",
+  title: { absolute: TITLE }, description: DESCRIPTION,
   alternates: { canonical: "/pricing" },
-  openGraph: og("/pricing", "Pricing · Estos", "Simple per-agent pricing: Starter $29, Pro $59, Team $89 per agent per month. Assistants free, no setup fees, cancel any time."),
+  openGraph: og("/pricing", TITLE, DESCRIPTION),
 };
 
-const LD = jsonLd(organization, software, breadcrumbs([["Estos", "/welcome"], ["Pricing", "/pricing"]]));
+const LD = jsonLd(organization, website, software(true),
+  webPage("/pricing", TITLE, DESCRIPTION, "WebPage", { breadcrumb: { "@id": `${SITE}/pricing#breadcrumb` }, about: { "@id": `${SITE}/#app` } }),
+  breadcrumbs([["Estos", "/welcome"], ["Pricing", "/pricing"]]));
 
 
 export default function PricingPage() {
@@ -24,7 +27,7 @@ export default function PricingPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: LD }} />
       <SiteNav />
       <section className="mx-auto max-w-[1240px] px-5 pt-14 pb-24 sm:px-8 sm:pt-24">
-        <Reveal>
+        <Reveal eager>
           <h1 className="max-w-[14ch] text-[clamp(3rem,7vw,6rem)] leading-[0.95] font-extrabold tracking-[-0.045em]">Priced per agent. Assistants free.</h1>
           <p className="mt-6 max-w-[52ch] text-xl" style={{ color: S.muted }}>No setup fees, no contracts. Pay monthly, or yearly and get {12 - YEARLY_MONTHS} months free.</p>
         </Reveal>

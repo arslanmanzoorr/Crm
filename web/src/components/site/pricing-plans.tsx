@@ -26,7 +26,7 @@ export function PricingPlans() {
           const amount = price(p.monthly, yearly);
           const dark = "recommended" in p && p.recommended;
           return (
-            <section key={p.key} aria-labelledby={`plan-${p.key}`} className={`flex flex-col gap-6 rounded-[8px] p-7 ${dark ? "bg-[#111111] text-white" : "bg-white ring-1 ring-black/10"}`}>
+            <section key={p.key} id={p.key} aria-labelledby={`plan-${p.key}`} className={`flex flex-col gap-6 rounded-[8px] p-7 ${dark ? "bg-[#111111] text-white" : "bg-white ring-1 ring-black/10"}`}>
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <h2 id={`plan-${p.key}`} className="text-2xl font-bold tracking-tight">{p.name}</h2>

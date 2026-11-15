@@ -23,7 +23,7 @@ const task = (after_hours: number, title: string, note = "", task_kind: "call" |
 export const TEMPLATES: Template[] = [
   {
     key: "speed_to_lead", name: "New lead: speed to lead and first week", trigger: "lead_created", conditions: {}, stop: ["Lost", "Under Contract", "Closed"],
-    why: "Leads called within minutes convert far better; most need several touches in the first week.",
+    why: "Call new leads first, while they are still looking, and keep in touch through the first week: most need several touches before they reply.",
     steps: [
       task(0, "Call {first_name} now", "First call within 5 minutes."),
       task(4, "Text {first_name} if you didn't connect", "Short and friendly: who you are and one question about their move.", "email"),
@@ -61,7 +61,7 @@ export const TEMPLATES: Template[] = [
   },
   {
     key: "under_contract", name: "Under contract: keep the client informed", trigger: "deal_opened", conditions: {}, stop: ["Lost"],
-    why: "Clients who hear from you weekly during escrow are calmer and refer more.",
+    why: "Weekly updates during escrow mean fewer anxious calls, and a client who felt informed is more likely to refer you.",
     steps: [
       task(0, "Send {first_name} the timeline and who's who (lender, title)", "Their client portal shows the milestones.", "email"),
       task(24 * 7, "Weekly update to {first_name}", "", "email"),

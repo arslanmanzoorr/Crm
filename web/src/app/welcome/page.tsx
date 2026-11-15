@@ -6,9 +6,12 @@ import { CircleReveal, ClosingCta, Letters, LiftCard, Panels, Reveal, SiteFooter
 import { btnGhost, btnPrimary, S } from "@/lib/site-theme";
 import { siteFont } from "@/lib/site-font";
 import { STORE } from "@/lib/store";
-import { jsonLd, og, organization, software, website } from "@/lib/seo";
+import { FEATURES, jsonLd, og, organization, SITE, software, SUMMARY, webPage, website } from "@/lib/seo";
+import { BILLING_LIVE } from "@/lib/plans";
 
-const DESCRIPTION = "The real estate CRM for agents and teams: leads, listings, showings, deals and follow-up in one place, with AI that drafts the work for you to approve.";
+const DESCRIPTION = "Estos is the real estate CRM for agents and teams: leads, listings, showings, deals and follow-up in one place, with AI that drafts the work for you to approve.";
+const TITLE = "Estos: the real estate CRM that writes the follow-up for you";
+const LD = jsonLd(organization, website, software(false), webPage("/welcome", TITLE, SUMMARY, "WebPage", { about: { "@id": `${SITE}/#app` }, primaryImageOfPage: { "@type": "ImageObject", url: `${SITE}/site/s-leads.png` } }));
 export const metadata: Metadata = {
   title: { absolute: "Estos: the real estate CRM that writes the follow-up for you" },
   description: DESCRIPTION,
@@ -26,18 +29,19 @@ const PANELS: Panel[] = [
 export default function WelcomePage() {
   return (
     <div data-site className={`${siteFont.className} min-h-[100dvh] overflow-x-clip`} style={{ background: S.bg, color: S.ink }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization, website, software) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: LD }} />
       <SiteNav />
 
       <section className="mx-auto max-w-[1240px] px-5 pt-14 sm:px-8 sm:pt-24">
         <h1 className="text-[clamp(3.4rem,10vw,9.5rem)] leading-[0.9] font-extrabold tracking-[-0.05em]">
+          <span className="mb-5 block text-lg font-semibold tracking-normal sm:text-xl" style={{ color: S.muted }}>Estos, the real estate CRM</span>
           <Letters text="Sell more." /><br /><span style={{ color: S.accentDisplay }}><Letters text="Type less." delay={0.3} /></span>
         </h1>
         <div className="mt-10 grid gap-8 border-t border-black/15 pt-8 sm:grid-cols-[1fr_auto] sm:items-end">
-          <p className="max-w-[44ch] text-xl" style={{ color: S.muted }}>The real estate CRM that writes the follow-up for you to approve, and keeps every deal on track.</p>
+          <p className="max-w-[44ch] text-xl" style={{ color: S.muted }}>Estos is a real estate CRM for US agents and teams that writes the follow-up for you to approve and keeps every deal on track.{!BILLING_LIVE && " Free during early access."}</p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/login" className={btnPrimary}>Create account <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" /></Link>
-            <Link href="/store" className={btnGhost}>Browse the store</Link>
+            <Link href="/login" className={btnPrimary}>{BILLING_LIVE ? "Create account" : "Start free"} <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-0.5" /></Link>
+            <Link href="/pricing" className={btnGhost}>See pricing</Link>
           </div>
         </div>
       </section>
@@ -46,9 +50,27 @@ export default function WelcomePage() {
 
       <section id="product" className="scroll-mt-20 pb-28">
         <Reveal className="mx-auto mb-10 max-w-[1240px] px-5 sm:px-8">
-          <h2 className="text-5xl font-extrabold tracking-[-0.04em] sm:text-6xl">Pick a screen.</h2>
+          <h2 className="text-5xl font-extrabold tracking-[-0.04em] sm:text-6xl">Inside Estos.</h2>
+          <p className="mt-4 max-w-[52ch] text-lg" style={{ color: S.muted }}>Leads, today&apos;s calls, each client and your commissions: the four screens agents live in.</p>
         </Reveal>
         <Panels items={PANELS} />
+      </section>
+
+      <section id="features" aria-labelledby="features-h" className="scroll-mt-20 border-t border-black/10 py-28">
+        <div className="mx-auto grid max-w-[1240px] gap-12 px-5 sm:px-8 lg:grid-cols-[1fr_1.6fr]">
+          <Reveal>
+            <h2 id="features-h" className="max-w-[14ch] text-5xl font-extrabold tracking-[-0.04em] sm:text-6xl">Everything a real estate team runs on.</h2>
+            <p className="mt-4 max-w-[44ch] text-lg" style={{ color: S.muted }}>{SUMMARY}</p>
+          </Reveal>
+          <dl className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+            {FEATURES.map(([k, v]) => (
+              <div key={k} className="border-t border-black/15 pt-4">
+                <dt className="text-lg font-bold">{k}</dt>
+                <dd className="mt-1.5" style={{ color: S.muted }}>{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </section>
 
       <section id="trust" className="scroll-mt-20 border-t border-black/10 py-28">
@@ -74,14 +96,14 @@ export default function WelcomePage() {
               <div className="h-full rounded-[8px] p-7" style={{ background: S.accent, color: S.ink }}>
                 <Scale aria-hidden className="size-6" />
                 <h3 className="mt-5 text-xl font-bold">Fair Housing guardrails</h3>
-                <p className="mt-2 text-sm">AI writing is instructed to describe the home, never who should live there. You review what goes out.</p>
+                <p className="mt-2 text-sm">AI writing describes the home, never who should live there. A Fair Housing check flags phrases like &ldquo;perfect for young couples&rdquo; or &ldquo;no Section 8&rdquo; before you publish.</p>
               </div>
             </Reveal>
             <Reveal delay={0.1} className="md:col-span-2">
               <div className="h-full rounded-[8px] bg-white p-7 ring-1 ring-black/10">
                 <PhoneOff aria-hidden className="size-6" style={{ color: S.accentText }} />
                 <h3 className="mt-5 text-xl font-bold">Consent before contact</h3>
-                <p className="mt-2 text-sm" style={{ color: S.muted }}>Calls and texts wait for consent, the Do Not Call check and your calling hours.</p>
+                <p className="mt-2 text-sm" style={{ color: S.muted }}>TCPA-aware by default: calls wait for consent or a Do Not Call Registry check from the last 31 days, texts need the lead&apos;s consent, and both stay inside your calling hours.</p>
               </div>
             </Reveal>
             <Reveal delay={0.04} className="md:col-span-3">
@@ -103,7 +125,7 @@ export default function WelcomePage() {
       <section className="border-t border-black/10 py-28" style={{ background: S.panel }}>
         <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
           <Reveal>
-            <h2 className="max-w-[18ch] text-5xl font-extrabold tracking-[-0.04em] sm:text-6xl">Follow-up that runs itself.</h2>
+            <h2 className="max-w-[18ch] text-5xl font-extrabold tracking-[-0.04em] sm:text-6xl">Free follow-up playbooks.</h2>
             <p className="mt-4 max-w-[52ch] text-lg" style={{ color: S.muted }}>Switch on a playbook and the right tasks show up on the right day. Free, and yours to edit.</p>
           </Reveal>
           <div className="mt-12 grid gap-3 md:grid-cols-3">

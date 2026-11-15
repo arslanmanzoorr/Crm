@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { LEGAL, operator } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Privacy Policy" };
+export const metadata: Metadata = pageMeta("/legal/privacy", "Privacy Policy", "What Estos collects about agents and the people in their CRM, why, who processes it, how long it is kept, and how to export or delete it.");
 
 export default function PrivacyPage() {
   return (

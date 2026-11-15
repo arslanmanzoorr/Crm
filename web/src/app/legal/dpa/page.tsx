@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { LEGAL, operator } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Data Processing Addendum" };
+export const metadata: Metadata = pageMeta("/legal/dpa", "Data Processing Addendum", "The Estos Data Processing Addendum: how we process the personal data in your CRM on your behalf, our security measures and incident notice.");
 
 export default function DpaPage() {
   return (

@@ -9,7 +9,7 @@ import { S } from "@/lib/site-theme";
 import { dbEnabled, supabase } from "@/lib/db";
 import { siteFont } from "@/lib/site-font";
 import { delayLabel, STORE, stepText, storeItem } from "@/lib/store";
-import { breadcrumbs, jsonLd, og } from "@/lib/seo";
+import { breadcrumbs, jsonLd, og, organization, SITE, webPage, website } from "@/lib/seo";
 
 export function generateStaticParams() {
   return STORE.map((s) => ({ key: s.key }));
@@ -17,11 +17,13 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/store/[key]">): Promise<Metadata> {
   const item = storeItem((await params).key);
-  return item ? {
-    title: { absolute: `${item.name} · Estos store` }, description: item.why,
-    alternates: { canonical: `/store/${item.key}` }, openGraph: og(`/store/${item.key}`, `${item.name} · Estos store`, item.why),
-  } : {};
+  if (!item) return {};
+  const title = `${item.name}: a free real estate follow-up playbook · Estos`;
+  return { title: { absolute: title }, description: describe(item), alternates: { canonical: `/store/${item.key}` }, openGraph: og(`/store/${item.key}`, title, describe(item)) };
 }
+
+const describe = (item: NonNullable<ReturnType<typeof storeItem>>) =>
+  `${item.why} ${item.taskCount} task${item.taskCount === 1 ? "" : "s"} over ${item.span}, starting when ${item.when.toLowerCase()}.`;
 
 export default function PlaybookPage({ params }: PageProps<"/store/[key]">) {
   return <Suspense fallback={<div data-site className="min-h-[100dvh]" style={{ background: S.bg }} />}><Playbook params={params} /></Suspense>;
@@ -36,7 +38,12 @@ async function Playbook({ params }: { params: PageProps<"/store/[key]">["params"
     { icon: ListChecks, k: "Tasks", v: String(item.taskCount) },
     { icon: Tag, k: "Price", v: "Free" },
   ];
-  const ld = jsonLd(breadcrumbs([["Estos", "/welcome"], ["Playbook store", "/store"], [item.name, `/store/${item.key}`]]));
+  const path = `/store/${item.key}`;
+  const ld = jsonLd(organization, website,
+    webPage(path, item.name, describe(item), "ItemPage", { breadcrumb: { "@id": `${SITE}${path}#breadcrumb` }, mainEntity: { "@id": `${SITE}${path}#playbook` } }),
+    breadcrumbs([["Estos", "/welcome"], ["Playbook store", "/store"], [item.name, path]]),
+    { "@type": "CreativeWork", "@id": `${SITE}${path}#playbook`, name: item.name, description: item.why, genre: item.category, isAccessibleForFree: true,
+      inLanguage: "en-US", creator: { "@id": `${SITE}/#org` }, publisher: { "@id": `${SITE}/#org` }, isPartOf: { "@id": `${SITE}/#app` } });
   return (
     <div data-site className={`${siteFont.className} min-h-[100dvh] overflow-x-clip`} style={{ background: S.bg, color: S.ink }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
@@ -58,7 +65,7 @@ async function Playbook({ params }: { params: PageProps<"/store/[key]">["params"
             </dl>
             <div className="mt-10">
               {dbEnabled ? <Suspense fallback={<div className="h-12 w-48 rounded-[6px] bg-[#e8e8e8]" />}><Install playbook={item.key} /></Suspense> : null}
-              <p className="mt-4 max-w-[52ch] text-sm" style={{ color: S.muted }}>Playbooks only create tasks and tags. People still do the calling and emailing, and it stops once the lead moves on.</p>
+              <p className="mt-4 max-w-[52ch] text-sm" style={{ color: S.muted }}>Playbooks only create tasks and tags. People still do the calling and emailing, and it stops once the lead moves on. Playbooks are included in every plan, Starter too. <Link href="/pricing" className="underline">See pricing</Link>.</p>
             </div>
           </Reveal>
           <Reveal delay={0.1}>

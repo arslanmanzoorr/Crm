@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { LEGAL, LEGAL_PAGES } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Legal" };
+export const metadata: Metadata = pageMeta("/legal", "Legal", "Estos legal policies in plain language: Terms of Service, Privacy Policy, refunds and cancellation, subprocessors, the Data Processing Addendum and open-source notices.");
 
 export default function LegalIndex() {
   return (

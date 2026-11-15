@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Subprocessors" };
+export const metadata: Metadata = pageMeta("/legal/subprocessors", "Subprocessors", "Every company that processes Estos customer data, what each one handles, and where.");
 
 const ROWS = [
   ["Supabase, Inc.", "Database, sign-in, file storage and scheduled jobs", "All data in the Service", "European Union (Frankfurt, Germany)", "https://supabase.com/privacy"],

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Refunds and cancellation" };
+export const metadata: Metadata = pageMeta("/legal/refunds", "Refunds and cancellation", "How to cancel Estos online, when plans renew, and when a first paid charge can be refunded.");
 
 export default function RefundsPage() {
   return (
