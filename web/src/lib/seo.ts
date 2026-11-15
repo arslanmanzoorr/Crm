@@ -85,7 +85,7 @@ const spec = (price: number, unitText: string, billingDuration: string) => ({ "@
 
 export const organization = {
   "@type": "Organization", ...ORG, name: LEGAL.product, url: SITE, slogan: TAGLINE, description: SUMMARY, disambiguatingDescription: DISAMBIGUATION,
-  logo: { "@type": "ImageObject", "@id": `${SITE}/#logo`, url: `${SITE}/apple-icon.png`, contentUrl: `${SITE}/apple-icon.png`, width: 180, height: 180 },
+  logo: { "@type": "ImageObject", "@id": `${SITE}/#logo`, url: `${SITE}/brand/estos-mark-512.png`, contentUrl: `${SITE}/brand/estos-mark-512.png`, width: 512, height: 512 },
   email: LEGAL.support,
   contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: LEGAL.support, areaServed: "US", availableLanguage: "en" },
   ...(LEGAL.entity ? { legalName: LEGAL.entity } : {}),
@@ -145,7 +145,7 @@ export const pageMeta = (path: string, title: string, description: string) => ({
 
 const PRIVATE = ["/api/", "/f/", "/oh/", "/p/", "/tc/", "/u/", "/invite", "/agency-invite", "/accept", "/mfa", "/oauth/", "/auth/"];
 /** What a crawler needs besides the pages to render them: scripts, styles, images, icons, share cards, AI files. */
-const ASSETS = ["/login", "/llms.txt", "/llms-full.txt", "/site/", "/_next/", "/opengraph-image", "/twitter-image", "/apple-icon", "/favicon.ico", "/icons/", "/manifest.webmanifest"];
+const ASSETS = ["/login", "/llms.txt", "/llms-full.txt", "/site/", "/_next/", "/opengraph-image", "/twitter-image", "/apple-icon", "/icon.svg", "/brand/", "/favicon.ico", "/icons/", "/manifest.webmanifest"];
 const AI_BOTS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User", "PerplexityBot", "Perplexity-User",
   "Google-Extended", "Applebot-Extended", "Bingbot", "DuckAssistBot", "MistralAI-User", "Amazonbot", "meta-externalagent", "CCBot"];
 

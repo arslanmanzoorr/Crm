@@ -18,13 +18,24 @@ import { LEGAL, operator } from "@/lib/legal";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 
+/** The Estos mark: an E whose middle bar ends in the brand dot. Same drawing as app/icon.svg. */
+function Mark() {
+  return (
+    <svg aria-hidden viewBox="0 0 64 64" className="size-7 shrink-0">
+      <rect width="64" height="64" rx="14" fill="#111111" />
+      <path d="M16 16h32v8H24v4h12v8H24v4h24v8H16z" fill="#f4f4f4" />
+      <circle cx="44" cy="32" r="4" fill="#c5f36a" />
+    </svg>
+  );
+}
+
 export function SiteNav() {
   const [open, setOpen] = useState(false);
   const links = [["Product", "/welcome#product"], ["AI", "/ai"], ["Teams", "/teams"], ["Pricing", "/pricing"], ["Security", "/security"], ["Store", "/store"], ["Sign in", "/login"]] as const;
   return (
     <header className="sticky top-0 z-40 border-b border-black/10 bg-[#f4f4f4]/85 backdrop-blur-xl">
       <nav aria-label="Site" className="mx-auto flex h-16 max-w-[1240px] items-center gap-8 px-5 sm:px-8">
-        <Link href="/welcome" className="text-lg font-extrabold tracking-tight">Estos<span style={{ color: S.accentDisplay }}>.</span></Link>
+        <Link href="/welcome" className="flex items-center gap-2 text-lg font-extrabold tracking-tight"><Mark />Estos</Link>
         <div className="ml-auto hidden items-center gap-7 text-sm font-medium md:flex">
           {links.map(([l, h]) => <Link key={h} href={h} className="hover:text-[#c2360a]">{l}</Link>)}
         </div>
@@ -51,7 +62,7 @@ export function SiteFooter() {
   return (
     <footer className="bg-[#111111] text-white/70">
       <div className="mx-auto flex max-w-[1240px] flex-col gap-8 px-5 py-12 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <Link href="/welcome" className="text-lg font-extrabold tracking-tight text-white">Estos<span style={{ color: S.accent }}>.</span></Link>
+        <Link href="/welcome" className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-white"><Mark />Estos</Link>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/welcome#product" className="hover:text-white">Product</Link>
           <Link href="/pricing" className="hover:text-white">Pricing</Link>
