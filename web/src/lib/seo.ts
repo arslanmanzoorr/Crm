@@ -16,11 +16,20 @@ export const DISAMBIGUATION = "Estos (estos.app) is a US real estate CRM. It is 
 /** Bump when the marketing copy changes; it is the sitemap's lastmod for those pages, never "now". */
 export const COPY_UPDATED = "2026-11-15";
 
+/** Topic pages: [path, title, one-line summary for llms.txt]. */
+export const TOPICS = [
+  ["/tcpa-compliant-crm", "TCPA and Do Not Call", "how Estos checks consent, the Do Not Call Registry and calling hours before a call or text"],
+  ["/teams", "Estos for teams", "lead routing, the first-reply watchdog, splits, caps and tiers, offices and white-label"],
+  ["/ai", "AI follow-up", "what the AI drafts, how scores are explained, the contract reader and the guardrails"],
+  ["/security", "Security", "team isolation, two-step sign-in, encryption, private links, AI without data retention and where data lives"],
+] as const;
+
 /** Every page a search engine should know about. Robots rules and the sitemap are both built from this list. */
 export const PUBLIC_PAGES: { path: string; title: string; updated: string }[] = [
   { path: "/welcome", title: "Estos home", updated: COPY_UPDATED },
   { path: "/pricing", title: "Pricing", updated: COPY_UPDATED },
   { path: "/store", title: "Playbook store", updated: COPY_UPDATED },
+  ...TOPICS.map(([path, title]) => ({ path, title, updated: COPY_UPDATED })),
   ...STORE.map((s) => ({ path: `/store/${s.key}`, title: s.name, updated: COPY_UPDATED })),
   { path: "/legal", title: "Legal", updated: LEGAL.updatedIso },
   ...LEGAL_PAGES.map(([title, path]) => ({ path, title, updated: LEGAL.updatedIso })),
@@ -60,7 +69,7 @@ export const FAQ: { q: string; a: string; link?: { text: string; href: string } 
   { q: "Do you use my data to train AI?", a: "No. AI requests go through OpenRouter with data collection switched off, so they only reach model providers that don't store or train on your data.",
     link: { text: "Details are in our privacy policy.", href: "/legal/privacy" } },
   { q: "Does the AI text or email my clients by itself?", a: "No. AI drafts replies and next steps; a person sends them. The one exception is the website chat assistant, which says its answers are automated and can be switched off or taken over at any time." },
-  { q: "Can I import my leads from another CRM?", a: "Yes. Upload a CSV from any CRM or spreadsheet; Estos maps the columns, matches existing leads by email or phone, and never turns on consent the file doesn't record." },
+  { q: "Can I import my leads from another CRM?", a: "Yes. Upload a CSV from any CRM or spreadsheet; Estos maps the columns and matches existing leads by email or phone. Imported leads start with calling, texting and emailing switched off unless you confirm you hold their consent." },
 ];
 
 const faqText = (f: (typeof FAQ)[number]) => (f.link ? `${f.a} ${f.link.text}` : f.a);
@@ -189,6 +198,7 @@ ${FAQ.map((f) => `- **${f.q}** ${faqText(f)}${f.link ? ` (${SITE}${f.link.href})
 - [Home](${SITE}/welcome): product tour
 - [Pricing](${SITE}/pricing): plans, early access and FAQ
 - [Playbook store](${SITE}/store): ready-made follow-up sequences, free on every plan
+${TOPICS.map(([p, t, d]) => `- [${t}](${SITE}${p}): ${d}`).join("\n")}
 ${LEGAL_PAGES.map(([t, p]) => `- [${t}](${SITE}${p})`).join("\n")}
 ${full ? `\n## Playbooks\n\n${store}\n` : `\n## Optional\n\n- [Full version of this file](${SITE}/llms-full.txt): every plan feature and every playbook\n- [Playbook store](${SITE}/store): every playbook with its steps\n`}
 ## Contact

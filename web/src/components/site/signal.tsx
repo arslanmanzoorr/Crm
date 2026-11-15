@@ -20,7 +20,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function SiteNav() {
   const [open, setOpen] = useState(false);
-  const links = [["Product", "/welcome#product"], ["Pricing", "/pricing"], ["Security", "/welcome#trust"], ["Store", "/store"], ["Sign in", "/login"]] as const;
+  const links = [["Product", "/welcome#product"], ["AI", "/ai"], ["Teams", "/teams"], ["Pricing", "/pricing"], ["Security", "/security"], ["Store", "/store"], ["Sign in", "/login"]] as const;
   return (
     <header className="sticky top-0 z-40 border-b border-black/10 bg-[#f4f4f4]/85 backdrop-blur-xl">
       <nav aria-label="Site" className="mx-auto flex h-16 max-w-[1240px] items-center gap-8 px-5 sm:px-8">
@@ -56,7 +56,10 @@ export function SiteFooter() {
           <Link href="/welcome#product" className="hover:text-white">Product</Link>
           <Link href="/pricing" className="hover:text-white">Pricing</Link>
           <Link href="/store" className="hover:text-white">Store</Link>
-          <Link href="/welcome#trust" className="hover:text-white">Security</Link>
+          <Link href="/ai" className="hover:text-white">AI</Link>
+          <Link href="/teams" className="hover:text-white">Teams</Link>
+          <Link href="/tcpa-compliant-crm" className="hover:text-white">TCPA and Do Not Call</Link>
+          <Link href="/security" className="hover:text-white">Security</Link>
           <Link href="/legal/terms" className="hover:text-white">Terms</Link>
           <Link href="/legal/privacy" className="hover:text-white">Privacy</Link>
           <Link href="/legal" className="hover:text-white">Legal</Link>

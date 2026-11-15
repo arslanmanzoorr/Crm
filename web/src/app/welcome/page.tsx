@@ -97,6 +97,7 @@ export default function WelcomePage() {
                 <Scale aria-hidden className="size-6" />
                 <h3 className="mt-5 text-xl font-bold">Fair Housing guardrails</h3>
                 <p className="mt-2 text-sm">AI writing describes the home, never who should live there. A Fair Housing check flags phrases like &ldquo;perfect for young couples&rdquo; or &ldquo;no Section 8&rdquo; before you publish.</p>
+                <Link href="/ai" className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline">How the AI works <ArrowRight aria-hidden className="size-4" /></Link>
               </div>
             </Reveal>
             <Reveal delay={0.1} className="md:col-span-2">
@@ -104,12 +105,14 @@ export default function WelcomePage() {
                 <PhoneOff aria-hidden className="size-6" style={{ color: S.accentText }} />
                 <h3 className="mt-5 text-xl font-bold">Consent before contact</h3>
                 <p className="mt-2 text-sm" style={{ color: S.muted }}>TCPA-aware by default: calls wait for consent or a Do Not Call Registry check from the last 31 days, texts need the lead&apos;s consent, and both stay inside your calling hours.</p>
+                <Link href="/tcpa-compliant-crm" className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline" style={{ color: S.accentText }}>How the checks work <ArrowRight aria-hidden className="size-4" /></Link>
               </div>
             </Reveal>
             <Reveal delay={0.04} className="md:col-span-3">
               <div className="flex h-full items-start gap-5 rounded-[8px] p-7" style={{ background: S.panel }}>
                 <Lock aria-hidden className="size-6 shrink-0" style={{ color: S.accentText }} />
-                <div><h3 className="text-xl font-bold">Your team&apos;s data stays your team&apos;s</h3><p className="mt-2 text-sm" style={{ color: S.muted }}>Every record is locked to your team in the database, with two-step sign-in for anyone who turns it on.</p></div>
+                <div><h3 className="text-xl font-bold">Your team&apos;s data stays your team&apos;s</h3><p className="mt-2 text-sm" style={{ color: S.muted }}>Every record is locked to your team in the database, with two-step sign-in for anyone who turns it on.</p>
+                  <Link href="/security" className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline" style={{ color: S.accentText }}>Security at Estos <ArrowRight aria-hidden className="size-4" /></Link></div>
               </div>
             </Reveal>
             <Reveal delay={0.08} className="md:col-span-3">
