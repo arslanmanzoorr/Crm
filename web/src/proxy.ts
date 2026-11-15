@@ -8,7 +8,7 @@ import { allows, capabilityFor, isPlan, upgradeMessage } from "@/lib/plans";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const APP_HOST = process.env.SITE_URL ? new URL(process.env.SITE_URL).hostname : "";
-const PUBLIC = ["/u/", "/api/email/", "/login", "/auth", "/f/", "/oh/", "/p/", "/legal", "/feeds/", "/api/chat/", "/api/v1/", "/api/mcp", "/.well-known/", "/tc/", "/welcome", "/store", "/pricing", "/site/"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
+const PUBLIC = ["/u/", "/api/email/", "/login", "/auth", "/f/", "/oh/", "/p/", "/legal", "/feeds/", "/api/chat/", "/api/v1/", "/api/mcp", "/.well-known/", "/robots.txt", "/sitemap.xml", "/llms.txt", "/llms-full.txt", "/opengraph-image", "/twitter-image", "/tc/", "/welcome", "/store", "/pricing", "/site/"]; // /invite redirects to login itself, keeping the token // /f/<id>: public lead forms
 
 /** Refreshes the Supabase session cookie and sends signed-out visitors to /login. */
 export async function proxy(req: NextRequest) {

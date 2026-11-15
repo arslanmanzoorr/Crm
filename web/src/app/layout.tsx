@@ -9,6 +9,7 @@ import { ProductTitle } from "@/components/product-title";
 import { Paused } from "@/components/paused";
 import { getAppBrand, getPausedNotice } from "@/lib/db";
 import { themeCss } from "@/lib/theme";
+import { LEGAL } from "@/lib/legal";
 import "./globals.css";
 
 const urbanist = Urbanist({
@@ -20,8 +21,13 @@ const urbanist = Urbanist({
 export const viewport: Viewport = { themeColor: "#0e0e0e", viewportFit: "cover", colorScheme: "dark" };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(LEGAL.site),
   title: { template: "%s · Estos", default: "Estos" },
   description: "The CRM for real estate agents: leads, follow-ups, listings and marketing in one place.",
+  applicationName: "Estos",
+  openGraph: { type: "website", siteName: "Estos", locale: "en_US" },
+  twitter: { card: "summary_large_image" },
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

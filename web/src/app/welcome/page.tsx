@@ -6,10 +6,14 @@ import { CircleReveal, ClosingCta, Letters, LiftCard, Panels, Reveal, SiteFooter
 import { btnGhost, btnPrimary, S } from "@/lib/site-theme";
 import { siteFont } from "@/lib/site-font";
 import { STORE } from "@/lib/store";
+import { jsonLd, og, organization, software, website } from "@/lib/seo";
 
+const DESCRIPTION = "The real estate CRM for agents and teams: leads, listings, showings, deals and follow-up in one place, with AI that drafts the work for you to approve.";
 export const metadata: Metadata = {
   title: { absolute: "Estos: the real estate CRM that writes the follow-up for you" },
-  description: "Leads, listings, deals and follow-up in one place, with AI that drafts the work and you approve it.",
+  description: DESCRIPTION,
+  alternates: { canonical: "/welcome" },
+  openGraph: og("/welcome", "Estos: the real estate CRM that writes the follow-up for you", DESCRIPTION),
 };
 
 const PANELS: Panel[] = [
@@ -22,6 +26,7 @@ const PANELS: Panel[] = [
 export default function WelcomePage() {
   return (
     <div data-site className={`${siteFont.className} min-h-[100dvh] overflow-x-clip`} style={{ background: S.bg, color: S.ink }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization, website, software) }} />
       <SiteNav />
 
       <section className="mx-auto max-w-[1240px] px-5 pt-14 sm:px-8 sm:pt-24">

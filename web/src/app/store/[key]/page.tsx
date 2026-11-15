@@ -9,6 +9,7 @@ import { S } from "@/lib/site-theme";
 import { dbEnabled, supabase } from "@/lib/db";
 import { siteFont } from "@/lib/site-font";
 import { delayLabel, STORE, stepText, storeItem } from "@/lib/store";
+import { breadcrumbs, jsonLd, og } from "@/lib/seo";
 
 export function generateStaticParams() {
   return STORE.map((s) => ({ key: s.key }));
@@ -16,7 +17,10 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/store/[key]">): Promise<Metadata> {
   const item = storeItem((await params).key);
-  return item ? { title: { absolute: `${item.name} · Estos store` }, description: item.why } : {};
+  return item ? {
+    title: { absolute: `${item.name} · Estos store` }, description: item.why,
+    alternates: { canonical: `/store/${item.key}` }, openGraph: og(`/store/${item.key}`, `${item.name} · Estos store`, item.why),
+  } : {};
 }
 
 export default function PlaybookPage({ params }: PageProps<"/store/[key]">) {
@@ -32,8 +36,10 @@ async function Playbook({ params }: { params: PageProps<"/store/[key]">["params"
     { icon: ListChecks, k: "Tasks", v: String(item.taskCount) },
     { icon: Tag, k: "Price", v: "Free" },
   ];
+  const ld = jsonLd(breadcrumbs([["Estos", "/welcome"], ["Playbook store", "/store"], [item.name, `/store/${item.key}`]]));
   return (
     <div data-site className={`${siteFont.className} min-h-[100dvh] overflow-x-clip`} style={{ background: S.bg, color: S.ink }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
       <SiteNav />
       <article className="mx-auto max-w-[1240px] px-5 pt-10 pb-28 sm:px-8">
         <Link href="/store" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium" style={{ color: S.muted }}><ArrowLeft aria-hidden className="size-4" /> All playbooks</Link>

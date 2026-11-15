@@ -1,32 +1,27 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { PricingPlans } from "@/components/site/pricing-plans";
 import { ClosingCta, Reveal, SiteFooter, SiteNav } from "@/components/site/signal";
 import { LEGAL } from "@/lib/legal";
-import { BILLING_LIVE, TRIAL_DAYS, YEARLY_MONTHS } from "@/lib/plans";
+import { BILLING_LIVE, YEARLY_MONTHS } from "@/lib/plans";
+import { breadcrumbs, FAQ, jsonLd, og, organization, software } from "@/lib/seo";
 import { siteFont } from "@/lib/site-font";
 import { S } from "@/lib/site-theme";
 
 export const metadata: Metadata = {
   title: { absolute: "Pricing · Estos" },
   description: "Simple per-agent pricing for the real estate CRM that writes the follow-up for you. Assistants free, no setup fees, cancel any time.",
+  alternates: { canonical: "/pricing" },
+  openGraph: og("/pricing", "Pricing · Estos", "Simple per-agent pricing: Starter $29, Pro $59, Team $89 per agent per month. Assistants free, no setup fees, cancel any time."),
 };
 
-const FAQ: [string, ReactNode][] = [
-  ["Who counts as an agent?", "Every owner, admin and agent on your team. Assistants are free, so you never pay extra for help."],
-  ["How does the free trial work?", BILLING_LIVE
-    ? `You get ${TRIAL_DAYS} days of the full plan. We take your card when you start, show you the date your first charge happens, and email you before it does. Cancel online before then and you pay nothing.`
-    : `When paid plans launch, new teams get ${TRIAL_DAYS} days of the full plan first. You'll add a card when you start, see the date of your first charge, and get an email before it happens. Cancel online before then and you pay nothing.`],
-  ["Can I cancel any time?", <>Yes, online, in a few clicks: the same way you signed up. Plans renew every month or year until you cancel, and you keep your plan until the end of the period you paid for. See our <Link key="r" href="/legal/refunds" className="underline">refunds and cancellation policy</Link>.</>],
-  ["Are there setup fees or contracts?", `No setup fees, no contracts, no hidden fees. Monthly plans are month to month; yearly plans cost ${YEARLY_MONTHS} months and renew yearly. Sales tax is added where the law requires it.`],
-  ["What happens to my data if I leave?", "It's yours. Owners and admins can download everything from Account at any time, and for 30 days after an account closes."],
-  ["Do you use my data to train AI?", <>No. AI requests only go to providers that neither store nor train on them. Details are in our <Link key="p" href="/legal/privacy" className="underline">privacy policy</Link>.</>],
-];
+const LD = jsonLd(organization, software, breadcrumbs([["Estos", "/welcome"], ["Pricing", "/pricing"]]));
+
 
 export default function PricingPage() {
   return (
     <div data-site className={`${siteFont.className} min-h-[100dvh] overflow-x-clip`} style={{ background: S.bg, color: S.ink }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: LD }} />
       <SiteNav />
       <section className="mx-auto max-w-[1240px] px-5 pt-14 pb-24 sm:px-8 sm:pt-24">
         <Reveal>
@@ -47,10 +42,10 @@ export default function PricingPage() {
         <div className="mx-auto grid max-w-[1240px] gap-10 px-5 sm:px-8 lg:grid-cols-[1fr_2fr]">
           <h2 className="text-5xl font-extrabold tracking-[-0.04em]">Questions</h2>
           <dl className="flex flex-col divide-y divide-black/10">
-            {FAQ.map(([q, a]) => (
+            {FAQ.map(({ q, a, link }) => (
               <div key={q} className="py-5 first:pt-0">
                 <dt className="text-lg font-bold">{q}</dt>
-                <dd className="mt-2 max-w-[62ch]" style={{ color: S.muted }}>{a}</dd>
+                <dd className="mt-2 max-w-[62ch]" style={{ color: S.muted }}>{a}{link && <> <Link href={link.href} className="underline">{link.text}</Link></>}</dd>
               </div>
             ))}
           </dl>
