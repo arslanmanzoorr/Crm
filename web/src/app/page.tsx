@@ -31,7 +31,7 @@ export default function Home() {
 
 async function Home_() {
   const [me, top, tasks, options, soon, brand] = await Promise.all([getMe(), getTopLeads(), getTasks(), getLeadOptions(), getSoonMovers(), getAppBrand()]);
-  const layout = await getHomeLayout(brand?.off ?? []);
+  const [layout, brief] = await Promise.all([getHomeLayout(brand?.off ?? []), dayBrief()]);
   const db = (node: ReactNode) => (dbEnabled ? node : null);
   const blocks: Record<Section, ReactNode> = {
     waiting: db(<Suspense fallback={null}><Waiting /></Suspense>),
@@ -49,12 +49,24 @@ async function Home_() {
   };
   return (
     <Reveal>
-      <Workspace name={me.name} tasks={tasks}>
+      <Workspace name={me.name} tasks={tasks} brief={brief}>
         {layout.order.filter((k) => !layout.hidden.includes(k)).map((k) => <Fragment key={k}>{blocks[k]}</Fragment>)}
         {dbEnabled && <HomeCustomize order={layout.order} hidden={layout.hidden} own={layout.own} canTeam={await isOwnerOrAdmin()} />}
       </Workspace>
     </Reveal>
   );
+}
+
+/** Counts for the header chips: showings in the next 24 hours and active deals closing within 30 days. */
+async function dayBrief() {
+  if (!dbEnabled) return null;
+  const now = Date.now();
+  const [showings, deals, today] = await Promise.all([getShowings({ from: new Date(now).toISOString(), to: new Date(now + 86_400_000).toISOString() }), listDeals(), teamToday()]);
+  const in30 = new Date(Date.parse(`${today}T00:00:00Z`) + 30 * 86_400_000).toISOString().slice(0, 10);
+  return {
+    showings: showings.filter((s) => s.status === "requested" || s.status === "confirmed").length,
+    closing: deals.filter((d) => d.status === "active" && d.closeOn && d.closeOn >= today && d.closeOn <= in30).length,
+  };
 }
 
 async function GettingStarted() {
