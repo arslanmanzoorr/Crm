@@ -1,10 +1,10 @@
-import { CircleAlert, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Roll, Skeleton } from "@/components/ui";
+import { Avatar, Roll, Skeleton } from "@/components/ui";
 import { money } from "@/lib/data";
-import { closeOutlook, commission, daysBetween, pipelineByAgent, riskFlags } from "@/lib/deals";
+import { addDays, closeOutlook, commission, daysBetween, pipelineByAgent, riskFlags } from "@/lib/deals";
 import { dbEnabled, getMembers, getOffices, listDeals, type Deal, teamToday } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Deals" };
@@ -44,7 +44,6 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
   const deals = isTeam || !others ? all : everything.filter((d) => d.ownerId === team.me);
   const active = deals.filter((d) => d.status === "active");
   const closed = deals.filter((d) => d.status === "closed");
-  const soon = active.filter((d) => d.closeOn && daysBetween(today, d.closeOn) <= 30);
   const sum = (ds: Deal[]) => ds.reduce((n, d) => n + (isTeam ? gci(d) : take(d)), 0);
   const share = isTeam ? "team GCI" : "your share";
   const email = new Map(team.members.map((m) => [m.userId, m.email]));
@@ -66,6 +65,10 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
       </div>
     );
 
+  const rows = active
+    .map((d) => ({ d, o: closeOutlook(flagsOf(d, today), d.milestones) }))
+    .sort((a, b) => b.o.rank - a.o.rank || (a.d.closeOn ?? "9").localeCompare(b.d.closeOn ?? "9"));
+
   return (
     <>
       {tabs}
@@ -77,6 +80,34 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
           ))}
         </nav>
       )}
+
+      <dl className="grid gap-x-12 gap-y-5 rounded-card bg-surface-2 p-5 sm:grid-cols-[auto_auto_1fr] sm:p-6">
+        <div>
+          <dt className="text-sm text-muted">Pending, {share}</dt>
+          <dd className="mt-1 text-4xl font-light tabular-nums"><Roll value={money(sum(active))} /></dd>
+          <dd className="text-sm text-muted">{active.length} under contract · {money(active.reduce((n, d) => n + d.price, 0))} volume</dd>
+        </div>
+        <div>
+          <dt className="text-sm text-muted">{isTeam ? "Closed" : "Earned"} in {today.slice(0, 4)}</dt>
+          <dd className="mt-1 text-4xl font-light tabular-nums text-accent-ink"><Roll value={money(sum(closed))} /></dd>
+          <dd className="text-sm text-muted">{closed.length} closed{isTeam ? ", team GCI" : ""}</dd>
+        </div>
+      </dl>
+
+      {rows.length > 0 && <Runway rows={rows} today={today} />}
+
+      <section aria-labelledby="active" className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="active" className="text-xl">Under contract</h2>
+          {rows.length > 1 && <p className="text-sm text-muted">Riskiest first</p>}
+        </div>
+        {rows.length === 0 ? <p className="rounded-card bg-surface-2 p-5 text-sm text-muted">Nothing under contract right now.</p> : (
+          <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
+            {rows.map(({ d, o }) => <DealRow key={d.id} d={d} o={o} today={today} />)}
+          </ul>
+        )}
+      </section>
+
       {isTeam && (
         <section aria-labelledby="by-agent" className="flex flex-col gap-3">
           <h2 id="by-agent" className="text-xl">By agent</h2>
@@ -95,32 +126,19 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
           </div>
         </section>
       )}
-      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Active deals" value={String(active.length)} />
-        <Stat label="Closing in 30 days" value={money(sum(soon))} sub={`${soon.length} deal${soon.length === 1 ? "" : "s"}, ${share}`} />
-        <Stat label={`Pending, ${share}`} value={money(sum(active))} />
-        <Stat label={`${isTeam ? "Closed" : "Earned"} in ${today.slice(0, 4)}`} value={money(sum(closed))} sub={`${closed.length} closed${isTeam ? ", team GCI" : ""}`} accent />
-      </dl>
-
-      <ThisMonth deals={active} today={today} />
-
-      <section aria-labelledby="active" className="flex flex-col gap-3">
-        <h2 id="active" className="text-xl">Under contract</h2>
-        {active.length === 0 && <p className="text-sm text-muted">Nothing under contract right now.</p>}
-        <ul className="grid gap-3 lg:grid-cols-2">
-          {active.map((d) => <DealCard key={d.id} d={d} today={today} />)}
-        </ul>
-      </section>
 
       {closed.length > 0 && (
         <section aria-labelledby="closed" className="flex flex-col gap-3">
-          <h2 id="closed" className="text-xl">Closed this year</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="closed" className="text-xl">Closed this year</h2>
+            <p className="text-sm tabular-nums text-muted">{closed.length} · {money(closed.reduce((n, d) => n + d.price, 0))} volume</p>
+          </div>
           <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
             {closed.map((d) => (
               <li key={d.id}>
                 <Link href={`/deals/${d.id}`} className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 px-5 py-3 hover:bg-surface-3">
                   <span className="min-w-0"><span className="font-medium">{d.contact.name}</span> <span className="text-muted">· {d.address}</span></span>
-                  <span className="text-sm text-muted">{money(d.price)} · {isTeam ? `GCI ${money(gci(d))}` : `you ${money(take(d))}`}</span>
+                  <span className="text-sm tabular-nums text-muted">{money(d.price)} · {isTeam ? `GCI ${money(gci(d))}` : `you ${money(take(d))}`}</span>
                 </Link>
               </li>
             ))}
@@ -131,78 +149,100 @@ async function Board({ searchParams }: { searchParams: PageProps<"/deals">["sear
   );
 }
 
-const flagsOf = (d: Deal, today: string) => riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
-const TONE = ["text-accent-ink", "text-ink", "text-score-1"] as const;
+type Outlook = ReturnType<typeof closeOutlook>;
+type Row = { d: Deal; o: Outlook };
 
-/** Deals set to close this calendar month, most likely first, each with the reason. */
-function ThisMonth({ deals, today }: { deals: Deal[]; today: string }) {
-  const rows = deals
-    .filter((d) => d.closeOn?.slice(0, 7) === today.slice(0, 7))
-    .map((d) => ({ d, o: closeOutlook(flagsOf(d, today), d.milestones) }))
-    .sort((a, b) => a.o.rank - b.o.rank || a.d.closeOn!.localeCompare(b.d.closeOn!));
-  if (rows.length === 0) return null;
-  const month = new Date(`${today.slice(0, 7)}-15T00:00:00Z`).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" });
+const flagsOf = (d: Deal, today: string) => riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
+const TONE = ["text-accent-ink", "text-score-3", "text-score-1"] as const;
+const RING = ["ring-accent", "ring-score-3", "ring-score-1"] as const;
+const DOT = ["bg-accent", "bg-score-3", "bg-score-1"] as const;
+const shortDate = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+const SPAN = 60; // days shown on the runway
+
+/**
+ * The next 60 days as a track: today on the left, a mark each week, every deal at its closing date ringed in its
+ * outlook colour. A date that has passed pins the deal to the left edge.
+ */
+function Runway({ rows, today }: { rows: Row[]; today: string }) {
+  const placed = rows.filter((r) => r.d.closeOn).map((r) => ({ ...r, left: daysBetween(today, r.d.closeOn!) }));
+  const shown = placed.filter((r) => r.left <= SPAN).sort((a, b) => a.left - b.left);
+  const later = placed.length - shown.length;
+  const undated = rows.length - placed.length;
+  const at = (days: number) => `clamp(18px, ${(Math.max(0, days) / SPAN) * 100}%, calc(100% - 18px))`;
   return (
-    <section aria-labelledby="this-month" className="flex flex-col gap-3">
-      <div>
-        <h2 id="this-month" className="text-xl">Closing in {month}</h2>
-        <p className="text-sm text-muted">Most likely to close on time first, from overdue items, the closing date and client contact.</p>
+    <section aria-labelledby="runway" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="runway" className="text-xl">Closing runway</h2>
+        <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+          {(["On track", "Watch", "At risk"] as const).map((l, i) => <span key={l} className="flex items-center gap-1.5"><span aria-hidden className={`size-2 rounded-full ${DOT[i]}`} />{l}</span>)}
+        </p>
       </div>
-      <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
-        {rows.map(({ d, o }) => (
-          <li key={d.id}>
-            <Link href={`/deals/${d.id}`} className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3 hover:bg-surface-3">
-              <span className="min-w-0 flex-1">
-                <span className="block truncate"><span className="font-medium">{d.contact.name}</span> <span className="text-muted">· {d.address}</span></span>
-                <span className="block text-sm text-muted"><span className={`font-medium ${TONE[o.rank]}`}>{o.label}</span> · {o.why}</span>
-              </span>
-              <span className="text-sm tabular-nums text-muted">{money(d.price)} · {new Date(`${d.closeOn}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="rounded-card bg-surface-2 px-5 pt-4 pb-3 sm:px-6">
+        <div className="relative h-14">
+          <span aria-hidden className="absolute inset-x-0 top-1/2 h-px bg-line/10" />
+          {Array.from({ length: Math.floor(SPAN / 7) }, (_, i) => (i + 1) * 7).map((w) => (
+            <span key={w} aria-hidden className="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-line/15" style={{ left: `${(w / SPAN) * 100}%` }} />
+          ))}
+          <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />
+          <ul aria-label="Deals by closing date">
+            {shown.map(({ d, o, left }, i) => (
+              // Deals closing within a few days of each other sit side by side so every face stays visible.
+              <li key={d.id} className="absolute top-1/2" style={{ left: at(left), transform: `translate(calc(-50% + ${shown.slice(0, i).filter((x) => Math.abs(x.left - left) < 4).length * 30}px), -50%)` }}>
+                <Link href={`/deals/${d.id}`} title={`${d.contact.name} · ${shortDate(d.closeOn!)} · ${o.label}`}
+                  aria-label={`${d.contact.name}, closes ${shortDate(d.closeOn!)}${left < 0 ? ", date passed" : ""}, ${o.label}`}
+                  className={`block rounded-full ring-2 ring-offset-2 ring-offset-surface-2 transition duration-150 hover:scale-110 ${RING[o.rank]}`}>
+                  <Avatar name={d.contact.name} size={34} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div aria-hidden className="relative mt-1 h-4 text-[11px] text-muted">
+          <span className="absolute left-0">Today</span>
+          {[14, 28, 42].map((w) => <span key={w} className="absolute -translate-x-1/2 tabular-nums" style={{ left: `${(w / SPAN) * 100}%` }}>{shortDate(addDays(today, w))}</span>)}
+          <span className="absolute right-0 tabular-nums">{shortDate(addDays(today, SPAN))}</span>
+        </div>
+        {(later > 0 || undated > 0) && (
+          <p className="mt-2 text-xs text-muted">{[later > 0 && `${later} closing after ${shortDate(addDays(today, SPAN))}`, undated > 0 && `${undated} without a closing date`].filter(Boolean).join(" · ")}</p>
+        )}
+      </div>
     </section>
   );
 }
 
-function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
-  return (
-    <div className="rounded-card bg-surface-2 p-4">
-      <dt className="text-sm text-muted">{label}</dt>
-      <dd className={`mt-1 text-2xl font-light ${accent ? "text-accent-ink" : ""}`}><Roll value={value} /></dd>
-      {sub && <dd className="text-xs text-muted">{sub}</dd>}
-    </div>
-  );
-}
-
-function DealCard({ d, today }: { d: Deal; today: string }) {
-  const flags = riskFlags({ status: d.status, closeOn: d.closeOn, lastContactOn: d.contact.lastActivityAt?.slice(0, 10) ?? null }, d.milestones, today);
+/** One deal under contract: who and where, how it's going and why, checklist progress, price and days left. */
+function DealRow({ d, o, today }: Row & { today: string }) {
   const done = d.milestones.filter((m) => m.doneAt).length;
   const next = d.milestones.find((m) => !m.doneAt);
   const left = d.closeOn ? daysBetween(today, d.closeOn) : null;
   return (
     <li>
-      <Link href={`/deals/${d.id}`} className="flex h-full flex-col gap-3 rounded-card bg-surface-2 p-5 transition duration-200 hover:bg-surface-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-lg">{d.contact.name}</p>
-            <p className="truncate text-sm text-muted">{d.side === "buyer" ? "Buying" : "Selling"} · {d.address}</p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p>{money(d.price)}</p>
-            <p className="text-sm text-muted">{left === null ? "No close date" : left < 0 ? "Close date passed" : left === 0 ? "Closes today" : `Closes in ${left}d`}</p>
-          </div>
-        </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-surface-1" role="progressbar" aria-label="Milestones done" aria-valuenow={done} aria-valuemin={0} aria-valuemax={d.milestones.length}>
-          <div className="h-full rounded-full bg-accent" style={{ width: `${d.milestones.length ? (done / d.milestones.length) * 100 : 0}%` }} />
-        </div>
-        <p className="text-sm text-muted">{done}/{d.milestones.length} done{next && <> · next: <span className="text-ink">{next.title}</span></>}</p>
-        {flags[0] && (
-          <p className={`flex items-start gap-1.5 text-sm ${flags[0].level === "high" ? "text-score-1" : "text-ink/80"}`}>
-            <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
-            <span>{flags[0].text}{flags.length > 1 && <span className="text-muted"> · +{flags.length - 1} more</span>}</span>
-          </p>
-        )}
+      <Link href={`/deals/${d.id}`} className="flex items-center gap-4 px-4 py-3.5 transition-colors duration-150 hover:bg-surface-3/60 sm:px-5">
+        <span className={`shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-surface-2 ${RING[o.rank]}`}><Avatar name={d.contact.name} size={38} /></span>
+        <span className="grid min-w-0 flex-1 gap-x-6 gap-y-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_9rem] md:items-center">
+          <span className="min-w-0">
+            <span className="block truncate font-medium">{d.contact.name}</span>
+            <span className="block truncate text-sm text-muted">{d.side === "buyer" ? "Buying" : "Selling"} · {d.address}</span>
+          </span>
+          <span className="min-w-0 text-sm">
+            <span className="block truncate"><span className={`font-medium ${TONE[o.rank]}`}>{o.label}</span> <span className="text-ink/80">· {o.why}</span></span>
+            {d.milestones.length > 0 ? (
+              <span className="mt-1 flex items-center gap-2 text-muted">
+                <span className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-surface-1" role="progressbar" aria-label="Milestones done" aria-valuenow={done} aria-valuemin={0} aria-valuemax={d.milestones.length}>
+                  <span className="block h-full rounded-full bg-accent" style={{ width: `${(done / d.milestones.length) * 100}%` }} />
+                </span>
+                <span className="truncate">{done} of {d.milestones.length}{next && <> · next: {next.title}</>}</span>
+              </span>
+            ) : <span className="mt-0.5 block text-muted">No checklist yet</span>}
+          </span>
+          <span className="flex flex-wrap items-baseline gap-x-3 text-sm tabular-nums md:block md:text-right">
+            <span className="block text-ink">{money(d.price)}</span>
+            <span className={`block ${left !== null && left < 0 ? "text-score-1" : "text-muted"}`}>
+              {left === null ? "No close date" : left < 0 ? "Date passed" : left === 0 ? "Closes today" : `${shortDate(d.closeOn!)} · ${left} day${left === 1 ? "" : "s"}`}
+            </span>
+          </span>
+        </span>
       </Link>
     </li>
   );
