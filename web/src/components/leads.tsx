@@ -1,12 +1,14 @@
 "use client";
 
-import { Check, Flame, Trash2, X } from "lucide-react";
+import { Check, Flame, Mail, Phone, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { bulkDelete, bulkSetOwner, bulkSetStage } from "@/lib/actions";
 import type { Member } from "@/lib/db";
 import { STAGES, type Lead, type Stage } from "@/lib/data";
+import { scrubbed } from "@/lib/consent";
+import { useNow } from "./header";
 import { Chip, LeadAvatar, NotchCard, ScoreDots, scoreLabel } from "./ui";
 
 const filters = ["All", "Hot", "Warm", "Cold"] as const;
@@ -63,6 +65,69 @@ export function LeadCard({ lead, selected, onToggle, owner }: { lead: Lead; sele
   );
 }
 
+const TEMP_TONE: Record<string, string> = { Hot: "text-score-2", Warm: "text-score-3", Cold: "text-muted" };
+const scoreTone = (s: number) => (s >= 80 ? "bg-score-2" : s >= 50 ? "bg-score-3" : "bg-surface-3");
+
+/** "3d", "5h", "just now": how long since the last touch. */
+function ago(iso: string | undefined, now: Date | null) {
+  if (!iso || !now || isNaN(Date.parse(iso))) return null;
+  const m = Math.max(0, Math.floor((now.getTime() - Date.parse(iso)) / 60_000));
+  return m < 1 ? "just now" : m < 60 ? `${m}m ago` : m < 1440 ? `${Math.floor(m / 60)}h ago` : m < 60 * 24 * 60 ? `${Math.floor(m / 1440)}d ago` : `${Math.floor(m / 43200)}mo ago`;
+}
+
+/** One lead as a scannable row: who, where they are, the next step, how hot, and the one action allowed now. */
+function LeadRow({ lead, owner, selected, onToggle, now }: { lead: Lead; owner?: string; selected?: boolean; onToggle?: () => void; now: Date | null }) {
+  const today = now?.toISOString().slice(0, 10) ?? "";
+  const call = !!now && !!lead.phone && !lead.consent?.dnc && (!!lead.consent?.call || scrubbed(lead.consent?.dncCheckedOn, today));
+  const mail = !call && !!lead.email && !lead.consent?.dnc;
+  const last = ago(lead.activity[0]?.when, now);
+  const first = lead.name.split(" ")[0];
+  return (
+    <li className={`group relative flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-surface-3/60 sm:px-5 ${selected ? "bg-accent/10" : ""}`}>
+      {onToggle ? (
+        <>
+          {/* In select mode the whole row is the checkbox; the circle sits where the avatar was. */}
+          <button type="button" role="checkbox" aria-checked={!!selected} aria-label={`Select ${lead.name}`} onClick={onToggle} className="absolute inset-0 z-20" />
+          <span aria-hidden className="grid size-11 shrink-0 place-items-center">
+            <span className={`grid size-7 place-items-center rounded-full transition duration-150 ${selected ? "bg-accent text-on-light" : "bg-surface-3 text-transparent ring-1 ring-line/15"}`}>
+              {selected && <Check className="size-4 animate-pop" />}
+            </span>
+          </span>
+        </>
+      ) : (
+        <LeadAvatar id={lead.id} name={lead.name} size={44} />
+      )}
+      <div className="grid min-w-0 flex-1 items-center gap-x-6 gap-y-0.5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)_auto]">
+        <div className="min-w-0">
+          <Link href={`/leads/${lead.id}`} className="block truncate font-medium after:absolute after:inset-0 hover:text-accent-ink">{lead.name}</Link>
+          <p className="truncate text-sm text-muted">
+            {lead.stage && <span className="text-ink/80">{lead.stage}</span>}
+            {lead.stage && lead.headline && " · "}{lead.headline}
+            {owner !== undefined && <> · {owner || "Unassigned"}</>}
+          </p>
+        </div>
+        <div className="min-w-0 text-sm">
+          <p className="truncate"><span className="text-accent-ink">Next</span> <span className="text-ink/90">{lead.nextAction || lead.intent}</span></p>
+          <p className="hidden truncate text-muted md:block">{last ? `${last} · ` : ""}{lead.lastTouch}</p>
+        </div>
+        <p className="hidden items-center gap-2 text-sm md:flex" aria-label={`Score ${lead.score}, ${scoreLabel(lead.score)}`}>
+          <span aria-hidden className={`size-2 rounded-full ${scoreTone(lead.score)}`} />
+          <span className="w-7 text-right tabular-nums">{lead.score}</span>
+        </p>
+      </div>
+      <span className={`shrink-0 text-sm tabular-nums md:hidden ${TEMP_TONE[scoreLabel(lead.score)]}`} aria-label={`Score ${lead.score}`}>{lead.score}</span>
+      {!onToggle && (call || mail) && (
+        <a href={call ? `tel:${lead.phone}` : `mailto:${lead.email}`} aria-label={`${call ? "Call" : "Email"} ${lead.name}`}
+          className="relative z-10 hidden min-h-11 w-36 shrink-0 items-center justify-center gap-2 rounded-full bg-surface-3 px-4 text-sm font-medium transition duration-150 hover:bg-accent hover:text-on-light sm:flex">
+          {call ? <Phone aria-hidden className="size-4 shrink-0" /> : <Mail aria-hidden className="size-4 shrink-0" />}<span className="truncate">{call ? "Call" : "Email"} {first}</span>
+        </a>
+      )}
+      {/* Same width with or without an action, so the columns line up row to row. */}
+      {!onToggle && !(call || mail) && <span aria-hidden className="hidden w-36 shrink-0 sm:block" />}
+    </li>
+  );
+}
+
 /** Workspace: the three leads most worth a call, by score. */
 export function TopLeads({ leads, total }: { leads: Lead[]; total: number }) {
   const top = [...leads].sort((a, b) => b.score - a.score).slice(0, 3);
@@ -93,6 +158,7 @@ export function LeadList({ leads, total, counts, q, temp, limit, owner = "", tag
   const team = members.length > 1;
   const nameOf = (id?: string | null) => (id ? members.find((m) => m.userId === id)?.email.split("@")[0] ?? "" : "");
   const router = useRouter();
+  const now = useNow();
   const [pending, start] = useTransition();
   const [text, setText] = useState(q);
   const [selecting, setSelecting] = useState(false);
@@ -166,9 +232,6 @@ export function LeadList({ leads, total, counts, q, temp, limit, owner = "", tag
           maxLength={80}
           className="min-h-11 w-full rounded-full bg-surface-2 px-4 text-sm outline-none placeholder:text-muted focus:ring-2 focus:ring-accent sm:w-80"
         />
-        <button type="button" onClick={() => (selecting ? stopSelecting() : setSelecting(true))} aria-pressed={selecting} className={`${pill(selecting)} ml-auto sm:order-last`}>
-          {selecting ? "Done" : "Select"}
-        </button>
         {team && (
           <div role="group" aria-label="Filter by owner" className="flex flex-wrap gap-2">
             {([["", "Everyone"], ["me", "Mine"], ["none", "Unassigned"]] as const).map(([v, l]) => (
@@ -181,13 +244,19 @@ export function LeadList({ leads, total, counts, q, temp, limit, owner = "", tag
             #{tag} <X aria-hidden className="size-3.5" />
           </button>
         )}
-        <div role="group" aria-label="Filter by temperature" className="flex flex-wrap gap-2">
-          {filters.map((f) => (
-            <button key={f} type="button" aria-pressed={temp === f} onClick={() => go({ temp: f })} className={pill(temp === f)}>
-              {f === "Hot" && <Flame aria-hidden className="size-3.5 text-score-2" />}
-              {f} <span className="text-xs opacity-70">{counts[f]}</span>
-            </button>
-          ))}
+        {/* Temperature chips scroll sideways on a phone so Select stays on the same line. */}
+        <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
+          <div role="group" aria-label="Filter by temperature" className="no-scrollbar flex min-w-0 gap-2 overflow-x-auto">
+            {filters.map((f) => (
+              <button key={f} type="button" aria-pressed={temp === f} onClick={() => go({ temp: f })} className={`${pill(temp === f)} shrink-0`}>
+                {f === "Hot" && <Flame aria-hidden className="size-3.5 text-score-2" />}
+                {f} <span className="text-xs opacity-70">{counts[f]}</span>
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={() => (selecting ? stopSelecting() : setSelecting(true))} aria-pressed={selecting} className={`${pill(selecting)} ml-auto shrink-0`}>
+            {selecting ? "Done" : "Select"}
+          </button>
         </div>
       </div>
 
@@ -243,8 +312,23 @@ export function LeadList({ leads, total, counts, q, temp, limit, owner = "", tag
       )}
       {leads.length ? (
         <>
-          <div data-tour="leads" className={`grid gap-4 transition-opacity duration-150 sm:grid-cols-2 xl:grid-cols-3 ${pending ? "opacity-60" : ""}`}>
-            {leads.map((l) => <LeadCard key={l.id} lead={l} owner={team ? nameOf(l.ownerId) : undefined} selected={picked.has(l.id)} onToggle={selecting ? () => toggle(l.id) : undefined} />)}
+          <div data-tour="leads" className={`flex flex-col gap-6 transition-opacity duration-150 ${pending ? "opacity-60" : ""}`}>
+            {filters.slice(1).map((band) => {
+              const rows = leads.filter((l) => scoreLabel(l.score) === band);
+              if (!rows.length) return null;
+              return (
+                <section key={band} aria-labelledby={`band-${band}`} className="flex flex-col gap-2">
+                  <h2 id={`band-${band}`} className="flex items-center gap-2 px-1 text-sm text-muted">
+                    {band === "Hot" && <Flame aria-hidden className="size-4 text-score-2" />}
+                    <span className={band === "Hot" ? "text-ink" : ""}>{band}</span>
+                    <span className="tabular-nums">{temp === "All" ? counts[band] : rows.length}</span>
+                  </h2>
+                  <ul className="flex flex-col divide-y divide-line/5 overflow-hidden rounded-card bg-surface-2">
+                    {rows.map((l) => <LeadRow key={l.id} lead={l} now={now} owner={team ? nameOf(l.ownerId) : undefined} selected={picked.has(l.id)} onToggle={selecting ? () => toggle(l.id) : undefined} />)}
+                  </ul>
+                </section>
+              );
+            })}
           </div>
           {leads.length < total && (
             <button type="button" onClick={() => go({ limit: limit + PAGE })} disabled={pending} className={`${pill(false)} self-center`}>
