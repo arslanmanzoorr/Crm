@@ -10,7 +10,7 @@ export const LEGAL = {
   /** State the company is organized in; governs the Terms. */
   state: "Wyoming" as string | null,
   /** Mailing address for notices (and the site footer). */
-  address: null as string | null,
+  address: "30 N Gould St, Ste R, Sheridan, WY 82801" as string | null,
   support: "support@estos.app",
   privacy: "privacy@estos.app",
   /** Effective date shown on every policy. */
