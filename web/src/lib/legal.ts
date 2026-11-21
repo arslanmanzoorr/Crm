@@ -6,7 +6,7 @@ export const LEGAL = {
   product: "Estos",
   site: "https://estos.app",
   /** Registered legal name, e.g. "Estos LLC". */
-  entity: null as string | null,
+  entity: "RPLCED LLC" as string | null,
   /** State the company is organized in; governs the Terms. */
   state: null as string | null,
   /** Mailing address for notices (and the site footer). */
@@ -14,11 +14,11 @@ export const LEGAL = {
   support: "support@estos.app",
   privacy: "privacy@estos.app",
   /** Effective date shown on every policy. */
-  updated: "November 8, 2026",
+  updated: "November 21, 2026",
   /** The same date for machines (sitemap lastmod, structured data). */
-  updatedIso: "2026-11-08",
+  updatedIso: "2026-11-21",
   /** Bump when the Terms or Privacy Policy change materially: everyone is asked to accept again. */
-  termsVersion: "2026-11-08",
+  termsVersion: "2026-11-21",
   /** Full refund of a first paid charge requested within this many days (only applies once paid plans exist). */
   refundDays: 14,
 };
