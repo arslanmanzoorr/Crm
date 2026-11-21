@@ -8,7 +8,7 @@ export const LEGAL = {
   /** Registered legal name, e.g. "Estos LLC". */
   entity: "RPLCED LLC" as string | null,
   /** State the company is organized in; governs the Terms. */
-  state: null as string | null,
+  state: "Wyoming" as string | null,
   /** Mailing address for notices (and the site footer). */
   address: null as string | null,
   support: "support@estos.app",
